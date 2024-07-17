@@ -46,6 +46,8 @@ void main() async {
     } catch (e) {
       assets.addAll(await TokenRepository.fetchFixedTokens());
       assets.add(zeniqSmart);
+      assets.add(avinocZSC); // For now
+      assets.add(tupanToken);
     }
   } catch (e) {
     runApp(

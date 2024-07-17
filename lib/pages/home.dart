@@ -16,6 +16,7 @@ import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
+import 'package:zeniq_swap_frontend/common/extensions.dart';
 import 'package:zeniq_swap_frontend/common/price_repository.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
@@ -418,20 +419,21 @@ class _HomeScreenState extends State<HomeScreen> {
                               value: info.getPrice(),
                             ),
                             const NomoDivider(),
-                            const NomoInfoItem(
+                            NomoInfoItem(
                               title: "Slippage Tolerance",
-                              value: "0.5%",
+                              value: "${info.slippage}%",
                             ),
                             const NomoDivider(),
-                            const NomoInfoItem(
-                              title: "Liquidity Provider Fee",
-                              value: "0.3%",
+                            NomoInfoItem(
+                              title: "Fee",
+                              value:
+                                  "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
                             ),
                             const NomoDivider(),
                             NomoInfoItem(
                               title: "Minimum Received",
                               value:
-                                  "${info.amountOutMin.displayDouble.toStringAsFixed(5)} ${info.toToken.symbol}",
+                                  "${info.amountOutMin.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.toToken.symbol}",
                             ),
                           ],
                         ToSwapInfo info => [
@@ -440,20 +442,21 @@ class _HomeScreenState extends State<HomeScreen> {
                               value: info.getPrice(),
                             ),
                             const NomoDivider(),
-                            const NomoInfoItem(
+                            NomoInfoItem(
                               title: "Slippage Tolerance",
-                              value: "0.5%",
+                              value: "${info.slippage}%",
                             ),
                             const NomoDivider(),
-                            const NomoInfoItem(
-                              title: "Liquidity Provider Fee",
-                              value: "0.3%",
+                            NomoInfoItem(
+                              title: "Fee",
+                              value:
+                                  "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
                             ),
                             const NomoDivider(),
                             NomoInfoItem(
                               title: "Maximum sold",
                               value:
-                                  "${info.amountInMax.displayDouble.toStringAsFixed(5)} ${info.fromToken.symbol}",
+                                  "${info.amountInMax.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
                             ),
                           ]
                       }

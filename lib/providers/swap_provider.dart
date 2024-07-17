@@ -41,7 +41,7 @@ enum LastAmountChanged {
 sealed class SwapInfo {
   final double slippage;
   final double priceImpact;
-  final double fee;
+  final Amount fee;
   final TokenEntity fromToken;
   final TokenEntity toToken;
   final bool needsApproval;
@@ -50,11 +50,11 @@ sealed class SwapInfo {
   const SwapInfo({
     required this.slippage,
     required this.priceImpact,
-    required this.fee,
     required this.fromToken,
     required this.toToken,
     required this.needsApproval,
     required this.path,
+    required this.fee,
   });
 }
 
@@ -75,13 +75,13 @@ final class FromSwapInfo extends SwapInfo {
     required this.amountOutMin,
     required this.fromAmount,
     required this.amountOut,
-    required super.fee,
     required super.priceImpact,
     required super.slippage,
     required super.fromToken,
     required super.toToken,
     required super.needsApproval,
     required super.path,
+    required super.fee,
   });
 
   @override
@@ -107,13 +107,13 @@ final class ToSwapInfo extends SwapInfo {
     required this.toAmount,
     required this.amountInMax,
     required this.amountIn,
-    required super.fee,
     required super.priceImpact,
     required super.slippage,
     required super.fromToken,
     required super.toToken,
     required super.needsApproval,
     required super.path,
+    required super.fee,
   });
 
   @override
@@ -171,6 +171,8 @@ class SwapProvider {
     fromAmountString.addListener(fromAmountStringChanged);
     toAmountString.addListener(toAmountStringChanged);
 
+    slippageString.addListener(slippageChanged);
+
     Timer.periodic(_refreshInterval, (_) {
       checkSwapInfo();
     });
@@ -185,6 +187,23 @@ class SwapProvider {
 
   // Rethink this since its only used for tests
   Completer<SwapInfo>? swapInfoCompleter;
+
+  double slippage = 0.5;
+
+  late final ValueNotifier<String> slippageString =
+      ValueNotifier(slippage.toString());
+
+  void slippageChanged() {
+    final slippage_s = slippageString.value;
+
+    final slippage_d = double.tryParse(slippage_s);
+
+    if (slippage_d == null) return;
+
+    slippage = slippage_d;
+
+    checkSwapInfo(); // Recalculate the swap info
+  }
 
   void fromAmountStringChanged() {
     final value = fromAmountString.value;
@@ -312,30 +331,35 @@ class SwapProvider {
           path: [wrappedZeniqSmart, toToken.value as EthBasedTokenEntity],
           own: ownAddress,
           fromAmount: fromAmount.value!,
+          slippage: slippage,
         ),
       SwapType.ExactTokenForZeniq => fromSwapInfo(
           path: [fromToken.value as EthBasedTokenEntity, wrappedZeniqSmart],
           own: ownAddress,
           fromAmount: fromAmount.value!,
+          slippage: slippage,
         ),
       SwapType.ExactTokenForToken => fromSwapInfo(
           path: [
             fromToken.value as EthBasedTokenEntity,
             wrappedZeniqSmart,
-            toToken.value as EthBasedTokenEntity
+            toToken.value as EthBasedTokenEntity,
           ],
           own: ownAddress,
           fromAmount: fromAmount.value!,
+          slippage: slippage,
         ),
       SwapType.ZeniqForExactToken => toSwapInfo(
           path: [wrappedZeniqSmart, toToken.value as EthBasedTokenEntity],
           toAmount: toAmount.value!,
           own: ownAddress,
+          slippage: slippage,
         ),
       SwapType.TokenForExactZeniq => toSwapInfo(
           path: [fromToken.value as EthBasedTokenEntity, wrappedZeniqSmart],
           toAmount: toAmount.value!,
           own: ownAddress,
+          slippage: slippage,
         ),
       SwapType.TokenForExactToken => toSwapInfo(
           path: [
@@ -345,6 +369,7 @@ class SwapProvider {
           ],
           toAmount: toAmount.value!,
           own: ownAddress,
+          slippage: slippage,
         ),
     };
 
@@ -502,6 +527,7 @@ Future<FromSwapInfo> fromSwapInfo({
   required List<EthBasedTokenEntity> path,
   required Amount fromAmount,
   required String own,
+  required double slippage,
 }) async {
   final contractPath = path.map((e) => e.contractAddress).toList();
 
@@ -510,8 +536,11 @@ Future<FromSwapInfo> fromSwapInfo({
     path: contractPath,
   );
 
+  final _s = 1000.toBigInt - Amount.convert(value: slippage, decimals: 1).value;
+
   final outputValue = outputs.last;
-  final minOutputValue = (outputValue * 995.toBigInt) ~/ 1000.toBigInt;
+
+  final minOutputValue = (outputValue * _s) ~/ 1000.toBigInt;
 
   final bool needsApproval;
 
@@ -531,13 +560,22 @@ Future<FromSwapInfo> fromSwapInfo({
     needsApproval = false;
   }
 
+  final feeValue = switch (outputs.length) {
+    2 => outputs.first - ((outputs.first * 997.toBigInt) ~/ 1000.toBigInt),
+    3 => outputs.first -
+        ((outputs.first * 997.toBigInt * 997.toBigInt) ~/ 1000000.toBigInt),
+    _ => throw Exception("Invalid path length"),
+  };
+
+  final feeAmount = Amount(value: feeValue, decimals: fromAmount.decimals);
+
   return FromSwapInfo(
     fromAmount: fromAmount,
     amountOutMin: Amount(value: minOutputValue, decimals: path.last.decimals),
     amountOut: Amount(value: outputValue, decimals: path.last.decimals),
-    fee: 0,
+    fee: feeAmount,
     priceImpact: 0,
-    slippage: 0.5,
+    slippage: slippage,
     fromToken: path.first,
     toToken: path.last,
     needsApproval: needsApproval,
@@ -549,6 +587,7 @@ Future<ToSwapInfo> toSwapInfo({
   required List<EthBasedTokenEntity> path,
   required Amount toAmount,
   required String own,
+  required double slippage,
 }) async {
   final contractPath = path.map((e) => e.contractAddress).toList();
 
@@ -557,8 +596,10 @@ Future<ToSwapInfo> toSwapInfo({
     path: contractPath,
   );
 
+  final _s = 1000.toBigInt + Amount.convert(value: slippage, decimals: 1).value;
+
   final inputValue = inputs.first;
-  final maxInputValue = (inputValue * 1005.toBigInt) ~/ 1000.toBigInt;
+  final maxInputValue = (inputValue * _s) ~/ 1000.toBigInt;
 
   final bool needsApproval;
 
@@ -577,13 +618,22 @@ Future<ToSwapInfo> toSwapInfo({
     needsApproval = false;
   }
 
+  final feeValue = switch (inputs.length) {
+    2 => inputs.first - ((inputs.first * 997.toBigInt) ~/ 1000.toBigInt),
+    3 => inputs.first -
+        ((inputs.first * 997.toBigInt * 997.toBigInt) ~/ 1000000.toBigInt),
+    _ => throw Exception("Invalid path length"),
+  };
+
+  final feeAmount = Amount(value: feeValue, decimals: path.first.decimals);
+
   return ToSwapInfo(
     amountInMax: Amount(value: maxInputValue, decimals: path.first.decimals),
     amountIn: Amount(value: inputValue, decimals: path.first.decimals),
     toAmount: toAmount,
-    fee: 0,
     priceImpact: 0,
-    slippage: 0.5,
+    fee: feeAmount,
+    slippage: slippage,
     fromToken: path.first,
     toToken: path.last,
     needsApproval: needsApproval,

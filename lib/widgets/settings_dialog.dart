@@ -81,7 +81,9 @@ class SettingsDialog extends StatelessWidget {
                     "%",
                     style: context.typography.b3,
                   ),
+                  valueNotifier: swapProcider.slippageString,
                   style: context.typography.b3,
+                  textAlign: TextAlign.end,
                   leading: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -95,6 +97,10 @@ class SettingsDialog extends StatelessWidget {
                           height: 32,
                           textStyle: context.typography.b1,
                           margin: EdgeInsets.only(right: 8),
+                          onPressed: () {
+                            swapProcider.slippageString.value =
+                                slippage.toString();
+                          },
                         )
                     ],
                   ),
