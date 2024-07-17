@@ -1,6 +1,6 @@
 {
-    "name": "swap_theme_webon",
-    "short_name": "swap_theme_webon",
+    "name": "zeniqswap_webon",
+    "short_name": "zeniqswap_webon",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

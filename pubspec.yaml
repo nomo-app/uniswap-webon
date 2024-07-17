@@ -7,7 +7,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.2.2 <4.0.0'
+  sdk: '>=3.3.1 <4.0.0'
 
 dependencies:
   flutter:
@@ -15,7 +15,7 @@ dependencies:
   
   flutter_web_plugins:
     sdk: flutter
-  nomo_ui_kit: 0.0.4
+  nomo_ui_kit: ^0.0.15
   nomo_router: 0.0.3
   route_gen: 0.0.2
   webon_kit_dart:
@@ -24,7 +24,8 @@ dependencies:
         path: packages/walletkit-dart
   google_fonts: 6.1.0
   logger: ^1.4.0
-  url_launcher: ^6.2.6
+  http: ^1.2.1
+  collection: ^1.18.0
 
 
 
@@ -34,6 +35,7 @@ dev_dependencies:
   build_runner: ^2.4.8
   flutter_lints: ^2.0.0
   custom_lint: ^0.6.0
+  dotenv: ^4.2.0
 
 
 flutter:

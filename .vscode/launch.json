@@ -5,13 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "swap_theme_webon",
+            "name": "Flutter Web on Custom Port",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "debug",
+            "program": "lib/main.dart",
             "args": [
+                // "-d",
+                // "web-server",
                 "--web-port",
-                "3000",
+                "3000"
             ]
         },
         {

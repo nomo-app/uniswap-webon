@@ -133,3 +133,13 @@ try {
     }
 }
 catch (e) { }
+
+
+
+export const hasWindowEtheruem = function () {
+    let ethereum = window.ethereum;
+
+    if (ethereum !== undefined) {
+        return ethereum;
+    }
+}

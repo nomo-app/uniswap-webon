@@ -45,9 +45,8 @@ node_modules/
 out/
 nomo.tar.gz
 
+# FVM Version Cache
+.fvm/
 .env
-.fvm
-android/
-ios/
-macos/
-windows/
+
+env.dart

@@ -42,3 +42,49 @@ export function stringifyWithBigInts(obj) {
     const resJson = JSON.stringify(obj, replacer, 1);
     return resJson;
 }
+/**
+ * Overwrite the default toJSON method of BigInt to make it work with JSON.stringify.
+ */
+BigInt.prototype.toJSON = function () {
+    return this.toString();
+};
+/**
+ * Converts URLSearchParams to a (nested) JS-object.
+ */
+export function urlSearchParamsToJson(params) {
+    const result = {};
+    params.forEach((value, key) => {
+        const keys = key.split(".");
+        let current = result;
+        keys.forEach((part, index) => {
+            const isLast = index === keys.length - 1;
+            if (isLast) {
+                const decodedValue = value; //decodeURIComponent(value);
+                if (current[part] !== undefined) {
+                    if (!Array.isArray(current[part])) {
+                        current[part] = [current[part]];
+                    }
+                    current[part].push(decodedValue);
+                }
+                else {
+                    current[part] = decodedValue;
+                }
+            }
+            else {
+                if (!current[part] || typeof current[part] !== "object") {
+                    current[part] = isNaN(Number(keys[index + 1])) ? {} : [];
+                }
+                current = current[part];
+            }
+        });
+    });
+    return result;
+}
+/**
+ * An asynchronous sleep function.
+ * @param ms The number of milliseconds to sleep.
+ * @returns A promise that resolves after the specified sleep duration.
+ */
+export function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}

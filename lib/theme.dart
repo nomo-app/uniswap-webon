@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nomo_ui_kit/components/app/scaffold/nomo_scaffold.dart';
 import 'package:nomo_ui_kit/components/app/sider/nomo_sider.dart';
+import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.dart';
+import 'package:nomo_ui_kit/components/divider/nomo_divider.dart';
+import 'package:nomo_ui_kit/components/info_item/nomo_info_item.dart';
 import 'package:nomo_ui_kit/components/input/textInput/nomo_input.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/theme/sub/nomo_color_theme.dart';
@@ -10,7 +13,9 @@ import 'package:nomo_ui_kit/theme/sub/nomo_sizing_theme.dart';
 
 enum ColorMode { LIGHT, DARK }
 
-enum SizingMode { SMALL, MEDIUM, LARGE }
+enum SizingMode {
+  SMALL,
+}
 
 class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
   @override
@@ -32,16 +37,12 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
 
   @override
   ColorMode initialColorTheme() {
-    return ColorMode.LIGHT;
+    return ColorMode.DARK;
   }
 
   @override
   SizingMode sizingThemeBuilder(double width) {
-    return switch (width) {
-      < 600 => SizingMode.SMALL,
-      < 1080 => SizingMode.MEDIUM,
-      _ => SizingMode.LARGE,
-    };
+    return SizingMode.SMALL;
   }
 
   @override
@@ -60,27 +61,6 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
       SizingMode.SMALL: NomoSizingThemeDataNullable(
         key: const ValueKey('small'),
         sizes: const NomoSizes(
-          fontSizeB1: 10,
-          fontSizeB2: 12,
-          fontSizeB3: 14,
-          fontSizeH1: 16,
-          fontSizeH2: 18,
-          fontSizeH3: 20,
-          spacing1: 4,
-          spacing2: 6,
-          spacing3: 8,
-        ),
-        buildComponents: (core) {
-          return const NomoComponentSizesNullable(
-            scaffoldSizing: NomoScaffoldSizingDataNullable(
-              showSider: false,
-            ),
-          );
-        },
-      ),
-      SizingMode.MEDIUM: NomoSizingThemeDataNullable(
-        key: const ValueKey('medium'),
-        sizes: const NomoSizes(
           fontSizeB1: 12,
           fontSizeB2: 14,
           fontSizeB3: 16,
@@ -93,30 +73,8 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
         ),
         buildComponents: (core) {
           return const NomoComponentSizesNullable(
-            siderSizing: NomoSiderSizingDataNullable(
-              width: 200,
-            ),
-          );
-        },
-      ),
-      SizingMode.LARGE: NomoSizingThemeDataNullable(
-        key: const ValueKey('large'),
-        sizes: const NomoSizes(
-          maxContentWidth: 1000,
-          fontSizeB1: 14,
-          fontSizeB2: 16,
-          fontSizeB3: 18,
-          fontSizeH1: 20,
-          fontSizeH2: 22,
-          fontSizeH3: 24,
-          spacing1: 8,
-          spacing2: 10,
-          spacing3: 12,
-        ),
-        buildComponents: (core) {
-          return const NomoComponentSizesNullable(
-            siderSizing: NomoSiderSizingDataNullable(
-              width: 200,
+            scaffoldSizing: NomoScaffoldSizingDataNullable(
+              showSider: false,
             ),
           );
         },
@@ -170,6 +128,13 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
           brightness: Brightness.dark,
           onDisabled: Colors.grey,
         ),
+        buildComponents: (core) {
+          return NomoComponentColorsNullable(
+            secondaryButtonColor: SecondaryNomoButtonColorDataNullable(
+              foregroundColor: core.foreground1,
+            ),
+          );
+        },
       ),
     };
   }
@@ -178,7 +143,11 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
   NomoComponentColorsNullable defaultComponentsColor(NomoColors core) {
     return NomoComponentColorsNullable(
       inputColor: NomoInputColorDataNullable(
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      infoItemColor: NomoInfoItemColorDataNullable(),
+      dividerColor: NomoDividerColorDataNullable(
+        color: core.background1,
       ),
     );
   }
