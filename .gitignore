@@ -50,3 +50,8 @@ nomo.tar.gz
 .env
 
 env.dart
+
+ios/
+android/
+macos/
+windows/
