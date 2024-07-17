@@ -4,7 +4,7 @@ const nomoCliConfig = {
             rawSSH: {
                 sshHost: process.env.SSH_TARGET,
                 sshBaseDir: "/var/www/production_webons/swaptheme/",
-                publicBaseUrl: "https://customtheme.nomo.zone",
+                publicBaseUrl: "https://zeniqswap.nomo.zone",
                 hybrid: true,
             },
         },
