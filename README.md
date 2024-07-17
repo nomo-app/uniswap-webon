@@ -5,3 +5,13 @@ Using [Walletkit-Dart](https://github.com/nomo-app/walletkit-dart).
 Supports both Metamask as well as Nomo App.
 
 Supports Compiling to Web Assembly.  
+
+## Get started
+
+Run the following commands for a local dev setup:
+
+````
+git submodule update --init --recursive  
+flutter pub get  
+flutter run -d chrome  
+````
