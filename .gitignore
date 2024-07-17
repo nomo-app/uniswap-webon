@@ -45,3 +45,9 @@ node_modules/
 out/
 nomo.tar.gz
 
+.env
+.fvm
+android/
+ios/
+macos/
+windows/

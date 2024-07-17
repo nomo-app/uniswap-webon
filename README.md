@@ -1,12 +1,7 @@
-# Swap Theme WebOn Flutter
+# UniswapV2 Frontend
 
-A WebOn to define a custom theme for the Nomo App with the Nomo-UI-Kit.
+Flutter web application for [Zeniq Swap](https://zeniq.dev/docs/swap/zeniqSwapOverview).  
+Using [Walletkit-Dart](https://github.com/nomo-app/walletkit-dart).  
+Supports both Metamask as well as Nomo App.
 
-## How to run
-
-```
-git submodule update --recursive --init
-flutter pub get
-flutter run -d chrome --web-port 3000 --web-hostname 0.0.0.0
-```
-
+Supports Compiling to Web Assembly.  
