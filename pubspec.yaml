@@ -1,0 +1,42 @@
+name: zeniq_swap_frontend
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.2 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  flutter_web_plugins:
+    sdk: flutter
+  nomo_ui_kit: 0.0.4
+  nomo_router: 0.0.3
+  route_gen: 0.0.2
+  webon_kit_dart:
+        path: packages/webon-kit-dart
+  walletkit_dart:
+        path: packages/walletkit-dart
+  google_fonts: 6.1.0
+  logger: ^1.4.0
+  url_launcher: ^6.2.6
+
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.8
+  flutter_lints: ^2.0.0
+  custom_lint: ^0.6.0
+
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
