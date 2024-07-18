@@ -5,19 +5,19 @@
 sealed class AsyncValue<T> {
   const AsyncValue();
 
-  bool get isLoading => this is Loading;
+  bool get isLoading => this is AsyncLoading;
 
   bool get hasValue => this is Value;
 
-  bool get hasError => this is Error;
+  bool get hasError => this is AsyncError;
 
   T? get valueOrNull => this is Value ? (this as Value).value : null;
 
-  factory AsyncValue.loading() => const Loading();
+  factory AsyncValue.loading() => const AsyncLoading();
 
   factory AsyncValue.value(T value) => Value(value);
 
-  factory AsyncValue.error(Object error) => Error(error);
+  factory AsyncValue.error(Object error) => AsyncError(error);
 
   R when<R>({
     required R Function() loading,
@@ -25,9 +25,9 @@ sealed class AsyncValue<T> {
     required R Function(Object error) error,
   }) {
     return switch (this) {
-      Loading() => loading(),
+      AsyncLoading() => loading(),
       Value v => data(v.value),
-      Error e => error(e.error),
+      AsyncError e => error(e.error),
     };
   }
 
@@ -41,8 +41,8 @@ sealed class AsyncValue<T> {
   }
 }
 
-class Loading<T> extends AsyncValue<T> {
-  const Loading();
+class AsyncLoading<T> extends AsyncValue<T> {
+  const AsyncLoading();
 }
 
 class Value<T> extends AsyncValue<T> {
@@ -51,8 +51,8 @@ class Value<T> extends AsyncValue<T> {
   const Value(this.value);
 }
 
-class Error<T> extends AsyncValue<T> {
+class AsyncError<T> extends AsyncValue<T> {
   final Object error;
 
-  const Error(this.error);
+  const AsyncError(this.error);
 }

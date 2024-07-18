@@ -21,6 +21,23 @@ class AssetNotifier {
   final Map<TokenEntity, ValueNotifier<AsyncValue<PriceState>>> _prices = {};
   final Map<TokenEntity, ValueNotifier<AsyncValue<ImageEntity>>> _images = {};
 
+  void addPreviewToken(TokenEntity token) {
+    _balances[token] = ValueNotifier(AsyncValue.loading());
+    _prices[token] = ValueNotifier(AsyncValue.loading());
+    _images[token] = ValueNotifier(AsyncValue.loading());
+
+    fetchBalanceForToken(token);
+    fetchImageForToken(token);
+  }
+
+  void addToken(TokenEntity token) {
+    tokens.add(token);
+
+    fetchBalanceForToken(token);
+    fetchImageForToken(token);
+    fetchPriceForToken(token);
+  }
+
   AssetNotifier(this.address, this.tokens) {
     for (final token in tokens) {
       _balances[token] = ValueNotifier(AsyncValue.loading());
@@ -89,6 +106,17 @@ class AssetNotifier {
       _prices[token]!.value = AsyncValue.value(
         PriceState(currency: currency, price: priceEntity.price),
       );
+    }
+  }
+
+  Future<void> fetchPriceForToken(TokenEntity token) async {
+    try {
+      final result = await PriceRepository.fetchSingle(token, currency);
+      _prices[token]!.value = AsyncValue.value(
+        PriceState(currency: currency, price: result),
+      );
+    } catch (e) {
+      _prices[token]!.value = AsyncValue.error(e);
     }
   }
 

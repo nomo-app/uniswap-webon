@@ -1,6 +1,17 @@
 import 'dart:math';
 
+import 'package:flutter/material.dart';
+
 extension FormatExtension on double {
+  (String, Color) formatPriceImpact() {
+    return switch (this) {
+      < 0.01 => ('<0.01', Colors.greenAccent),
+      < 1 => ('${toMaxPrecision(2)}', Colors.greenAccent),
+      < 5 => ('${toMaxPrecision(2)}', Colors.deepOrangeAccent),
+      _ => ('${toMaxPrecision(2)}', Colors.redAccent),
+    };
+  }
+
   String toMaxPrecisionWithoutScientificNotation(int maxPrecision) {
     final double value = this;
     final exact = value.toExactString();

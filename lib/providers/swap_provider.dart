@@ -9,6 +9,10 @@ final zeniqSwapRouter = UniswapV2Router(
   rpc: rpc,
   contractAddress: "0x7963c1bd24E4511A0b14bf148F93e2556AFe3C27",
 );
+final factory = UniswapV2Factory(
+  rpc: rpc,
+  contractAddress: "0x7D0cbcE25EaaB8D5434a53fB3B42077034a9bB99",
+);
 const _refreshInterval = Duration(seconds: 15);
 
 enum SwapType {
@@ -569,12 +573,14 @@ Future<FromSwapInfo> fromSwapInfo({
 
   final feeAmount = Amount(value: feeValue, decimals: fromAmount.decimals);
 
+  final priceImpact = await calculatePriceImpact(path, fromAmount.value);
+
   return FromSwapInfo(
     fromAmount: fromAmount,
     amountOutMin: Amount(value: minOutputValue, decimals: path.last.decimals),
     amountOut: Amount(value: outputValue, decimals: path.last.decimals),
     fee: feeAmount,
-    priceImpact: 0,
+    priceImpact: priceImpact,
     slippage: slippage,
     fromToken: path.first,
     toToken: path.last,
@@ -627,11 +633,13 @@ Future<ToSwapInfo> toSwapInfo({
 
   final feeAmount = Amount(value: feeValue, decimals: path.first.decimals);
 
+  final priceImpact = await calculatePriceImpact(path, inputValue);
+
   return ToSwapInfo(
     amountInMax: Amount(value: maxInputValue, decimals: path.first.decimals),
     amountIn: Amount(value: inputValue, decimals: path.first.decimals),
     toAmount: toAmount,
-    priceImpact: 0,
+    priceImpact: priceImpact,
     fee: feeAmount,
     slippage: slippage,
     fromToken: path.first,
@@ -663,4 +671,65 @@ class InheritedSwapProvider extends InheritedWidget {
   bool updateShouldNotify(InheritedSwapProvider oldWidget) {
     return true;
   }
+}
+
+Future<double> calculatePriceImpact(
+  List<EthBasedTokenEntity> path,
+  BigInt amountIn,
+) async {
+  final pairs = await Future.wait(
+    [
+      for (var i = 0; i < path.length - 1; i++)
+        factory
+            .getPair(
+              tokenA: path[i].contractAddress,
+              tokenB: path[i + 1].contractAddress,
+            )
+            .then(
+              (value) => UniswapV2Pair(
+                rpc: factory.rpc,
+                contractAddress: value,
+                tokenA: path[i],
+                tokenB: path[i + 1],
+              ),
+            ),
+    ],
+  );
+
+  final pairInfos = await Future.wait([
+    for (final pair in pairs)
+      () async {
+        final reserves = await pair.getReserves();
+        final token0 = await pair.token0();
+
+        return (reserves, token0, pair.tokenA);
+      }.call()
+  ]);
+
+  final quotedAmount = pairInfos.fold(
+    amountIn,
+    (amountIn, pairInfo) {
+      final reserves = pairInfo.$1;
+      final token0 = pairInfo.$2;
+      final tokenA = pairInfo.$3;
+
+      final price = token0 == tokenA.contractAddress.toLowerCase()
+          ? reserves.$2 / reserves.$1
+          : reserves.$1 / reserves.$2;
+
+      final amountOut = amountIn.multiply(0.997).multiply(price);
+      return amountOut;
+    },
+  );
+
+  final actualOutputAmount = await zeniqSwapRouter
+      .getAmountsOut(
+        amountIn: amountIn,
+        path: path.map((e) => e.contractAddress).toList(),
+      )
+      .then((value) => value.last);
+
+  final priceImpact = (quotedAmount - actualOutputAmount) / quotedAmount;
+
+  return priceImpact * 100;
 }

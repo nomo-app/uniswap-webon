@@ -6,6 +6,7 @@ import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.d
 import 'package:nomo_ui_kit/components/divider/nomo_divider.dart';
 import 'package:nomo_ui_kit/components/info_item/nomo_info_item.dart';
 import 'package:nomo_ui_kit/components/input/textInput/nomo_input.dart';
+import 'package:nomo_ui_kit/components/loading/shimmer/shimmer.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/theme/sub/nomo_color_theme.dart';
 import 'package:nomo_ui_kit/theme/sub/nomo_constants.dart';
@@ -145,9 +146,21 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
       inputColor: NomoInputColorDataNullable(
         borderRadius: BorderRadius.circular(12),
       ),
-      infoItemColor: NomoInfoItemColorDataNullable(),
+      infoItemColor: const NomoInfoItemColorDataNullable(),
       dividerColor: NomoDividerColorDataNullable(
         color: core.background1,
+      ),
+      shimmerColor: const ShimmerColorDataNullable(
+        gradient: LinearGradient(
+          colors: [
+            Color(0x222FAAA5),
+            Color.fromARGB(126, 104, 115, 154),
+            Color(0x222FAAA5)
+          ],
+          stops: [0.1, 0.3, 0.4],
+          begin: Alignment(-1.0, -0.3),
+          end: Alignment(1.0, 0.3),
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/dialog/nomo_dialog.dart';
+import 'package:nomo_ui_kit/components/divider/nomo_divider.dart';
 import 'package:nomo_ui_kit/components/dropdownmenu/drop_down_item.dart';
 import 'package:nomo_ui_kit/components/dropdownmenu/dropdownmenu.dart';
 import 'package:nomo_ui_kit/components/input/textInput/nomo_input.dart';
@@ -20,6 +21,7 @@ class SettingsDialog extends StatelessWidget {
     final swapProcider = InheritedSwapProvider.of(context);
     return NomoDialog(
       maxWidth: 480,
+      widthRatio: 0.9,
       leading: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,79 +38,76 @@ class SettingsDialog extends StatelessWidget {
       backgroundColor: context.colors.background2,
       padding: EdgeInsets.all(24),
       borderRadius: BorderRadius.circular(16),
-      content: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            16.vSpacing,
-            Row(
-              children: [
-                NomoText("Currency", style: context.typography.b3),
-                Spacer(),
-                SizedBox(
-                  width: 200,
-                  child: NomoDropDownMenu(
-                    backgroundColor: context.colors.background1,
-                    dropdownColor: context.colors.background1,
-                    borderRadius: BorderRadius.circular(16),
-                    itemPadding: const EdgeInsets.symmetric(horizontal: 24),
-                    valueNotifer: assetNotifer.currencyNotifier,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    iconColor: context.colors.foreground1,
-                    height: 48,
-                    items: [
-                      for (final currency in Currency.values)
-                        NomoDropDownItemString(
-                          value: currency,
-                          title: "${currency.displayName} ${currency.symbol} ",
-                        )
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            16.vSpacing,
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                NomoText("Slippage Tolerance", style: context.typography.b3),
-                16.vSpacing,
-                NomoInput(
-                  background: context.colors.background1,
+      content: Column(
+        children: [
+          NomoDivider(),
+          16.vSpacing,
+          Row(
+            children: [
+              NomoText("Currency", style: context.typography.b3),
+              Spacer(),
+              SizedBox(
+                width: 200,
+                child: NomoDropDownMenu(
+                  backgroundColor: context.colors.background1,
+                  dropdownColor: context.colors.background1,
+                  borderRadius: BorderRadius.circular(16),
+                  itemPadding: const EdgeInsets.symmetric(horizontal: 24),
+                  valueNotifer: assetNotifer.currencyNotifier,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  iconColor: context.colors.foreground1,
                   height: 48,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  trailling: NomoText(
-                    "%",
-                    style: context.typography.b3,
-                  ),
-                  valueNotifier: swapProcider.slippageString,
-                  style: context.typography.b3,
-                  textAlign: TextAlign.end,
-                  leading: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (final slippage in [0.1, 0.5, 1.0])
-                        PrimaryNomoButton(
-                          text: "$slippage%",
-                          padding: EdgeInsets.zero,
-                          backgroundColor:
-                              const Color.fromARGB(0, 212, 102, 102),
-                          width: 48,
-                          height: 32,
-                          textStyle: context.typography.b1,
-                          margin: EdgeInsets.only(right: 8),
-                          onPressed: () {
-                            swapProcider.slippageString.value =
-                                slippage.toString();
-                          },
-                        )
-                    ],
-                  ),
+                  items: [
+                    for (final currency in Currency.values)
+                      NomoDropDownItemString(
+                        value: currency,
+                        title: "${currency.displayName} ${currency.symbol} ",
+                      )
+                  ],
                 ),
-              ],
-            )
-          ],
-        ),
+              ),
+            ],
+          ),
+          32.vSpacing,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              NomoText("Slippage Tolerance", style: context.typography.b3),
+              16.vSpacing,
+              NomoInput(
+                background: context.colors.background1,
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                trailling: NomoText(
+                  "%",
+                  style: context.typography.b3,
+                ),
+                valueNotifier: swapProcider.slippageString,
+                style: context.typography.b3,
+                textAlign: TextAlign.end,
+                leading: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final slippage in [0.1, 0.5, 1.0])
+                      PrimaryNomoButton(
+                        text: "$slippage%",
+                        padding: EdgeInsets.zero,
+                        backgroundColor: const Color.fromARGB(0, 212, 102, 102),
+                        width: 48,
+                        height: 32,
+                        textStyle: context.typography.b1,
+                        margin: EdgeInsets.only(right: 8),
+                        onPressed: () {
+                          swapProcider.slippageString.value =
+                              slippage.toString();
+                        },
+                      )
+                  ],
+                ),
+              ),
+            ],
+          )
+        ],
       ),
     );
   }
