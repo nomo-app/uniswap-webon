@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
+import 'package:zeniq_swap_frontend/common/extensions.dart';
 
 final rpc = EvmRpcInterface(ZeniqSmartNetwork);
 final zeniqSwapRouter = UniswapV2Router(
@@ -90,7 +91,7 @@ final class FromSwapInfo extends SwapInfo {
 
   @override
   String toString() {
-    return "FromSwapInfo: From ${fromAmount.displayValue} ${fromToken.symbol} to ${amountOut.displayValue} ${toToken.symbol} with min ${amountOutMin.displayValue} ${toToken.symbol}";
+    return "${fromAmount.displayDouble.toMaxPrecisionWithoutScientificNotation(3)} ${fromToken.symbol} -> ${amountOut.displayDouble.toMaxPrecisionWithoutScientificNotation(3)} ${toToken.symbol}";
   }
 }
 
@@ -122,7 +123,7 @@ final class ToSwapInfo extends SwapInfo {
 
   @override
   String toString() {
-    return "ToSwapInfo: From ${amountIn.displayValue} ${fromToken.symbol} to ${toAmount.displayValue} ${toToken.symbol} with max ${amountInMax.displayValue} ${fromToken.symbol}";
+    return "${amountIn.displayDouble.toMaxPrecisionWithoutScientificNotation(3)} ${fromToken.symbol} -> ${toAmount.displayDouble.toMaxPrecisionWithoutScientificNotation(3)} ${toToken.symbol}";
   }
 }
 
@@ -509,13 +510,14 @@ class SwapProvider {
       // Cleanup
       fromAmountString.value = '';
       toAmountString.value = '';
-
       shouldRecalculateSwapType = true;
+      checkSwapInfo();
 
       return hash;
     } catch (e) {
       swapState.value = SwapState.Error;
       shouldRecalculateSwapType = true;
+      checkSwapInfo();
       rethrow;
     }
   }

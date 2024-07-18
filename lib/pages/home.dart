@@ -115,6 +115,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     /// User just completed the swap
     if (swapState == SwapState.Swapped) {
+      final swapInfo = swapProvider.swapInfo.value;
+      print(swapInfo);
       assetNotifer.fetchAllBalances();
       assetNotifer.fetchAllPrices();
       InAppNotification.show(
@@ -122,13 +124,13 @@ class _HomeScreenState extends State<HomeScreen> {
         top: 16,
         child: NomoNotification(
           title: "Swap Completed",
-          subtitle: "Your swap has been completed successfully.",
+          subtitle: swapInfo.toString(),
           leading: Icon(
             Icons.check,
             color: context.colors.primary,
             size: 36,
           ),
-          spacing: 8,
+          spacing: 12,
           showCloseButton: false,
         ),
         context: context,
@@ -143,15 +145,13 @@ class _HomeScreenState extends State<HomeScreen> {
       InAppNotification.show(
         right: 16,
         top: 16,
-        child: NomoNotification(
+        child: const NomoNotification(
           title: "Transaction Pending",
           subtitle: "Waiting for transaction confirmation",
-          leading: Icon(
-            Icons.hourglass_bottom_sharp,
-            color: context.colors.primary,
-            size: 36,
+          leading: Loading(
+            size: 20,
           ),
-          spacing: 8,
+          spacing: 12,
           showCloseButton: false,
         ),
         context: context,
@@ -168,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: "Swap Error",
           subtitle: "An error occurred while swapping",
           showCloseButton: false,
-          spacing: 8,
+          spacing: 12,
           leading: Icon(
             Icons.error,
             color: context.colors.error,
@@ -189,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: "Token Approval Error",
           subtitle: "An error occurred while approving the token",
           showCloseButton: false,
-          spacing: 8,
+          spacing: 12,
           leading: Icon(
             Icons.error,
             color: context.colors.error,
