@@ -35,7 +35,7 @@ void main() {
 
     expect(swapProvider.swapType, SwapType.ExactZeniqForToken);
 
-    await swapProvider.swapInfoCompleter?.future;
+    // await swapProvider.swapInfoCompleter?.future;
 
     expect(swapProvider.swapType, SwapType.ExactZeniqForToken);
 
@@ -51,7 +51,7 @@ void main() {
 
     expect(swapProvider.swapType, SwapType.ZeniqForExactToken);
 
-    await swapProvider.swapInfoCompleter?.future;
+    //   await swapProvider.swapInfoCompleter?.future;
 
     expect(swapProvider.swapType, SwapType.ZeniqForExactToken);
 
@@ -75,7 +75,7 @@ void main() {
 
     expect(swapProvider.swapType, SwapType.ExactTokenForZeniq);
 
-    await swapProvider.swapInfoCompleter?.future;
+    //   await swapProvider.swapInfoCompleter?.future;
 
     expect(swapProvider.swapType, SwapType.ExactTokenForZeniq);
 
@@ -91,7 +91,7 @@ void main() {
 
     expect(swapProvider.swapType, SwapType.TokenForExactZeniq);
 
-    await swapProvider.swapInfoCompleter?.future;
+    //    await swapProvider.swapInfoCompleter?.future;
 
     expect(swapProvider.swapType, SwapType.TokenForExactZeniq);
 
@@ -115,7 +115,7 @@ void main() {
 
     expect(swapProvider.swapType, SwapType.ExactTokenForToken);
 
-    await swapProvider.swapInfoCompleter?.future;
+    //    await swapProvider.swapInfoCompleter?.future;
 
     expect(swapProvider.swapType, SwapType.ExactTokenForToken);
 
@@ -131,7 +131,7 @@ void main() {
 
     expect(swapProvider.swapType, SwapType.TokenForExactToken);
 
-    await swapProvider.swapInfoCompleter?.future;
+    //    await swapProvider.swapInfoCompleter?.future;
 
     expect(swapProvider.swapType, SwapType.TokenForExactToken);
 
@@ -156,7 +156,7 @@ void main() {
       );
 
       expect(swapProvider.swapType, SwapType.ExactZeniqForToken);
-      await swapProvider.swapInfoCompleter?.future;
+      //    await swapProvider.swapInfoCompleter?.future;
 
       expect(swapProvider.toAmount.value, isNotNull);
 
@@ -184,7 +184,7 @@ void main() {
       );
 
       expect(swapProvider.swapType, SwapType.ExactTokenForZeniq);
-      await swapProvider.swapInfoCompleter?.future;
+      //    await swapProvider.swapInfoCompleter?.future;
 
       expect(swapProvider.toAmount.value, isNotNull);
 
@@ -212,7 +212,7 @@ void main() {
       );
 
       expect(swapProvider.swapType, SwapType.ExactTokenForToken);
-      await swapProvider.swapInfoCompleter?.future;
+      //   await swapProvider.swapInfoCompleter?.future;
 
       expect(swapProvider.toAmount.value, isNotNull);
 
@@ -240,7 +240,7 @@ void main() {
       );
 
       expect(swapProvider.swapType, SwapType.TokenForExactZeniq);
-      await swapProvider.swapInfoCompleter?.future;
+      //    await swapProvider.swapInfoCompleter?.future;
 
       expect(swapProvider.fromAmount.value, isNotNull);
 
@@ -268,7 +268,7 @@ void main() {
       );
 
       expect(swapProvider.swapType, SwapType.ZeniqForExactToken);
-      await swapProvider.swapInfoCompleter?.future;
+      //   await swapProvider.swapInfoCompleter?.future;
 
       expect(swapProvider.fromAmount.value, isNotNull);
 
@@ -296,7 +296,7 @@ void main() {
       );
 
       expect(swapProvider.swapType, SwapType.TokenForExactToken);
-      await swapProvider.swapInfoCompleter?.future;
+      //    await swapProvider.swapInfoCompleter?.future;
 
       expect(swapProvider.fromAmount.value, isNotNull);
 

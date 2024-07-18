@@ -190,8 +190,8 @@ class SwapProvider {
   final ValueNotifier<SwapState> swapState = ValueNotifier(SwapState.None);
   final ValueNotifier<SwapInfo?> swapInfo = ValueNotifier(null);
 
-  // Rethink this since its only used for tests
-  Completer<SwapInfo>? swapInfoCompleter;
+  // // Rethink this since its only used for tests
+  // Completer<SwapInfo>? swapInfoCompleter;
 
   double slippage = 0.5;
 
@@ -319,7 +319,7 @@ class SwapProvider {
   }
 
   void calculateSwapInfo() async {
-    swapInfoCompleter = Completer();
+    // swapInfoCompleter = Completer();
 
     swapInfo.value = await switch (swapType!) {
       SwapType.ExactZeniqForToken => fromSwapInfo(
@@ -386,7 +386,7 @@ class SwapProvider {
 
     shouldRecalculateSwapType = true;
 
-    swapInfoCompleter!.complete(swapInfo.value);
+    // swapInfoCompleter!.complete(swapInfo.value);
   }
 
   Future<String> swap() async {
