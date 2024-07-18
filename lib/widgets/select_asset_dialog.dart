@@ -146,6 +146,10 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                 placeHolderStyle: context.typography.b3,
                 height: 64,
                 valueNotifier: searchNotifier,
+                maxLines: 1,
+                scrollable: true,
+                keyboardType: TextInputType.text,
+                style: context.typography.b3,
               ),
               32.vSpacing,
               const Row(

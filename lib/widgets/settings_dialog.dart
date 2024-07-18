@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/dialog/nomo_dialog.dart';
 import 'package:nomo_ui_kit/components/divider/nomo_divider.dart';
@@ -85,6 +86,16 @@ class SettingsDialog extends StatelessWidget {
                 valueNotifier: swapProcider.slippageString,
                 style: context.typography.b3,
                 textAlign: TextAlign.end,
+                maxLines: 1,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(
+                    RegExp(
+                      r'^\d+([.,]?\d{0,' + (3).toString() + r'})',
+                    ),
+                  ),
+                ],
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 leading: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -96,7 +107,7 @@ class SettingsDialog extends StatelessWidget {
                         width: 48,
                         height: 32,
                         textStyle: context.typography.b1,
-                        margin: EdgeInsets.only(right: 8),
+                        margin: const EdgeInsets.only(right: 8),
                         onPressed: () {
                           swapProcider.slippageString.value =
                               slippage.toString();

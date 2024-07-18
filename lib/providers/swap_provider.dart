@@ -300,6 +300,7 @@ class SwapProvider {
       if (fromAmount.value?.value == BigInt.zero) {
         toAmountString.value = '';
         swapState.value = SwapState.None;
+        swapInfo.value = null;
         return;
       }
     }
@@ -308,21 +309,10 @@ class SwapProvider {
       if (toAmount.value?.value == BigInt.zero) {
         fromAmountString.value = '';
         swapState.value = SwapState.None;
+        swapInfo.value = null;
         return;
       }
     }
-
-    // if (switch ((fromAmount.value, toAmount.value)) {
-    //   (Amount a, _) => a.value == BigInt.zero,
-    //   (_, Amount a) => a.value == BigInt.zero,
-    //   _ => true,
-    // }) {
-    //   toAmountString.value = '';
-    //   fromAmountString.value = '';
-    //   swapState.value = SwapState.None;
-
-    //   return;
-    // }
 
     calculateSwapInfo();
   }

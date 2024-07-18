@@ -217,6 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       height: 64,
                       padding: const EdgeInsets.symmetric(horizontal: 4),
+                      borderRadius: BorderRadius.circular(16),
                       textStyle: context.typography.h1,
                       onPressed: () {
                         if (state == SwapState.ReadyForSwap ||
@@ -354,6 +355,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+                maxLines: 1,
+                scrollable: true,
                 style: context.typography.h1.copyWith(fontSize: 28),
                 placeHolderStyle: context.typography.h1.copyWith(fontSize: 28),
                 borderRadius: BorderRadius.circular(16),
@@ -409,8 +412,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: priceImpactInfo.$2,
               );
 
-              print(swapInfo.path.length);
-
               return Column(
                 children: [
                   NomoInfoItemThemeOverride(
@@ -428,6 +429,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       borderRadius: BorderRadius.circular(16),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ...switch (swapInfo) {
                             FromSwapInfo info => [
@@ -488,23 +490,58 @@ class _HomeScreenState extends State<HomeScreen> {
                                       "${info.amountInMax.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
                                 ),
                               ]
-                          }
+                          },
+                          if (swapInfo.path.length > 2) ...[
+                            const NomoDivider(),
+                            4.vSpacing,
+                            NomoText(
+                              "Route",
+                              style: context.typography.b2
+                                  .copyWith(color: Colors.white60),
+                            ),
+                            12.vSpacing,
+                            NomoCard(
+                              elevation: 0,
+                              padding: const EdgeInsets.all(16),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  AssetPicture(
+                                    token: swapInfo.fromToken,
+                                  ),
+                                  8.hSpacing,
+                                  NomoText(swapInfo.fromToken.name),
+                                  const Spacer(),
+                                  const Icon(
+                                    Icons.arrow_forward,
+                                    color: Colors.white60,
+                                  ),
+                                  const Spacer(),
+                                  const AssetPicture(
+                                    token: zeniqSmart,
+                                  ),
+                                  8.hSpacing,
+                                  NomoText(zeniqSmart.name),
+                                  const Spacer(),
+                                  const Icon(
+                                    Icons.arrow_forward,
+                                    color: Colors.white60,
+                                  ),
+                                  const Spacer(),
+                                  AssetPicture(
+                                    token: swapInfo.toToken,
+                                  ),
+                                  8.hSpacing,
+                                  NomoText(swapInfo.toToken.name),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
                   ),
-                  if (swapInfo.path.length > 2) ...[
-                    32.vSpacing,
-                    Row(
-                      children: [
-                        for (final pathItem in swapInfo.path)
-                          NomoText(
-                            pathItem,
-                            style: context.typography.b2,
-                          ),
-                      ],
-                    ),
-                  ],
                 ],
               );
             },
