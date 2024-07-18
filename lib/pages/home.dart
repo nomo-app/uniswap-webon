@@ -23,7 +23,8 @@ import 'package:zeniq_swap_frontend/common/extensions.dart';
 import 'package:zeniq_swap_frontend/common/price_repository.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
-import 'package:zeniq_swap_frontend/routes.dart';
+import 'package:zeniq_swap_frontend/widgets/select_asset_dialog.dart';
+import 'package:zeniq_swap_frontend/widgets/settings_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -291,7 +292,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icons.settings_outlined,
                 padding: EdgeInsets.zero,
                 onPressed: () {
-                  NomoNavigator.of(context).push(SettingsDialogRoute());
+                  NomoNavigator.of(context).showModal(
+                    context: context,
+                    builder: (context) => const SettingsDialog(),
+                  );
                 },
               ),
             ],
@@ -612,8 +616,9 @@ class SwapInputTrailling extends StatelessWidget {
   });
 
   void onPressed(BuildContext context) async {
-    final result = await NomoNavigator.of(context).push(
-      SelectAssetDialogRoute(),
+    final result = await NomoNavigator.of(context).showModal(
+      context: context,
+      builder: (context) => const SelectAssetDialog(),
     );
 
     if (result is TokenEntity) {

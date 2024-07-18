@@ -14,20 +14,4 @@ part 'routes.g.dart';
 @AppRoutes()
 const _routes = [
   MenuPageRouteInfo(path: "/", page: HomeScreen, title: "Home"),
-  ModalRouteInfo(
-    path: "/settings",
-    page: SettingsDialog,
-    transition: PageSharedAxisTransition(
-      fillColor: Colors.black54,
-      type: SharedAxisTransitionType.vertical,
-    ),
-  ),
-  ModalRouteInfo(
-    path: "/selectAssets",
-    page: SelectAssetDialog,
-    transition: PageSharedAxisTransition(
-      fillColor: Colors.black54,
-      type: SharedAxisTransitionType.vertical,
-    ),
-  ),
 ];
