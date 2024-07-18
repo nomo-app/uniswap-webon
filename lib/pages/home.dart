@@ -24,7 +24,6 @@ import 'package:zeniq_swap_frontend/common/price_repository.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
-import 'package:zeniq_swap_frontend/widgets/select_asset_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -126,6 +125,29 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle: "Your swap has been completed successfully.",
           leading: Icon(
             Icons.check,
+            color: context.colors.primary,
+            size: 36,
+          ),
+          spacing: 8,
+          showCloseButton: false,
+        ),
+        context: context,
+      );
+      return;
+    }
+
+    /// User just completed the swap
+    if (swapState == SwapState.Confirming) {
+      assetNotifer.fetchAllBalances();
+      assetNotifer.fetchAllPrices();
+      InAppNotification.show(
+        right: 16,
+        top: 16,
+        child: NomoNotification(
+          title: "Transaction Pending",
+          subtitle: "Waiting for transaction confirmation",
+          leading: Icon(
+            Icons.hourglass_bottom_sharp,
             color: context.colors.primary,
             size: 36,
           ),
@@ -275,9 +297,21 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           16.vSpacing,
-          ValueListenableBuilder(
-            valueListenable: swapProvider.fromToken,
-            builder: (context, token, child) {
+          ListenableBuilder(
+            listenable: Listenable.merge([
+              swapProvider.fromToken,
+              swapProvider.swapState,
+            ]),
+            builder: (context, child) {
+              final token = swapProvider.fromToken.value;
+              final enabled = switch (swapProvider.swapState.value) {
+                SwapState.None ||
+                SwapState.ReadyForSwap ||
+                SwapState.Error ||
+                SwapState.TokenApprovalError =>
+                  true,
+                _ => false,
+              };
               return NomoInput(
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 placeHolderStyle: context.typography.h1.copyWith(fontSize: 28),
@@ -297,6 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+                enabled: enabled,
                 errorNotifier: fromErrorNotifier,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
@@ -340,9 +375,21 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           16.vSpacing,
-          ValueListenableBuilder(
-            valueListenable: swapProvider.toToken,
-            builder: (context, token, child) {
+          ListenableBuilder(
+            listenable: Listenable.merge([
+              swapProvider.toToken,
+              swapProvider.swapState,
+            ]),
+            builder: (context, child) {
+              final token = swapProvider.toToken.value;
+              final enabled = switch (swapProvider.swapState.value) {
+                SwapState.None ||
+                SwapState.ReadyForSwap ||
+                SwapState.Error ||
+                SwapState.TokenApprovalError =>
+                  true,
+                _ => false,
+              };
               return NomoInput(
                 top: Padding(
                   padding: const EdgeInsets.only(bottom: 8),
@@ -355,6 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+                enabled: enabled,
                 maxLines: 1,
                 scrollable: true,
                 style: context.typography.h1.copyWith(fontSize: 28),

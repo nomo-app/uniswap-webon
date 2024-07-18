@@ -389,6 +389,8 @@ class SwapProvider {
   }
 
   Future<String> swap() async {
+    shouldRecalculateSwapType = false;
+
     if (swapState.value == SwapState.NeedsTokenApproval ||
         swapState.value == SwapState.TokenApprovalError) {
       final erc20 = ERC20Contract(
@@ -508,10 +510,12 @@ class SwapProvider {
       fromAmountString.value = '';
       toAmountString.value = '';
 
+      shouldRecalculateSwapType = true;
+
       return hash;
     } catch (e) {
       swapState.value = SwapState.Error;
-
+      shouldRecalculateSwapType = true;
       rethrow;
     }
   }
