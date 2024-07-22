@@ -592,10 +592,10 @@ packages:
     dependency: "direct main"
     description:
       name: nomo_ui_kit
-      sha256: "12191faf49eb0e8d015c24d3749944ca532e14519bfda6670bfed37c46edd85a"
+      sha256: de268df58b7acf6749a85aa4f3455b2942fe4dd8f0b083d2c6e36933c5d2be05
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.15"
+    version: "0.0.18"
   package_config:
     dependency: transitive
     description:

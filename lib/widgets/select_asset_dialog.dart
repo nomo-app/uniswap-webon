@@ -127,6 +127,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
     final balanceNotifer = InheritedAssetProvider.of(context);
     return Shimmer(
       child: NomoDialog(
+        scrollabe: true,
         padding: const EdgeInsets.all(24),
         maxWidth: 480,
         widthRatio: 0.9,
