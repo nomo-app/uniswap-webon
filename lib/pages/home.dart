@@ -258,9 +258,20 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
         children: [
-          NomoText(
-            "Swap",
-            style: context.typography.h1.copyWith(fontSize: 48),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              NomoText(
+                "Swap",
+                style: context.typography.h3.copyWith(fontSize: 64),
+              ),
+              const Spacer(),
+              Image.asset(
+                'assets/logo.png',
+                width: 64,
+                height: 64,
+              ),
+            ],
           ),
           32.vSpacing,
           Row(
@@ -312,15 +323,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 SwapState.None ||
                 SwapState.ReadyForSwap ||
                 SwapState.Error ||
-                SwapState.TokenApprovalError =>
+                SwapState.TokenApprovalError ||
+                SwapState.NeedsTokenApproval =>
                   true,
                 _ => false,
               };
               return NomoInput(
                 margin: const EdgeInsets.symmetric(vertical: 8),
-                placeHolderStyle: context.typography.h1.copyWith(fontSize: 28),
+                placeHolderStyle: context.typography.b3,
                 borderRadius: BorderRadius.circular(16),
-                style: context.typography.h1.copyWith(fontSize: 28),
+                style: context.typography.b3,
                 border: const Border.fromBorderSide(
                   BorderSide(color: Colors.white10),
                 ),
@@ -330,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       NomoText(
                         "From",
-                        style: context.typography.b3,
+                        style: context.typography.b2,
                       ),
                     ],
                   ),
@@ -401,7 +413,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       NomoText(
                         "To",
-                        style: context.typography.b3,
+                        style: context.typography.b2,
                       ),
                     ],
                   ),
@@ -409,8 +421,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 enabled: enabled,
                 maxLines: 1,
                 scrollable: true,
-                style: context.typography.h1.copyWith(fontSize: 28),
-                placeHolderStyle: context.typography.h1.copyWith(fontSize: 28),
+                style: context.typography.b3,
+                placeHolderStyle: context.typography.b3,
                 borderRadius: BorderRadius.circular(16),
                 errorNotifier: toErrorNotifier,
                 placeHolder: '0',
@@ -460,140 +472,147 @@ class _HomeScreenState extends State<HomeScreen> {
 
               final priceImpactInfo = swapInfo.priceImpact.formatPriceImpact();
 
-              final priceImpactStyle = context.typography.b2.copyWith(
+              final priceImpactStyle = context.typography.b1.copyWith(
                 color: priceImpactInfo.$2,
               );
 
               return Column(
                 children: [
-                  NomoInfoItemThemeOverride(
-                    data: NomoInfoItemThemeDataNullable(
-                      titleStyle:
-                          context.typography.b2.copyWith(color: Colors.white60),
-                      valueStyle: context.typography.b2,
+                  NomoDividerThemeOverride(
+                    data: const NomoDividerThemeDataNullable(
+                      crossAxisSpacing: 12,
                     ),
-                    child: NomoCard(
-                      elevation: 0,
-                      padding: const EdgeInsets.all(16),
-                      backgroundColor: context.colors.background2,
-                      border: const Border.fromBorderSide(
-                        BorderSide(color: Colors.white10),
+                    child: NomoInfoItemThemeOverride(
+                      data: NomoInfoItemThemeDataNullable(
+                        titleStyle: context.typography.b1
+                            .copyWith(color: Colors.white60),
+                        valueStyle: context.typography.b1,
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ...switch (swapInfo) {
-                            FromSwapInfo info => [
-                                NomoInfoItem(
-                                  title: "Price",
-                                  value: info.getPrice(),
-                                ),
-                                const NomoDivider(),
-                                NomoInfoItem(
-                                  title: "Slippage Tolerance",
-                                  value: "${info.slippage}%",
-                                ),
-                                const NomoDivider(),
-                                NomoInfoItem(
-                                  title: "Price Impact",
-                                  value: "${priceImpactInfo.$1}%",
-                                  valueStyle: priceImpactStyle,
-                                ),
-                                const NomoDivider(),
-                                NomoInfoItem(
-                                  title: "Fee",
-                                  value:
-                                      "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
-                                ),
-                                const NomoDivider(),
-                                NomoInfoItem(
-                                  title: "Minimum Received",
-                                  value:
-                                      "${info.amountOutMin.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.toToken.symbol}",
-                                ),
-                              ],
-                            ToSwapInfo info => [
-                                NomoInfoItem(
-                                  title: "Price",
-                                  value: info.getPrice(),
-                                ),
-                                const NomoDivider(),
-                                NomoInfoItem(
-                                  title: "Slippage Tolerance",
-                                  value: "${info.slippage}%",
-                                ),
-                                const NomoDivider(),
-                                NomoInfoItem(
-                                  title: "Price Impact",
-                                  value: "${priceImpactInfo.$1}%",
-                                  valueStyle: priceImpactStyle,
-                                ),
-                                const NomoDivider(),
-                                NomoInfoItem(
-                                  title: "Fee",
-                                  value:
-                                      "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
-                                ),
-                                const NomoDivider(),
-                                NomoInfoItem(
-                                  title: "Maximum sold",
-                                  value:
-                                      "${info.amountInMax.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
-                                ),
-                              ]
-                          },
-                          if (swapInfo.path.length > 2) ...[
-                            const NomoDivider(),
-                            4.vSpacing,
-                            NomoText(
-                              "Route",
-                              style: context.typography.b2
-                                  .copyWith(color: Colors.white60),
-                            ),
-                            12.vSpacing,
-                            NomoCard(
-                              elevation: 0,
-                              padding: const EdgeInsets.all(16),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  AssetPicture(
-                                    token: swapInfo.fromToken,
+                      child: NomoCard(
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 24),
+                        backgroundColor: context.colors.background2,
+                        border: const Border.fromBorderSide(
+                          BorderSide(color: Colors.white10),
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ...switch (swapInfo) {
+                              FromSwapInfo info => [
+                                  NomoInfoItem(
+                                    title: "Price",
+                                    value: info.getPrice(),
                                   ),
-                                  8.hSpacing,
-                                  NomoText(swapInfo.fromToken.name),
-                                  const Spacer(),
-                                  const Icon(
-                                    Icons.arrow_forward,
-                                    color: Colors.white60,
+                                  const NomoDivider(),
+                                  NomoInfoItem(
+                                    title: "Slippage Tolerance",
+                                    value: "${info.slippage}%",
                                   ),
-                                  const Spacer(),
-                                  const AssetPicture(
-                                    token: zeniqSmart,
+                                  const NomoDivider(),
+                                  NomoInfoItem(
+                                    title: "Price Impact",
+                                    value: "${priceImpactInfo.$1}%",
+                                    valueStyle: priceImpactStyle,
                                   ),
-                                  8.hSpacing,
-                                  NomoText(zeniqSmart.name),
-                                  const Spacer(),
-                                  const Icon(
-                                    Icons.arrow_forward,
-                                    color: Colors.white60,
+                                  const NomoDivider(),
+                                  NomoInfoItem(
+                                    title: "Fee",
+                                    value:
+                                        "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
                                   ),
-                                  const Spacer(),
-                                  AssetPicture(
-                                    token: swapInfo.toToken,
+                                  const NomoDivider(),
+                                  NomoInfoItem(
+                                    title: "Minimum Received",
+                                    value:
+                                        "${info.amountOutMin.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.toToken.symbol}",
                                   ),
-                                  8.hSpacing,
-                                  NomoText(swapInfo.toToken.name),
                                 ],
+                              ToSwapInfo info => [
+                                  NomoInfoItem(
+                                    title: "Price",
+                                    value: info.getPrice(),
+                                  ),
+                                  const NomoDivider(),
+                                  NomoInfoItem(
+                                    title: "Slippage Tolerance",
+                                    value: "${info.slippage}%",
+                                  ),
+                                  const NomoDivider(),
+                                  NomoInfoItem(
+                                    title: "Price Impact",
+                                    value: "${priceImpactInfo.$1}%",
+                                    valueStyle: priceImpactStyle,
+                                  ),
+                                  const NomoDivider(),
+                                  NomoInfoItem(
+                                    title: "Fee",
+                                    value:
+                                        "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
+                                  ),
+                                  const NomoDivider(),
+                                  NomoInfoItem(
+                                    title: "Maximum sold",
+                                    value:
+                                        "${info.amountInMax.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
+                                  ),
+                                ]
+                            },
+                            if (swapInfo.path.length > 2) ...[
+                              const NomoDivider(),
+                              4.vSpacing,
+                              NomoText(
+                                "Route",
+                                style: context.typography.b2
+                                    .copyWith(color: Colors.white60),
                               ),
-                            ),
+                              12.vSpacing,
+                              NomoCard(
+                                elevation: 0,
+                                padding: const EdgeInsets.all(16),
+                                borderRadius: BorderRadius.circular(12),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    AssetPicture(
+                                      token: swapInfo.fromToken,
+                                    ),
+                                    8.hSpacing,
+                                    NomoText(swapInfo.fromToken.name),
+                                    const Spacer(),
+                                    const Icon(
+                                      Icons.arrow_forward,
+                                      color: Colors.white60,
+                                    ),
+                                    const Spacer(),
+                                    const AssetPicture(
+                                      token: zeniqSmart,
+                                    ),
+                                    8.hSpacing,
+                                    NomoText(zeniqSmart.name),
+                                    const Spacer(),
+                                    const Icon(
+                                      Icons.arrow_forward,
+                                      color: Colors.white60,
+                                    ),
+                                    const Spacer(),
+                                    AssetPicture(
+                                      token: swapInfo.toToken,
+                                    ),
+                                    8.hSpacing,
+                                    NomoText(swapInfo.toToken.name),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
+                  32.vSpacing,
                 ],
               );
             },
@@ -637,14 +656,14 @@ class SwapInputTrailling extends StatelessWidget {
               height: 42,
               padding: const EdgeInsets.symmetric(horizontal: 8),
               borderRadius: BorderRadius.circular(12),
-              textStyle: context.typography.b2,
               onPressed: () => onPressed(context),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  4.hSpacing,
                   NomoText(
                     'Select Token',
-                    style: context.typography.b2,
+                    style: context.typography.b1,
                     color: context.colors.onPrimary,
                   ),
                   4.hSpacing,
@@ -666,7 +685,7 @@ class SwapInputTrailling extends StatelessWidget {
                   8.hSpacing,
                   NomoText(
                     token!.name,
-                    style: context.typography.h1,
+                    style: context.typography.b2,
                     useInheritedTheme: true,
                   ),
                   8.hSpacing,
@@ -730,7 +749,7 @@ class SwapInputBottom extends StatelessWidget {
                               "${value.currency.symbol}${(value.price * amount.displayDouble).toStringAsFixed(5)}",
                             _ => "${value.currency.symbol}0.00",
                           },
-                          style: context.typography.b2,
+                          style: context.typography.b1,
                           fontWeight: FontWeight.bold,
                           opacity: 0.8,
                         );
@@ -749,7 +768,7 @@ class SwapInputBottom extends StatelessWidget {
                       error: (error) {
                         return NomoText(
                           "No price available",
-                          style: context.typography.b2,
+                          style: context.typography.b1,
                           color: context.colors.error,
                         );
                       },
@@ -761,7 +780,7 @@ class SwapInputBottom extends StatelessWidget {
                           children: [
                             NomoText(
                               value.displayDouble.toStringAsFixed(5),
-                              style: context.typography.b2,
+                              style: context.typography.b1,
                               fontWeight: FontWeight.bold,
                               opacity: 0.8,
                             ),
@@ -776,7 +795,7 @@ class SwapInputBottom extends StatelessWidget {
                                     context.colors.primary.lighten(),
                                 tapDownColor: context.colors.primary.darken(),
                                 padding: EdgeInsets.zero,
-                                textStyle: context.typography.b2,
+                                textStyle: context.typography.b1,
                                 onPressed: () {
                                   swapProvider.fromAmountString.value =
                                       value.displayValue;

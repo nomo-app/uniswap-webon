@@ -51,9 +51,9 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
         b1: GoogleFonts.roboto(),
         b2: GoogleFonts.roboto(),
         b3: GoogleFonts.roboto(),
-        h1: GoogleFonts.inter(),
-        h2: GoogleFonts.inter(),
-        h3: GoogleFonts.inter(),
+        h1: GoogleFonts.dancingScript(),
+        h2: GoogleFonts.dancingScript(),
+        h3: GoogleFonts.dancingScript(),
       );
 
   @override
@@ -62,12 +62,12 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
       SizingMode.SMALL: NomoSizingThemeDataNullable(
         key: const ValueKey('small'),
         sizes: const NomoSizes(
-          fontSizeB1: 12,
-          fontSizeB2: 14,
-          fontSizeB3: 16,
-          fontSizeH1: 18,
-          fontSizeH2: 20,
-          fontSizeH3: 22,
+          fontSizeB1: 14,
+          fontSizeB2: 18,
+          fontSizeB3: 28,
+          fontSizeH1: 36,
+          fontSizeH2: 48,
+          fontSizeH3: 64,
           spacing1: 4,
           spacing2: 6,
           spacing3: 8,

@@ -135,29 +135,33 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
         titleStyle: context.typography.h2,
         leading: NomoText(
           "Select Asset",
-          style: context.typography.h2,
+          style: context.typography.h1,
         ),
         backgroundColor: context.colors.background3,
         content: SingleChildScrollView(
           child: Column(
             children: [
+              8.vSpacing,
               NomoInput(
                 titleStyle: context.typography.h2,
                 placeHolder: "Search name or paste address",
-                placeHolderStyle: context.typography.b3,
+                placeHolderStyle: context.typography.b2,
                 height: 64,
                 valueNotifier: searchNotifier,
                 maxLines: 1,
                 scrollable: true,
                 keyboardType: TextInputType.text,
-                style: context.typography.b3,
+                style: context.typography.b2,
               ),
               32.vSpacing,
-              const Row(
+              Row(
                 children: [
-                  NomoText("Name"),
-                  Spacer(),
-                  SecondaryNomoButton(
+                  NomoText(
+                    "Name",
+                    style: context.typography.b1,
+                  ),
+                  const Spacer(),
+                  const SecondaryNomoButton(
                     icon: Icons.sort,
                     backgroundColor: Colors.transparent,
                     border: Border.fromBorderSide(BorderSide.none),
@@ -202,7 +206,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                                     children: [
                                       NomoText(
                                         customToken.name,
-                                        style: context.typography.h1,
+                                        style: context.typography.b3,
                                       ),
                                     ],
                                   ),
@@ -249,7 +253,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                                 12.hSpacing,
                                 NomoText(
                                   asset.name,
-                                  style: context.typography.h1,
+                                  style: context.typography.b2,
                                 ),
                                 const Spacer(),
                                 ValueListenableBuilder(
@@ -260,7 +264,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                                         return NomoText(
                                           value.displayDouble
                                               .toStringAsPrecision(5),
-                                          style: context.typography.b2,
+                                          style: context.typography.b1,
                                         );
                                       },
                                       error: (error) => NomoText(

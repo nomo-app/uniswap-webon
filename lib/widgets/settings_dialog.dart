@@ -37,16 +37,16 @@ class SettingsDialog extends StatelessWidget {
         ],
       ),
       backgroundColor: context.colors.background2,
-      padding: EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
       borderRadius: BorderRadius.circular(16),
       content: Column(
         children: [
-          NomoDivider(),
+          const NomoDivider(),
           16.vSpacing,
           Row(
             children: [
-              NomoText("Currency", style: context.typography.b3),
-              Spacer(),
+              NomoText("Currency", style: context.typography.b2),
+              const Spacer(),
               SizedBox(
                 width: 200,
                 child: NomoDropDownMenu(
@@ -73,7 +73,7 @@ class SettingsDialog extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              NomoText("Slippage Tolerance", style: context.typography.b3),
+              NomoText("Slippage Tolerance", style: context.typography.b2),
               16.vSpacing,
               NomoInput(
                 background: context.colors.background1,
@@ -81,10 +81,10 @@ class SettingsDialog extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 trailling: NomoText(
                   "%",
-                  style: context.typography.b3,
+                  style: context.typography.b2,
                 ),
                 valueNotifier: swapProcider.slippageString,
-                style: context.typography.b3,
+                style: context.typography.b2,
                 textAlign: TextAlign.end,
                 maxLines: 1,
                 inputFormatters: [
@@ -117,7 +117,8 @@ class SettingsDialog extends StatelessWidget {
                 ),
               ),
             ],
-          )
+          ),
+          16.vSpacing,
         ],
       ),
     );

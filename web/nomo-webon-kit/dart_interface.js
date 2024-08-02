@@ -143,3 +143,5 @@ export const hasWindowEtheruem = function () {
         return ethereum;
     }
 }
+
+window.isFallbackModeActive = isFallbackModeActive;

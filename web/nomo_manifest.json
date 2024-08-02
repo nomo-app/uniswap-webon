@@ -1,13 +1,13 @@
 {
     "nomo_manifest_version": "1.2.0",
-    "webon_id": "zone.nomo.zeniqswap",
+    "webon_id": "lol.nomo.zeniqswap",
     "webon_name": "Zeniq Swap",
-    "webon_version": "0.1.7",
-    "min_nomo_version": "0.5.2",
+    "webon_version": "0.1.0",
+    "min_nomo_version": "0.6.0",
     "dependencies": [],
     "permissions": [
-        "nomo.permission.READ_MEDIA",
-        "nomo.permission.GET_INSTALLED_WEBONS",
-        "nomo.permission.INSTALL_WEBON"
+        "nomo.permission.ADD_CUSTOM_TOKEN",
+        "nomo.permission.SIGN_EVM_TRANSACTION",
+        "nomo.permission.SIGN_EVM_MESSAGE"
     ]
 }
