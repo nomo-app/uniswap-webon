@@ -57,6 +57,7 @@ void main() async {
       assets.add(tupanToken);
     }
   } catch (e) {
+    print(e);
     runApp(
       MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -111,6 +112,9 @@ void main() async {
     );
     return;
   }
+
+  print(assets);
+  print(address);
 
   runApp(
     InheritedSwapProvider(

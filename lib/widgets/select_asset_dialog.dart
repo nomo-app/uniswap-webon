@@ -138,107 +138,58 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
           style: context.typography.h1,
         ),
         backgroundColor: context.colors.background3,
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              8.vSpacing,
-              NomoInput(
-                titleStyle: context.typography.h2,
-                placeHolder: "Search name or paste address",
-                placeHolderStyle: context.typography.b2,
-                height: 64,
-                valueNotifier: searchNotifier,
-                maxLines: 1,
-                scrollable: true,
-                keyboardType: TextInputType.text,
-                style: context.typography.b2,
-              ),
-              32.vSpacing,
-              Row(
-                children: [
-                  NomoText(
-                    "Name",
-                    style: context.typography.b1,
-                  ),
-                  const Spacer(),
-                  const SecondaryNomoButton(
-                    icon: Icons.sort,
-                    backgroundColor: Colors.transparent,
-                    border: Border.fromBorderSide(BorderSide.none),
-                  )
-                ],
-              ),
-              const NomoDivider(),
-              ListenableBuilder(
-                listenable: Listenable.merge([
-                  filteredAssetsNotifer,
-                  customTokenNotifier,
-                ]),
-                builder: (context, child) {
-                  final assets = filteredAssetsNotifer.value;
-                  final customToken = customTokenNotifier.value;
+        content: Column(
+          children: [
+            8.vSpacing,
+            NomoInput(
+              titleStyle: context.typography.h2,
+              placeHolder: "Search name or paste address",
+              placeHolderStyle: context.typography.b2,
+              height: 64,
+              valueNotifier: searchNotifier,
+              maxLines: 1,
+              scrollable: true,
+              keyboardType: TextInputType.text,
+              style: context.typography.b2,
+            ),
+            32.vSpacing,
+            Row(
+              children: [
+                NomoText(
+                  "Name",
+                  style: context.typography.b1,
+                ),
+                const Spacer(),
+                const SecondaryNomoButton(
+                  icon: Icons.sort,
+                  backgroundColor: Colors.transparent,
+                  border: Border.fromBorderSide(BorderSide.none),
+                )
+              ],
+            ),
+            const NomoDivider(),
+            ListenableBuilder(
+              listenable: Listenable.merge([
+                filteredAssetsNotifer,
+                customTokenNotifier,
+              ]),
+              builder: (context, child) {
+                final assets = filteredAssetsNotifer.value;
+                final customToken = customTokenNotifier.value;
 
-                  final length = customToken == null ? assets.length : 1;
+                final length = customToken == null ? assets.length : 1;
 
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: length,
-                    itemBuilder: (context, index) {
-                      if (customToken != null) {
-                        return Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.of(context).pop(customToken);
-                            },
-                            borderRadius: BorderRadius.circular(8),
-                            child: SizedBox(
-                              height: 56,
-                              child: Row(
-                                children: [
-                                  12.hSpacing,
-                                  AssetPicture(
-                                    token: customToken,
-                                    size: 32,
-                                  ),
-                                  12.hSpacing,
-                                  Column(
-                                    children: [
-                                      NomoText(
-                                        customToken.name,
-                                        style: context.typography.b3,
-                                      ),
-                                    ],
-                                  ),
-                                  const Spacer(),
-                                  PrimaryNomoButton(
-                                    height: 42,
-                                    width: 42,
-                                    padding: EdgeInsets.zero,
-                                    icon: Icons.add,
-                                    shape: BoxShape.circle,
-                                    onPressed: () {
-                                      assetNotifier.addToken(customToken);
-                                      customTokenNotifier.value = null;
-                                      searchNotifier.value = '';
-                                    },
-                                  ),
-                                  12.hSpacing,
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }
-
-                      final asset = assets[index];
-                      final balanceListenable =
-                          balanceNotifer.notifierForToken(asset);
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: length,
+                  primary: false,
+                  itemBuilder: (context, index) {
+                    if (customToken != null) {
                       return Material(
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            Navigator.of(context).pop(asset);
+                            Navigator.of(context).pop(customToken);
                           },
                           borderRadius: BorderRadius.circular(8),
                           child: SizedBox(
@@ -247,43 +198,29 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                               children: [
                                 12.hSpacing,
                                 AssetPicture(
-                                  token: asset,
+                                  token: customToken,
                                   size: 32,
                                 ),
                                 12.hSpacing,
-                                NomoText(
-                                  asset.name,
-                                  style: context.typography.b2,
+                                Column(
+                                  children: [
+                                    NomoText(
+                                      customToken.name,
+                                      style: context.typography.b3,
+                                    ),
+                                  ],
                                 ),
                                 const Spacer(),
-                                ValueListenableBuilder(
-                                  valueListenable: balanceListenable,
-                                  builder: (context, value, child) {
-                                    return value.when(
-                                      data: (value) {
-                                        return NomoText(
-                                          value.displayDouble
-                                              .toStringAsPrecision(5),
-                                          style: context.typography.b1,
-                                        );
-                                      },
-                                      error: (error) => NomoText(
-                                        "Error",
-                                        style: context.typography.h1,
-                                      ),
-                                      loading: () => ShimmerLoading(
-                                        isLoading: true,
-                                        child: Container(
-                                          width: 64,
-                                          height: 24,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                            color: context.colors.background2,
-                                          ),
-                                        ),
-                                      ),
-                                    );
+                                PrimaryNomoButton(
+                                  height: 42,
+                                  width: 42,
+                                  padding: EdgeInsets.zero,
+                                  icon: Icons.add,
+                                  shape: BoxShape.circle,
+                                  onPressed: () {
+                                    assetNotifier.addToken(customToken);
+                                    customTokenNotifier.value = null;
+                                    searchNotifier.value = '';
                                   },
                                 ),
                                 12.hSpacing,
@@ -292,12 +229,74 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                           ),
                         ),
                       );
-                    },
-                  );
-                },
-              )
-            ],
-          ),
+                    }
+
+                    final asset = assets[index];
+                    final balanceListenable =
+                        balanceNotifer.notifierForToken(asset);
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).pop(asset);
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: SizedBox(
+                          height: 56,
+                          child: Row(
+                            children: [
+                              12.hSpacing,
+                              AssetPicture(
+                                token: asset,
+                                size: 32,
+                              ),
+                              12.hSpacing,
+                              NomoText(
+                                asset.name,
+                                style: context.typography.b2,
+                              ),
+                              const Spacer(),
+                              ValueListenableBuilder(
+                                valueListenable: balanceListenable,
+                                builder: (context, value, child) {
+                                  return value.when(
+                                    data: (value) {
+                                      return NomoText(
+                                        value.displayDouble
+                                            .toStringAsPrecision(5),
+                                        style: context.typography.b1,
+                                      );
+                                    },
+                                    error: (error) => NomoText(
+                                      "Error",
+                                      style: context.typography.h1,
+                                    ),
+                                    loading: () => ShimmerLoading(
+                                      isLoading: true,
+                                      child: Container(
+                                        width: 64,
+                                        height: 24,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          color: context.colors.background2,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              12.hSpacing,
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            )
+          ],
         ),
       ),
     );
