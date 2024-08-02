@@ -22,7 +22,7 @@ void main() async {
   final List<TokenEntity> assets = [];
   try {
     if (WebonKitDart.isFallBackMode()) {
-      //   throw Exception('Fallback mode is active');
+      throw Exception('Fallback mode is active');
     }
 
     address = await WebonKitDart.getEvmAddress();
@@ -63,6 +63,7 @@ void main() async {
         home: NomoDefaultTextStyle(
           style: const TextStyle(color: Colors.white, fontSize: 32),
           child: Scaffold(
+            backgroundColor: Colors.black87,
             body: Padding(
               padding: const EdgeInsets.all(32.0),
               child: Center(
@@ -75,12 +76,12 @@ void main() async {
                       color: Colors.redAccent,
                     ),
                     const SizedBox(height: 24.0),
-                    const Text(
+                    const NomoText(
                       'Not inside the NomoApp. Please use zeniqswap.com for Swapping in the browser.',
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16.0),
-                    const Text(
+                    const NomoText(
                       'Or download the Nomo App from the App Store or Google Play Store.',
                       textAlign: TextAlign.center,
                     ),
@@ -93,7 +94,7 @@ void main() async {
                       ),
                       elevation: 10,
                       height: 64,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                       padding: EdgeInsets.zero,
                       width: 320,
                       onPressed: () async {
