@@ -10,8 +10,7 @@
             "type": "dart",
             "program": "lib/main.dart",
             "args": [
-                // "-d",
-                // "web-server",
+                "--wasm",
                 "--web-port",
                 "3000"
             ]
