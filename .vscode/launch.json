@@ -5,12 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Flutter Web on Custom Port",
+            "name": "Flutter Web Wasm",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
             "args": [
                 "--wasm",
+                "--web-port",
+                "3000"
+            ]
+        },
+        {
+            "name": "Flutter Web JS",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+              
                 "--web-port",
                 "3000"
             ]

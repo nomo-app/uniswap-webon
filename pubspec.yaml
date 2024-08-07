@@ -28,6 +28,7 @@ dependencies:
   http: ^1.2.1
   collection: ^1.18.0
   url_launcher: ^6.3.0
+  mesh: ^0.3.0
 
 dev_dependencies:
   flutter_test:

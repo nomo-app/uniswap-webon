@@ -21,6 +21,7 @@ import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/common/extensions.dart';
 import 'package:zeniq_swap_frontend/common/price_repository.dart';
+import 'package:zeniq_swap_frontend/pages/background.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/widgets/select_asset_dialog.dart';
@@ -207,7 +208,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Shimmer(
       child: NomoRouteBody(
-        backgroundColor: context.colors.background3,
+        //  backgroundColor: context.colors.background3,
+        background: const AppBackground(),
         padding: const EdgeInsets.all(16),
         scrollable: true,
         maxContentWidth: 480,
@@ -347,6 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+                background: context.colors.background2.withOpacity(0.5),
                 enabled: enabled,
                 errorNotifier: fromErrorNotifier,
                 keyboardType:
@@ -378,13 +381,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           16.vSpacing,
           Center(
-            child: SecondaryNomoButton(
+            child: PrimaryNomoButton(
               icon: Icons.swap_vert,
               height: 48,
               width: 48,
               shape: BoxShape.circle,
-              foregroundColor: Colors.white.withOpacity(0.6),
-              backgroundColor: Colors.transparent,
+              padding: EdgeInsets.zero,
+              foregroundColor: Colors.white,
+              backgroundColor: context.colors.background2.withOpacity(0.5),
               onPressed: () {
                 swapProvider.changePosition();
               },
@@ -423,6 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 scrollable: true,
                 style: context.typography.b3,
                 placeHolderStyle: context.typography.b3,
+                background: context.colors.background2.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(16),
                 errorNotifier: toErrorNotifier,
                 placeHolder: '0',
@@ -492,7 +497,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 24),
-                        backgroundColor: context.colors.background2,
+                        backgroundColor:
+                            context.colors.background2.withOpacity(0.5),
                         border: const Border.fromBorderSide(
                           BorderSide(color: Colors.white10),
                         ),
