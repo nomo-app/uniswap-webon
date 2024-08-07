@@ -5,7 +5,12 @@ import 'package:flutter/widgets.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/extensions.dart';
 
-final rpc = EvmRpcInterface(ZeniqSmartNetwork);
+final rpc = EvmRpcInterface(
+  type: ZeniqSmartNetwork,
+  clients: [
+    EvmRpcClient(zeniqSmartRPCEndpoint),
+  ],
+);
 final zeniqSwapRouter = UniswapV2Router(
   rpc: rpc,
   contractAddress: "0x7963c1bd24E4511A0b14bf148F93e2556AFe3C27",
@@ -414,7 +419,7 @@ class SwapProvider {
 
       swapState.value = SwapState.ApprovingToken;
 
-      final hash = await rpc.client.sendRawTransaction(signed);
+      final hash = await rpc.sendRawTransaction(signed);
 
       final successfull = await rpc.waitForTxConfirmation(hash);
 
@@ -497,7 +502,7 @@ class SwapProvider {
 
       swapState.value = SwapState.Broadcasting;
 
-      final hash = await rpc.client.sendRawTransaction(
+      final hash = await rpc.sendRawTransaction(
         signedTX.startsWith("0x") ? signedTX : "0x$signedTX",
       );
 

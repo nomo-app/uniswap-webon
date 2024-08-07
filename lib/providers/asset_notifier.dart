@@ -11,7 +11,12 @@ const _fetchInterval = Duration(minutes: 1);
 class AssetNotifier {
   final String address;
   final List<TokenEntity> tokens;
-  final EvmRpcInterface rpc = EvmRpcInterface(ZeniqSmartNetwork);
+  final EvmRpcInterface rpc = EvmRpcInterface(
+    type: ZeniqSmartNetwork,
+    clients: [
+      EvmRpcClient(zeniqSmartRPCEndpoint),
+    ],
+  );
 
   final ValueNotifier<Currency> currencyNotifier = ValueNotifier(Currency.usd);
 

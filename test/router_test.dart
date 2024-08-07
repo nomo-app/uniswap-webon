@@ -2,7 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 
 void main() {
-  final rpc = EvmRpcInterface(ZeniqSmartNetwork);
+  final rpc = EvmRpcInterface(
+    type: ZeniqSmartNetwork,
+    clients: [
+      EvmRpcClient(zeniqSmartRPCEndpoint),
+    ],
+  );
   final zeniqSwapRouter = UniswapV2Router(
     rpc: rpc,
     contractAddress: "0x7963c1bd24E4511A0b14bf148F93e2556AFe3C27",
