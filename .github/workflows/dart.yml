@@ -29,8 +29,10 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v1
 
-      - name: Install dependencies
+      - name: Clone submodules
         run: git submodule update --init --recursive
+
+      - name: Install dependencies
         run: flutter pub get
 
       - name: Build web app
