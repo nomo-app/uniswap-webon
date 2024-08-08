@@ -22,6 +22,7 @@ jobs:
 
   build-and-deploy:
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -38,16 +39,21 @@ jobs:
       - name: Build web app
         run: flutter build web
 
+      - name: Add SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Add server to known_hosts
+        run: |
+          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+
       - name: Deploy to server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_HOST: ${{ secrets.HOST }}
           SSH_USERNAME: ${{ secrets.USERNAME }}
           REMOTE_PATH: /var/www/production_webons/web
-
         run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
           rsync -avz --delete --exclude='.git' build/web/ $SSH_USERNAME@$SSH_HOST:$REMOTE_PATH
