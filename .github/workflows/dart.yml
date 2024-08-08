@@ -1,19 +1,52 @@
-name: Swap Theme WebOn CI/CD
+name: ZeniqSwap CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    tags:
+      - "v*"
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   lint:
-   name: Static code analysis
-   runs-on: ubuntu-latest
-   steps:
-     - uses: actions/checkout@v3
-     - uses: subosito/flutter-action@v1
-     - run: git submodule update --init --recursive
-     - run: flutter pub get
-     - name: Lint analysis
-       run: flutter analyze
+    name: Static code analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v1
+      - run: git submodule update --init --recursive
+      - run: flutter pub get
+      - name: Lint analysis
+        run: flutter analyze
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "stable"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web app
+        run: flutter build web
+
+      - name: Deploy to server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.HOST }}
+          SSH_USERNAME: ${{ secrets.USERNAME }}
+          REMOTE_PATH: /var/www/production_webons/web
+
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          rsync -avz --delete --exclude='.git' build/web/ $SSH_USERNAME@$SSH_HOST:$REMOTE_PATH
