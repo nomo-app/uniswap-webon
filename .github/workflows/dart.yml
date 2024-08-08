@@ -30,6 +30,9 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v1
 
+      - name: Flutter Doctor
+        run: flutter doctor
+
       - name: Clone submodules
         run: git submodule update --init --recursive
 
@@ -37,7 +40,7 @@ jobs:
         run: flutter pub get
 
       - name: Build web app
-        run: flutter build web
+        run: flutter build web --wasm
 
       - name: Add SSH key
         run: |
