@@ -49,6 +49,10 @@ jobs:
         run: |
           ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
 
+      - name: Test SSH connection
+        run: |
+          ssh -v -i ~/.ssh/id_rsa ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo 'SSH connection established'"
+
       - name: Deploy to server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
