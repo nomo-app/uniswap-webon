@@ -321,15 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ]),
             builder: (context, child) {
               final token = swapProvider.fromToken.value;
-              final enabled = switch (swapProvider.swapState.value) {
-                SwapState.None ||
-                SwapState.ReadyForSwap ||
-                SwapState.Error ||
-                SwapState.TokenApprovalError ||
-                SwapState.NeedsTokenApproval =>
-                  true,
-                _ => false,
-              };
+              final enabled = swapProvider.swapState.value.inputEnabled;
               return NomoInput(
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 placeHolderStyle: context.typography.b3,
@@ -402,14 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ]),
             builder: (context, child) {
               final token = swapProvider.toToken.value;
-              final enabled = switch (swapProvider.swapState.value) {
-                SwapState.None ||
-                SwapState.ReadyForSwap ||
-                SwapState.Error ||
-                SwapState.TokenApprovalError =>
-                  true,
-                _ => false,
-              };
+              final enabled = swapProvider.swapState.value.inputEnabled;
               return NomoInput(
                 top: Padding(
                   padding: const EdgeInsets.only(bottom: 8),

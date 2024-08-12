@@ -40,7 +40,17 @@ enum SwapState {
   Broadcasting,
   Confirming,
   Swapped,
-  Error,
+  Error;
+
+  bool get inputEnabled => switch (this) {
+        SwapState.None ||
+        SwapState.ReadyForSwap ||
+        SwapState.Error ||
+        SwapState.TokenApprovalError ||
+        SwapState.NeedsTokenApproval =>
+          true,
+        _ => false,
+      };
 }
 
 enum LastAmountChanged {
@@ -399,32 +409,40 @@ class SwapProvider {
 
     if (swapState.value == SwapState.NeedsTokenApproval ||
         swapState.value == SwapState.TokenApprovalError) {
-      final erc20 = ERC20Contract(
-        rpc: rpc,
-        contractAddress: swapInfo.value!.fromToken.asEthBased!.contractAddress,
-      );
+      try {
+        final erc20 = ERC20Contract(
+          rpc: rpc,
+          contractAddress:
+              swapInfo.value!.fromToken.asEthBased!.contractAddress,
+        );
 
-      final tx = await erc20.approveTx(
-        sender: ownAddress,
-        spender: zeniqSwapRouter.contractAddress,
-        value: switch (swapInfo.value!) {
-          FromSwapInfo info => info.fromAmount.value,
-          ToSwapInfo info => info.amountInMax.value,
-        },
-      );
+        final tx = await erc20.approveTx(
+          sender: ownAddress,
+          spender: zeniqSwapRouter.contractAddress,
+          value: switch (swapInfo.value!) {
+            FromSwapInfo info => info.fromAmount.value,
+            ToSwapInfo info => info.amountInMax.value,
+          },
+        );
 
-      swapState.value = SwapState.WaitingForUserApproval;
+        swapState.value = SwapState.WaitingForUserApproval;
 
-      final signed = await signer(tx.serializedTransactionHex);
+        final signed = await signer(tx.serializedTransactionHex);
 
-      swapState.value = SwapState.ApprovingToken;
+        swapState.value = SwapState.ApprovingToken;
 
-      final hash = await rpc.sendRawTransaction(signed);
+        final hash = await rpc.sendRawTransaction(signed);
 
-      final successfull = await rpc.waitForTxConfirmation(hash);
+        final successfull = await rpc.waitForTxConfirmation(hash);
 
-      swapState.value =
-          successfull ? SwapState.ReadyForSwap : SwapState.TokenApprovalError;
+        swapState.value =
+            successfull ? SwapState.ReadyForSwap : SwapState.TokenApprovalError;
+      } catch (e) {
+        swapState.value = SwapState.TokenApprovalError;
+        shouldRecalculateSwapType = true;
+        checkSwapInfo();
+        rethrow;
+      }
     }
 
     assert(
