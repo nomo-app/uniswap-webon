@@ -3,7 +3,7 @@
     "webon_id": "lol.nomo.zeniqswap",
     "webon_name": "Zeniq Swap",
     "webon_version": "0.1.0",
-    "min_nomo_version": "0.5.1",
+    "min_nomo_version": "0.6.0",
     "dependencies": [],
     "permissions": [
         "nomo.permission.ADD_CUSTOM_TOKEN",
