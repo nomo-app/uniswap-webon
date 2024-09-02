@@ -1,5 +1,5 @@
 <svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100%" height="100%" fill="#1f1f1f"/>
+  <rect width="180" height="180" fill="#1f1f1f"/>
   <g transform="translate(10,10)">
     <g clip-path="url(#clip0_1547_1900)">
       <path d="M91.9023 111.67L110.123 129.88L159.998 80.0048L123.627 79.9453L91.9023 111.67Z" fill="#606060"/>
