@@ -45,8 +45,8 @@ jobs:
       - name: Add SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
 
       - name: Add server to known_hosts
         run: |
@@ -54,7 +54,7 @@ jobs:
 
       - name: Test SSH connection
         run: |
-          ssh -v -i ~/.ssh/id_rsa ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo 'SSH connection established'"
+          ssh -v -i ~/.ssh/id_ed25519 ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo 'SSH connection established'"
 
       - name: Deploy to server
         env:
