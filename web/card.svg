@@ -17,7 +17,7 @@
     <g clip-path="url(#roundedCorners)">
         <rect width="1600" height="900" fill="url(#goldGradient)" />
 
-        <g transform="translate(640,290) scale(2)">
+        <g transform="translate(640,200) scale(2)">
             <g clip-path="url(#clip0_1547_1900)">
                 <path d="M91.9023 111.67L110.123 129.88L159.998 80.0048L123.627 79.9453L91.9023 111.67Z"
                     fill="#606060" />
@@ -34,7 +34,7 @@
             </defs>
         </g>
 
-        <text x="800" y="760" font-family="'Dancing Script'" font-size="160" font-weight="900" fill="#595959"
+        <text x="800" y="680" font-family="'Dancing Script'" font-size="180" font-weight="900" fill="#595959"
             text-anchor="middle">Swap</text>
     </g>
 </svg>
