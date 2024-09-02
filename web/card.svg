@@ -1,0 +1,40 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#BF953F;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#FCF6BA;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#B38728;stop-opacity:1" />
+        </linearGradient>
+        <clipPath id="roundedCorners">
+            <rect x="0" y="0" width="1600" height="900" rx="45" ry="45" />
+        </clipPath>
+
+        <style type="text/css">
+            @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&display=swap');
+        </style>
+    </defs>
+
+    <g clip-path="url(#roundedCorners)">
+        <rect width="1600" height="900" fill="url(#goldGradient)" />
+
+        <g transform="translate(640,290) scale(2)">
+            <g clip-path="url(#clip0_1547_1900)">
+                <path d="M91.9023 111.67L110.123 129.88L159.998 80.0048L123.627 79.9453L91.9023 111.67Z"
+                    fill="#606060" />
+                <path d="M61.8438 18.1609L80.0046 0L160 80.005L123.628 79.9455L61.8438 18.1609Z" fill="#4F4F4F" />
+                <path d="M68.0959 48.33L49.8854 30.1196L0 80.0051L36.3713 80.0546L68.0959 48.33Z" fill="#606060" />
+                <path d="M98.1658 141.839L80.005 160L0 80.0049L36.3713 80.0544L98.1658 141.839Z" fill="#4F4F4F" />
+                <path d="M80.0041 99.2078L99.207 80.0049L80.0041 60.8019L60.8011 80.0049L80.0041 99.2078Z"
+                    fill="#CFB16D" />
+            </g>
+            <defs>
+                <clipPath id="clip0_1547_1900">
+                    <rect width="160" height="160" fill="white" />
+                </clipPath>
+            </defs>
+        </g>
+
+        <text x="800" y="760" font-family="'Dancing Script'" font-size="160" font-weight="900" fill="#595959"
+            text-anchor="middle">Swap</text>
+    </g>
+</svg>
