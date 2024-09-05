@@ -150,6 +150,21 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             }
 
+            if (snapshot.hasError) {
+              return Align(
+                alignment: Alignment(0, -0.2),
+                child: NomoCard(
+                  backgroundColor: context.colors.background2.withOpacity(0.5),
+                  padding: const EdgeInsets.all(16.0),
+                  borderRadius: BorderRadius.circular(12),
+                  child: NomoText(
+                    'Error fetching assets',
+                    color: context.colors.error,
+                  ),
+                ),
+              );
+            }
+
             final assets = snapshot.data!;
             return InheritedAssetProvider(
               notifier: AssetNotifier(
@@ -197,13 +212,17 @@ Future<List<TokenEntity>> fetchTokens() async {
 
     assets.addAll(assetsWithLiquidity);
   } catch (e) {
-    final fixedTokens = await TokenRepository.fetchFixedTokens();
-    final tokens = await TokenRepository.fetchTokensWhereLiquidty(
-      allTokens: fixedTokens,
-      minZeniqInPool: 10000,
-    );
+    try {
+      final fixedTokens = await TokenRepository.fetchFixedTokens();
+      final tokens = await TokenRepository.fetchTokensWhereLiquidty(
+        allTokens: fixedTokens,
+        minZeniqInPool: 10000,
+      );
 
-    assets.addAll(tokens);
+      assets.addAll(tokens);
+    } catch (e) {
+      assets.addAll([tupanToken, iLoveSafirToken, avinocZSC]);
+    }
   }
   return assets.toList();
 }
