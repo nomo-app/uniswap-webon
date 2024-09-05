@@ -462,8 +462,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
                   return Column(
                     children: [
                       NomoDividerThemeOverride(
-                        data: const NomoDividerThemeDataNullable(
+                        data: NomoDividerThemeDataNullable(
                           crossAxisSpacing: 12,
+                          color: Colors.white12,
                         ),
                         child: NomoInfoItemThemeOverride(
                           data: NomoInfoItemThemeDataNullable(
@@ -557,38 +558,43 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                     elevation: 0,
                                     padding: const EdgeInsets.all(16),
                                     borderRadius: BorderRadius.circular(12),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        AssetPicture(
-                                          token: swapInfo.fromToken,
-                                        ),
-                                        8.hSpacing,
-                                        NomoText(swapInfo.fromToken.name),
-                                        const Spacer(),
-                                        const Icon(
-                                          Icons.arrow_forward,
-                                          color: Colors.white60,
-                                        ),
-                                        const Spacer(),
-                                        const AssetPicture(
-                                          token: zeniqSmart,
-                                        ),
-                                        8.hSpacing,
-                                        NomoText(zeniqSmart.name),
-                                        const Spacer(),
-                                        const Icon(
-                                          Icons.arrow_forward,
-                                          color: Colors.white60,
-                                        ),
-                                        const Spacer(),
-                                        AssetPicture(
-                                          token: swapInfo.toToken,
-                                        ),
-                                        8.hSpacing,
-                                        NomoText(swapInfo.toToken.name),
-                                      ],
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        minWidth: 480,
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          AssetPicture(
+                                            token: swapInfo.fromToken,
+                                          ),
+                                          8.hSpacing,
+                                          NomoText(swapInfo.fromToken.symbol),
+                                          const Spacer(),
+                                          const Icon(
+                                            Icons.arrow_forward,
+                                            color: Colors.white60,
+                                          ),
+                                          const Spacer(),
+                                          const AssetPicture(
+                                            token: zeniqSmart,
+                                          ),
+                                          8.hSpacing,
+                                          NomoText(zeniqSmart.name),
+                                          const Spacer(),
+                                          const Icon(
+                                            Icons.arrow_forward,
+                                            color: Colors.white60,
+                                          ),
+                                          const Spacer(),
+                                          AssetPicture(
+                                            token: swapInfo.toToken,
+                                          ),
+                                          8.hSpacing,
+                                          NomoText(swapInfo.toToken.symbol),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ],
