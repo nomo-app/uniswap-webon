@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_ui_kit/app/nomo_app.dart';
+import 'package:nomo_ui_kit/components/app/routebody/nomo_route_body.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
+import 'package:nomo_ui_kit/components/loading/shimmer/loading_shimmer.dart';
+import 'package:nomo_ui_kit/components/loading/shimmer/shimmer.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/common/token_repository.dart';
+import 'package:zeniq_swap_frontend/pages/background.dart';
+import 'package:zeniq_swap_frontend/pages/swap_screen.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
@@ -19,53 +24,13 @@ void main() async {
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
   final String address;
-  final Set<TokenEntity> assets = {zeniqSmart};
+
   try {
     // if (WebonKitDart.isFallBackMode()) {
     //   throw Exception('Fallback mode is active');
     // }
 
     address = await WebonKitDart.getEvmAddress();
-
-    try {
-      final allAppAssets = await WebonKitDart.getAllAssets().then(
-        (assets) => assets
-            .where((asset) {
-              return asset.chainId == ZeniqSmartNetwork.chainId;
-            })
-            .map((asset) {
-              if (asset.contractAddress != null) {
-                return EthBasedTokenEntity(
-                  name: asset.name,
-                  symbol: asset.symbol,
-                  decimals: asset.decimals,
-                  contractAddress: asset.contractAddress!,
-                  chainID: asset.chainId!,
-                );
-              }
-
-              return null;
-            })
-            .whereType<EthBasedTokenEntity>()
-            .toList(),
-      );
-
-      final assetsWithLiquidity =
-          await TokenRepository.fetchTokensWhereLiquidty(
-        allTokens: allAppAssets,
-        minZeniqInPool: 10000,
-      );
-
-      assets.addAll(assetsWithLiquidity);
-    } catch (e) {
-      final fixedTokens = await TokenRepository.fetchFixedTokens();
-      final tokens = await TokenRepository.fetchTokensWhereLiquidty(
-        allTokens: fixedTokens,
-        minZeniqInPool: 10000,
-      );
-
-      assets.addAll(tokens);
-    }
   } catch (e) {
     print(e);
     runApp(
@@ -123,22 +88,13 @@ void main() async {
     return;
   }
 
-  print(assets);
-  print(address);
-
   runApp(
     InheritedSwapProvider(
       swapProvider: SwapProvider(
         address,
         WebonKitDart.signTransaction,
       ),
-      child: InheritedAssetProvider(
-        notifier: AssetNotifier(
-          address,
-          assets.toList(),
-        ),
-        child: const MyApp(),
-      ),
+      child: const MyApp(),
     ),
   );
 }
@@ -158,4 +114,86 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late final assetsFuture = fetchTokens();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer(
+      child: NomoRouteBody(
+        background: AppBackground(),
+        maxContentWidth: 480,
+        padding: EdgeInsets.zero,
+        child: FutureBuilder(
+          future: assetsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return SizedBox.shrink();
+            }
+
+            final assets = snapshot.data!;
+            return InheritedAssetProvider(
+              notifier: AssetNotifier(
+                InheritedSwapProvider.of(context).ownAddress,
+                assets,
+              ),
+              child: SwappingScreen(),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+Future<List<TokenEntity>> fetchTokens() async {
+  final Set<TokenEntity> assets = {zeniqSmart};
+  try {
+    final allAppAssets = await WebonKitDart.getAllAssets().then(
+      (assets) => assets
+          .where((asset) {
+            return asset.chainId == ZeniqSmartNetwork.chainId;
+          })
+          .map((asset) {
+            if (asset.contractAddress != null) {
+              return EthBasedTokenEntity(
+                name: asset.name,
+                symbol: asset.symbol,
+                decimals: asset.decimals,
+                contractAddress: asset.contractAddress!,
+                chainID: asset.chainId!,
+              );
+            }
+
+            return null;
+          })
+          .whereType<EthBasedTokenEntity>()
+          .toList(),
+    );
+
+    final assetsWithLiquidity = await TokenRepository.fetchTokensWhereLiquidty(
+      allTokens: allAppAssets,
+      minZeniqInPool: 10000,
+    );
+
+    assets.addAll(assetsWithLiquidity);
+  } catch (e) {
+    final fixedTokens = await TokenRepository.fetchFixedTokens();
+    final tokens = await TokenRepository.fetchTokensWhereLiquidty(
+      allTokens: fixedTokens,
+      minZeniqInPool: 10000,
+    );
+
+    assets.addAll(tokens);
+  }
+  return assets.toList();
 }
