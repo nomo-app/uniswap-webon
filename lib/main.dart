@@ -28,9 +28,9 @@ void main() async {
   final String address;
 
   try {
-    // if (WebonKitDart.isFallBackMode()) {
-    //   throw Exception('Fallback mode is active');
-    // }
+    if (WebonKitDart.isFallBackMode()) {
+      throw Exception('Fallback mode is active');
+    }
 
     address = await WebonKitDart.getEvmAddress();
   } catch (e) {
