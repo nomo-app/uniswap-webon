@@ -727,7 +727,9 @@ class SwapInputTrailling extends StatelessWidget {
                   AssetPicture(token: token!),
                   8.hSpacing,
                   NomoText(
-                    token!.name,
+                    token!.name.length > 12
+                        ? "${token!.name.substring(0, 12)}..."
+                        : token!.name,
                     style: context.typography.b2,
                     useInheritedTheme: true,
                   ),
