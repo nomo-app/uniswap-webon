@@ -41,6 +41,11 @@ class _HomeScreenState extends State<HomeScreen> {
   late final ValueNotifier<String?> fromErrorNotifier = ValueNotifier(null);
   late final ValueNotifier<String?> toErrorNotifier = ValueNotifier(null);
 
+  late final FocusNode fromFocusNode = FocusNode();
+  late final FocusNode toFocusNode = FocusNode();
+
+  bool keyboardShown = false;
+
   @override
   void didChangeDependencies() {
     swapProvider = InheritedSwapProvider.of(context);
@@ -50,6 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     swapProvider.fromAmount.addListener(fromAmountChanged);
     swapProvider.toAmount.addListener(toAmountChanged);
+
+    keyboardShown = MediaQuery.of(context).viewInsets.bottom > 0;
 
     super.didChangeDependencies();
   }
@@ -208,407 +215,455 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Shimmer(
       child: NomoRouteBody(
-        //  backgroundColor: context.colors.background3,
-        background: const AppBackground(),
-        padding: const EdgeInsets.all(16),
-        scrollable: true,
         maxContentWidth: 480,
-        footer: ValueListenableBuilder(
-          valueListenable: swapProvider.swapState,
-          builder: (context, state, child) {
-            return AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: PrimaryNomoButton(
-                      text: switch (state) {
-                        SwapState.NeedsTokenApproval => 'Approve',
-                        SwapState.ApprovingToken => 'Approving',
-                        SwapState.Broadcasting ||
-                        SwapState.Confirming ||
-                        SwapState.WaitingForUserApproval =>
-                          'Swapping',
-                        _ => 'Swap',
-                      },
-                      type: switch (state) {
-                        SwapState.Broadcasting ||
-                        SwapState.Confirming ||
-                        SwapState.WaitingForUserApproval ||
-                        SwapState.ApprovingToken =>
-                          ActionType.loading,
-                        SwapState.None => ActionType.nonInteractive,
-                        _ => ActionType.def,
-                      },
-                      height: 64,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      borderRadius: BorderRadius.circular(16),
-                      textStyle: context.typography.h1,
-                      onPressed: () {
-                        if (state == SwapState.ReadyForSwap ||
-                            state == SwapState.NeedsTokenApproval ||
-                            state == SwapState.TokenApprovalError ||
-                            state == SwapState.Error) {
-                          swapProvider.swap();
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
+        background: AppBackground(),
+        padding: EdgeInsets.zero,
+        child: TapIgnoreDragDetector(
+          onTap: () {
+            FocusScope.of(context).unfocus();
           },
-        ),
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              NomoText(
-                "Swap",
-                style: context.typography.h3.copyWith(fontSize: 64),
-              ),
-              const Spacer(),
-              Image.asset(
-                'assets/logo.png',
-                width: 64,
-                height: 64,
-              ),
-            ],
-          ),
-          32.vSpacing,
-          Row(
-            children: [
-              const Spacer(),
-              PrimaryNomoButton(
-                backgroundColor: context.colors.background2,
-                foregroundColor: context.colors.foreground1,
-                height: 32,
-                width: 48,
-                iconSize: 18,
-                borderRadius: BorderRadius.circular(16),
-                icon: Icons.refresh_rounded,
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  swapProvider.checkSwapInfo();
-                  assetNotifer.fetchAllBalances();
-                  assetNotifer.fetchAllPrices();
-                },
-              ),
-              12.hSpacing,
-              PrimaryNomoButton(
-                backgroundColor: context.colors.background2,
-                foregroundColor: context.colors.foreground1,
-                height: 32,
-                width: 48,
-                iconSize: 18,
-                borderRadius: BorderRadius.circular(16),
-                icon: Icons.settings_outlined,
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  NomoNavigator.of(context).showModal(
-                    context: context,
-                    builder: (context) => const SettingsDialog(),
-                  );
-                },
-              ),
-            ],
-          ),
-          16.vSpacing,
-          ListenableBuilder(
-            listenable: Listenable.merge([
-              swapProvider.fromToken,
-              swapProvider.swapState,
-            ]),
-            builder: (context, child) {
-              final token = swapProvider.fromToken.value;
-              final enabled = swapProvider.swapState.value.inputEnabled;
-              return NomoInput(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                placeHolderStyle: context.typography.b3,
-                borderRadius: BorderRadius.circular(16),
-                style: context.typography.b3,
-                border: const Border.fromBorderSide(
-                  BorderSide(color: Colors.white10),
-                ),
-                top: Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      NomoText(
-                        "From",
-                        style: context.typography.b2,
-                      ),
-                    ],
-                  ),
-                ),
-                background: context.colors.background2.withOpacity(0.5),
-                enabled: enabled,
-                errorNotifier: fromErrorNotifier,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                placeHolder: '0',
-                valueNotifier: swapProvider.fromAmountString,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(
-                    RegExp(
-                      r'^\d+([.,]?\d{0,' +
-                          (token?.decimals ?? 18).toString() +
-                          r'})',
-                    ),
-                  ),
-                ],
-                scrollable: true,
-                maxLines: 1,
-                bottom: SwapInputBottom(token: token),
-                trailling: SwapInputTrailling(
-                  token: token,
-                  onTokenSelected: (token) {
-                    swapProvider.setFromToken(token);
-                  },
-                ),
-              );
-            },
-          ),
-          16.vSpacing,
-          Center(
-            child: PrimaryNomoButton(
-              icon: Icons.swap_vert,
-              height: 48,
-              width: 48,
-              shape: BoxShape.circle,
-              padding: EdgeInsets.zero,
-              foregroundColor: Colors.white,
-              backgroundColor: context.colors.background2.withOpacity(0.5),
-              onPressed: () {
-                swapProvider.changePosition();
-              },
-            ),
-          ),
-          16.vSpacing,
-          ListenableBuilder(
-            listenable: Listenable.merge([
-              swapProvider.toToken,
-              swapProvider.swapState,
-            ]),
-            builder: (context, child) {
-              final token = swapProvider.toToken.value;
-              final enabled = swapProvider.swapState.value.inputEnabled;
-              return NomoInput(
-                top: Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      NomoText(
-                        "To",
-                        style: context.typography.b2,
-                      ),
-                    ],
-                  ),
-                ),
-                enabled: enabled,
-                maxLines: 1,
-                scrollable: true,
-                style: context.typography.b3,
-                placeHolderStyle: context.typography.b3,
-                background: context.colors.background2.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(16),
-                errorNotifier: toErrorNotifier,
-                placeHolder: '0',
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                bottom: SwapInputBottom(
-                  token: token,
-                  showMax: false,
-                ),
-                border: const Border.fromBorderSide(
-                  BorderSide(color: Colors.white10),
-                ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(
-                    RegExp(
-                      r'^\d+([.,]?\d{0,' +
-                          (token?.decimals ?? 18).toString() +
-                          r'})',
-                    ),
-                  ),
-                ],
-                valueNotifier: swapProvider.toAmountString,
-                trailling: ValueListenableBuilder(
-                  valueListenable: swapProvider.toToken,
-                  builder: (context, value, child) {
-                    return SwapInputTrailling(
-                      token: value,
-                      onTokenSelected: (token) {
-                        swapProvider.setToToken(token);
-                      },
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-          32.vSpacing,
-          ValueListenableBuilder(
-            valueListenable: swapProvider.swapInfo,
-            builder: (context, swapInfo, child) {
-              if (swapInfo == null) {
-                return const SizedBox();
-              }
-
-              final priceImpactInfo = swapInfo.priceImpact.formatPriceImpact();
-
-              final priceImpactStyle = context.typography.b1.copyWith(
-                color: priceImpactInfo.$2,
-              );
-
-              return Column(
+          child: TextFieldTapRegion(
+            child: SingleChildScrollView(
+              physics: AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.all(16),
+              child: Column(
                 children: [
-                  NomoDividerThemeOverride(
-                    data: const NomoDividerThemeDataNullable(
-                      crossAxisSpacing: 12,
-                    ),
-                    child: NomoInfoItemThemeOverride(
-                      data: NomoInfoItemThemeDataNullable(
-                        titleStyle: context.typography.b1
-                            .copyWith(color: Colors.white60),
-                        valueStyle: context.typography.b1,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      NomoText(
+                        "Swap",
+                        style: context.typography.h3.copyWith(fontSize: 64),
                       ),
-                      child: NomoCard(
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 24),
-                        backgroundColor:
-                            context.colors.background2.withOpacity(0.5),
-                        border: const Border.fromBorderSide(
-                          BorderSide(color: Colors.white10),
-                        ),
+                      const Spacer(),
+                      Image.asset(
+                        'assets/logo.png',
+                        width: 64,
+                        height: 64,
+                      ),
+                    ],
+                  ),
+                  32.vSpacing,
+                  Row(
+                    children: [
+                      const Spacer(),
+                      PrimaryNomoButton(
+                        backgroundColor: context.colors.background2,
+                        foregroundColor: context.colors.foreground1,
+                        height: 32,
+                        width: 48,
+                        iconSize: 18,
                         borderRadius: BorderRadius.circular(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ...switch (swapInfo) {
-                              FromSwapInfo info => [
-                                  NomoInfoItem(
-                                    title: "Price",
-                                    value: info.getPrice(),
-                                  ),
-                                  const NomoDivider(),
-                                  NomoInfoItem(
-                                    title: "Slippage Tolerance",
-                                    value: "${info.slippage}%",
-                                  ),
-                                  const NomoDivider(),
-                                  NomoInfoItem(
-                                    title: "Price Impact",
-                                    value: "${priceImpactInfo.$1}%",
-                                    valueStyle: priceImpactStyle,
-                                  ),
-                                  const NomoDivider(),
-                                  NomoInfoItem(
-                                    title: "Fee",
-                                    value:
-                                        "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
-                                  ),
-                                  const NomoDivider(),
-                                  NomoInfoItem(
-                                    title: "Minimum Received",
-                                    value:
-                                        "${info.amountOutMin.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.toToken.symbol}",
+                        icon: Icons.refresh_rounded,
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          swapProvider.checkSwapInfo();
+                          assetNotifer.fetchAllBalances();
+                          assetNotifer.fetchAllPrices();
+                        },
+                      ),
+                      12.hSpacing,
+                      PrimaryNomoButton(
+                        backgroundColor: context.colors.background2,
+                        foregroundColor: context.colors.foreground1,
+                        height: 32,
+                        width: 48,
+                        iconSize: 18,
+                        borderRadius: BorderRadius.circular(16),
+                        icon: Icons.settings_outlined,
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          NomoNavigator.of(context).showModal(
+                            context: context,
+                            builder: (context) => const SettingsDialog(),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  16.vSpacing,
+                  Column(
+                    children: [
+                      ListenableBuilder(
+                        listenable: Listenable.merge([
+                          swapProvider.fromToken,
+                          swapProvider.swapState,
+                        ]),
+                        builder: (context, child) {
+                          final token = swapProvider.fromToken.value;
+                          final enabled =
+                              swapProvider.swapState.value.inputEnabled;
+                          return NomoInput(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            placeHolderStyle: context.typography.b3,
+                            borderRadius: BorderRadius.circular(16),
+                            style: context.typography.b3,
+                            border: const Border.fromBorderSide(
+                              BorderSide(color: Colors.white10),
+                            ),
+                            hitTestBehavior: HitTestBehavior.deferToChild,
+                            top: Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  NomoText(
+                                    "From",
+                                    style: context.typography.b2,
                                   ),
                                 ],
-                              ToSwapInfo info => [
-                                  NomoInfoItem(
-                                    title: "Price",
-                                    value: info.getPrice(),
-                                  ),
-                                  const NomoDivider(),
-                                  NomoInfoItem(
-                                    title: "Slippage Tolerance",
-                                    value: "${info.slippage}%",
-                                  ),
-                                  const NomoDivider(),
-                                  NomoInfoItem(
-                                    title: "Price Impact",
-                                    value: "${priceImpactInfo.$1}%",
-                                    valueStyle: priceImpactStyle,
-                                  ),
-                                  const NomoDivider(),
-                                  NomoInfoItem(
-                                    title: "Fee",
-                                    value:
-                                        "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
-                                  ),
-                                  const NomoDivider(),
-                                  NomoInfoItem(
-                                    title: "Maximum sold",
-                                    value:
-                                        "${info.amountInMax.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
-                                  ),
-                                ]
-                            },
-                            if (swapInfo.path.length > 2) ...[
-                              const NomoDivider(),
-                              4.vSpacing,
-                              NomoText(
-                                "Route",
-                                style: context.typography.b2
-                                    .copyWith(color: Colors.white60),
                               ),
-                              12.vSpacing,
-                              NomoCard(
-                                elevation: 0,
-                                padding: const EdgeInsets.all(16),
-                                borderRadius: BorderRadius.circular(12),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    AssetPicture(
-                                      token: swapInfo.fromToken,
-                                    ),
-                                    8.hSpacing,
-                                    NomoText(swapInfo.fromToken.name),
-                                    const Spacer(),
-                                    const Icon(
-                                      Icons.arrow_forward,
-                                      color: Colors.white60,
-                                    ),
-                                    const Spacer(),
-                                    const AssetPicture(
-                                      token: zeniqSmart,
-                                    ),
-                                    8.hSpacing,
-                                    NomoText(zeniqSmart.name),
-                                    const Spacer(),
-                                    const Icon(
-                                      Icons.arrow_forward,
-                                      color: Colors.white60,
-                                    ),
-                                    const Spacer(),
-                                    AssetPicture(
-                                      token: swapInfo.toToken,
-                                    ),
-                                    8.hSpacing,
-                                    NomoText(swapInfo.toToken.name),
-                                  ],
+                            ),
+                            focusNode: fromFocusNode,
+                            onTap: () {
+                              if (fromFocusNode.hasFocus && !keyboardShown) {
+                                fromFocusNode.unfocus();
+                                Future.microtask(
+                                    () => fromFocusNode.requestFocus());
+                              }
+                            },
+                            background:
+                                context.colors.background2.withOpacity(0.5),
+                            enabled: enabled,
+                            errorNotifier: fromErrorNotifier,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            placeHolder: '0',
+                            valueNotifier: swapProvider.fromAmountString,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(
+                                  r'^\d+([.,]?\d{0,' +
+                                      (token?.decimals ?? 18).toString() +
+                                      r'})',
                                 ),
                               ),
                             ],
-                          ],
+                            scrollable: true,
+                            maxLines: 1,
+                            bottom: SwapInputBottom(token: token),
+                            trailling: SwapInputTrailling(
+                              token: token,
+                              onTokenSelected: (token) {
+                                if (swapProvider.toAmount.value == null) {
+                                  fromFocusNode.requestFocus();
+                                }
+                                swapProvider.setFromToken(token);
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      16.vSpacing,
+                      Center(
+                        child: PrimaryNomoButton(
+                          icon: Icons.swap_vert,
+                          height: 48,
+                          width: 48,
+                          shape: BoxShape.circle,
+                          padding: EdgeInsets.zero,
+                          foregroundColor: Colors.white,
+                          backgroundColor:
+                              context.colors.background2.withOpacity(0.5),
+                          onPressed: () {
+                            swapProvider.changePosition();
+                          },
                         ),
                       ),
-                    ),
+                      16.vSpacing,
+                      ListenableBuilder(
+                        listenable: Listenable.merge([
+                          swapProvider.toToken,
+                          swapProvider.swapState,
+                        ]),
+                        builder: (context, child) {
+                          final token = swapProvider.toToken.value;
+                          final enabled =
+                              swapProvider.swapState.value.inputEnabled;
+                          return NomoInput(
+                            top: Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  NomoText(
+                                    "To",
+                                    style: context.typography.b2,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            hitTestBehavior: HitTestBehavior.deferToChild,
+                            focusNode: toFocusNode,
+                            onTap: () {
+                              if (toFocusNode.hasFocus && !keyboardShown) {
+                                toFocusNode.unfocus();
+                                Future.microtask(
+                                    () => toFocusNode.requestFocus());
+                              }
+                            },
+                            enabled: enabled,
+                            maxLines: 1,
+                            scrollable: true,
+                            style: context.typography.b3,
+                            placeHolderStyle: context.typography.b3,
+                            background:
+                                context.colors.background2.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(16),
+                            errorNotifier: toErrorNotifier,
+                            placeHolder: '0',
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16),
+                            bottom: SwapInputBottom(
+                              token: token,
+                              showMax: false,
+                            ),
+                            border: const Border.fromBorderSide(
+                              BorderSide(color: Colors.white10),
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(
+                                  r'^\d+([.,]?\d{0,' +
+                                      (token?.decimals ?? 18).toString() +
+                                      r'})',
+                                ),
+                              ),
+                            ],
+                            valueNotifier: swapProvider.toAmountString,
+                            trailling: ValueListenableBuilder(
+                              valueListenable: swapProvider.toToken,
+                              builder: (context, value, child) {
+                                return SwapInputTrailling(
+                                  token: value,
+                                  onTokenSelected: (token) {
+                                    if (swapProvider.fromAmount.value == null) {
+                                      toFocusNode.requestFocus();
+                                    }
+                                    swapProvider.setToToken(token);
+                                  },
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   32.vSpacing,
+                  ValueListenableBuilder(
+                    valueListenable: swapProvider.swapInfo,
+                    builder: (context, swapInfo, child) {
+                      if (swapInfo == null) {
+                        return const SizedBox();
+                      }
+
+                      final priceImpactInfo =
+                          swapInfo.priceImpact.formatPriceImpact();
+
+                      final priceImpactStyle = context.typography.b1.copyWith(
+                        color: priceImpactInfo.$2,
+                      );
+
+                      return Column(
+                        children: [
+                          NomoDividerThemeOverride(
+                            data: const NomoDividerThemeDataNullable(
+                              crossAxisSpacing: 12,
+                            ),
+                            child: NomoInfoItemThemeOverride(
+                              data: NomoInfoItemThemeDataNullable(
+                                titleStyle: context.typography.b1
+                                    .copyWith(color: Colors.white60),
+                                valueStyle: context.typography.b1,
+                              ),
+                              child: NomoCard(
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 24),
+                                backgroundColor:
+                                    context.colors.background2.withOpacity(0.5),
+                                border: const Border.fromBorderSide(
+                                  BorderSide(color: Colors.white10),
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ...switch (swapInfo) {
+                                      FromSwapInfo info => [
+                                          NomoInfoItem(
+                                            title: "Price",
+                                            value: info.getPrice(),
+                                          ),
+                                          const NomoDivider(),
+                                          NomoInfoItem(
+                                            title: "Slippage Tolerance",
+                                            value: "${info.slippage}%",
+                                          ),
+                                          const NomoDivider(),
+                                          NomoInfoItem(
+                                            title: "Price Impact",
+                                            value: "${priceImpactInfo.$1}%",
+                                            valueStyle: priceImpactStyle,
+                                          ),
+                                          const NomoDivider(),
+                                          NomoInfoItem(
+                                            title: "Fee",
+                                            value:
+                                                "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
+                                          ),
+                                          const NomoDivider(),
+                                          NomoInfoItem(
+                                            title: "Minimum Received",
+                                            value:
+                                                "${info.amountOutMin.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.toToken.symbol}",
+                                          ),
+                                        ],
+                                      ToSwapInfo info => [
+                                          NomoInfoItem(
+                                            title: "Price",
+                                            value: info.getPrice(),
+                                          ),
+                                          const NomoDivider(),
+                                          NomoInfoItem(
+                                            title: "Slippage Tolerance",
+                                            value: "${info.slippage}%",
+                                          ),
+                                          const NomoDivider(),
+                                          NomoInfoItem(
+                                            title: "Price Impact",
+                                            value: "${priceImpactInfo.$1}%",
+                                            valueStyle: priceImpactStyle,
+                                          ),
+                                          const NomoDivider(),
+                                          NomoInfoItem(
+                                            title: "Fee",
+                                            value:
+                                                "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
+                                          ),
+                                          const NomoDivider(),
+                                          NomoInfoItem(
+                                            title: "Maximum sold",
+                                            value:
+                                                "${info.amountInMax.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
+                                          ),
+                                        ]
+                                    },
+                                    if (swapInfo.path.length > 2) ...[
+                                      const NomoDivider(),
+                                      4.vSpacing,
+                                      NomoText(
+                                        "Route",
+                                        style: context.typography.b2
+                                            .copyWith(color: Colors.white60),
+                                      ),
+                                      12.vSpacing,
+                                      NomoCard(
+                                        elevation: 0,
+                                        padding: const EdgeInsets.all(16),
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            AssetPicture(
+                                              token: swapInfo.fromToken,
+                                            ),
+                                            8.hSpacing,
+                                            NomoText(swapInfo.fromToken.name),
+                                            const Spacer(),
+                                            const Icon(
+                                              Icons.arrow_forward,
+                                              color: Colors.white60,
+                                            ),
+                                            const Spacer(),
+                                            const AssetPicture(
+                                              token: zeniqSmart,
+                                            ),
+                                            8.hSpacing,
+                                            NomoText(zeniqSmart.name),
+                                            const Spacer(),
+                                            const Icon(
+                                              Icons.arrow_forward,
+                                              color: Colors.white60,
+                                            ),
+                                            const Spacer(),
+                                            AssetPicture(
+                                              token: swapInfo.toToken,
+                                            ),
+                                            8.hSpacing,
+                                            NomoText(swapInfo.toToken.name),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          32.vSpacing,
+                        ],
+                      );
+                    },
+                  ),
+                  ValueListenableBuilder(
+                    valueListenable: swapProvider.swapState,
+                    builder: (context, state, child) {
+                      return AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: PrimaryNomoButton(
+                                text: switch (state) {
+                                  SwapState.NeedsTokenApproval => 'Approve',
+                                  SwapState.ApprovingToken => 'Approving',
+                                  SwapState.Broadcasting ||
+                                  SwapState.Confirming ||
+                                  SwapState.WaitingForUserApproval =>
+                                    'Swapping',
+                                  _ => 'Swap',
+                                },
+                                type: switch (state) {
+                                  SwapState.Broadcasting ||
+                                  SwapState.Confirming ||
+                                  SwapState.WaitingForUserApproval ||
+                                  SwapState.ApprovingToken =>
+                                    ActionType.loading,
+                                  SwapState.None => ActionType.nonInteractive,
+                                  _ => ActionType.def,
+                                },
+                                height: 64,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                borderRadius: BorderRadius.circular(16),
+                                textStyle: context.typography.h1,
+                                onPressed: () {
+                                  if (state == SwapState.ReadyForSwap ||
+                                      state == SwapState.NeedsTokenApproval ||
+                                      state == SwapState.TokenApprovalError ||
+                                      state == SwapState.Error) {
+                                    swapProvider.swap();
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  MediaQuery.of(context).viewInsets.bottom.vSpacing,
                 ],
-              );
-            },
+              ),
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -880,4 +935,58 @@ class AssetPicture extends StatelessWidget {
       },
     );
   }
+}
+
+class TapIgnoreDragDetector extends StatefulWidget {
+  final Widget child;
+
+  final void Function() onTap;
+
+  const TapIgnoreDragDetector({
+    super.key,
+    required this.child,
+    required this.onTap,
+  });
+
+  @override
+  State<TapIgnoreDragDetector> createState() => _TapIgnoreDragDetectorState();
+}
+
+class _TapIgnoreDragDetectorState extends State<TapIgnoreDragDetector> {
+  bool hasScrollUpdate = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification is ScrollUpdateNotification) {
+          hasScrollUpdate = true;
+        }
+        if (notification is ScrollEndNotification) {
+          if (hasScrollUpdate == false) {
+            widget.onTap();
+          }
+          hasScrollUpdate = false;
+        }
+        return true;
+      },
+      child: widget.child,
+    );
+  }
+}
+
+class CustomScrollPhysics extends ScrollPhysics {
+  /// Creates scroll physics that always lets the user scroll.
+  const CustomScrollPhysics({ScrollPhysics? parent}) : super(parent: parent);
+
+  @override
+  ScrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return ScrollPhysics(parent: buildParent(ancestor));
+  }
+
+  @override
+  bool shouldAcceptUserOffset(ScrollMetrics position) => true;
+
+  @override
+  bool get allowImplicitScrolling => false;
 }

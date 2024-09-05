@@ -19,42 +19,52 @@ void main() async {
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
   final String address;
-  final List<TokenEntity> assets = [];
+  final Set<TokenEntity> assets = {zeniqSmart};
   try {
-    if (WebonKitDart.isFallBackMode()) {
-      throw Exception('Fallback mode is active');
-    }
+    // if (WebonKitDart.isFallBackMode()) {
+    //   throw Exception('Fallback mode is active');
+    // }
 
     address = await WebonKitDart.getEvmAddress();
 
     try {
-      assets.addAll(await WebonKitDart.getAllAssets().then(
-        (assets) => assets.where((asset) {
-          return asset.chainId == ZeniqSmartNetwork.chainId;
-        }).map((asset) {
-          if (asset.contractAddress != null) {
-            return EthBasedTokenEntity(
-              name: asset.name,
-              symbol: asset.symbol,
-              decimals: asset.decimals,
-              contractAddress: asset.contractAddress!,
-              chainID: asset.chainId!,
-            );
-          }
+      final allAppAssets = await WebonKitDart.getAllAssets().then(
+        (assets) => assets
+            .where((asset) {
+              return asset.chainId == ZeniqSmartNetwork.chainId;
+            })
+            .map((asset) {
+              if (asset.contractAddress != null) {
+                return EthBasedTokenEntity(
+                  name: asset.name,
+                  symbol: asset.symbol,
+                  decimals: asset.decimals,
+                  contractAddress: asset.contractAddress!,
+                  chainID: asset.chainId!,
+                );
+              }
 
-          return EvmEntity(
-            name: asset.name,
-            symbol: asset.symbol,
-            decimals: asset.decimals,
-            chainID: asset.chainId!,
-          );
-        }).toList(),
-      ));
+              return null;
+            })
+            .whereType<EthBasedTokenEntity>()
+            .toList(),
+      );
+
+      final assetsWithLiquidity =
+          await TokenRepository.fetchTokensWhereLiquidty(
+        allTokens: allAppAssets,
+        minZeniqInPool: 10000,
+      );
+
+      assets.addAll(assetsWithLiquidity);
     } catch (e) {
-      assets.addAll(await TokenRepository.fetchFixedTokens());
-      assets.add(zeniqSmart);
-      assets.add(avinocZSC); // For now
-      assets.add(tupanToken);
+      final fixedTokens = await TokenRepository.fetchFixedTokens();
+      final tokens = await TokenRepository.fetchTokensWhereLiquidty(
+        allTokens: fixedTokens,
+        minZeniqInPool: 10000,
+      );
+
+      assets.addAll(tokens);
     }
   } catch (e) {
     print(e);
@@ -125,7 +135,7 @@ void main() async {
       child: InheritedAssetProvider(
         notifier: AssetNotifier(
           address,
-          assets,
+          assets.toList(),
         ),
         child: const MyApp(),
       ),

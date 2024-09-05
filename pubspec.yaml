@@ -16,7 +16,7 @@ dependencies:
 
   flutter_web_plugins:
     sdk: flutter
-  nomo_ui_kit: ^0.0.18
+  nomo_ui_kit: 0.0.26
   nomo_router: 0.0.3
   route_gen: 0.0.2
   webon_kit_dart:

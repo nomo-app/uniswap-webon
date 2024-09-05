@@ -1,8 +1,24 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
+import 'package:zeniq_swap_frontend/common/token_repository.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
 void main() {
+  test(
+    'Fetch all Tokens which have enough Liquidity',
+    () async {
+      final fixedTokens = await TokenRepository.fetchFixedTokens();
+
+      final tokens = await TokenRepository.fetchTokensWhereLiquidty(
+        allTokens: fixedTokens,
+        minZeniqInPool: 10000,
+      );
+
+      expect(tokens.length, greaterThanOrEqualTo(4));
+      print(tokens);
+    },
+  );
+
   test('Test Price Impact Calculation', () async {
     const tokenA = wrappedZeniqSmart;
     const tokenB = avinocZSC;
