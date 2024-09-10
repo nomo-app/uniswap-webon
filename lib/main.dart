@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:nomo_router/nomo_router.dart';
@@ -24,7 +25,7 @@ void main() async {
   final String address;
 
   try {
-    if (WebonKitDart.isFallBackMode()) {
+    if (WebonKitDart.isFallBackMode() && kDebugMode == false) {
       throw Exception('Fallback mode is active');
     }
 
