@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:nomo_router/nomo_router.dart';
+import 'package:nomo_router/router/entities/transitions.dart';
 import 'package:nomo_ui_kit/app/nomo_app.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
@@ -107,6 +108,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return NomoNavigator(
       delegate: appRouter.delegate,
+      defaultTransistion: PageFadeTransition(),
       child: NomoApp(
         color: const Color(0xFF1A1A1A),
         routerConfig: appRouter.config,
