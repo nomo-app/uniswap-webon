@@ -2,16 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_ui_kit/app/nomo_app.dart';
-import 'package:nomo_ui_kit/components/app/routebody/nomo_route_body.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
-import 'package:nomo_ui_kit/components/loading/shimmer/shimmer.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/common/token_repository.dart';
-import 'package:zeniq_swap_frontend/pages/background.dart';
-import 'package:zeniq_swap_frontend/pages/swap_screen.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
@@ -28,9 +24,9 @@ void main() async {
   final String address;
 
   try {
-    // if (WebonKitDart.isFallBackMode()) {
-    //   throw Exception('Fallback mode is active');
-    // }
+    if (WebonKitDart.isFallBackMode()) {
+      throw Exception('Fallback mode is active');
+    }
 
     address = await WebonKitDart.getEvmAddress();
   } catch (e) {
