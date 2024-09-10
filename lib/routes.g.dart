@@ -14,7 +14,9 @@ class AppRouter extends NomoAppRouter {
   AppRouter({this.shouldPop, this.willPop})
       : super(
           {
-            HomeScreenRoute.path: ([a]) => HomeScreenRoute(),
+            SwappingScreenRoute.path: ([a]) => SwappingScreenRoute(),
+            SettingsDialogRoute.path: ([a]) => SettingsDialogRoute(),
+            SelectAssetDialogRoute.path: ([a]) => SelectAssetDialogRoute(),
           },
           _routes.expanded.where((r) => r is! NestedNavigator).toList(),
           _routes.expanded.whereType<NestedNavigator>().toList(),
@@ -34,15 +36,42 @@ class AppRouter extends NomoAppRouter {
   }
 }
 
-class HomeScreenArguments {
-  const HomeScreenArguments();
+class SwappingScreenArguments {
+  const SwappingScreenArguments();
 }
 
-class HomeScreenRoute extends AppRoute implements HomeScreenArguments {
-  HomeScreenRoute()
+class SwappingScreenRoute extends AppRoute implements SwappingScreenArguments {
+  SwappingScreenRoute()
       : super(
           name: '/',
-          page: HomeScreen(),
+          page: SwappingScreen(),
         );
   static String path = '/';
+}
+
+class SettingsDialogArguments {
+  const SettingsDialogArguments();
+}
+
+class SettingsDialogRoute extends AppRoute implements SettingsDialogArguments {
+  SettingsDialogRoute()
+      : super(
+          name: '/settings',
+          page: SettingsDialog(),
+        );
+  static String path = '/settings';
+}
+
+class SelectAssetDialogArguments {
+  const SelectAssetDialogArguments();
+}
+
+class SelectAssetDialogRoute extends AppRoute
+    implements SelectAssetDialogArguments {
+  SelectAssetDialogRoute()
+      : super(
+          name: '/selectAsset',
+          page: SelectAssetDialog(),
+        );
+  static String path = '/selectAsset';
 }

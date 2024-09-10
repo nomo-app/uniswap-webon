@@ -7,6 +7,7 @@ import 'package:zeniq_swap_frontend/common/extensions.dart';
 
 final rpc = EvmRpcInterface(
   type: ZeniqSmartNetwork,
+  useQueuedManager: false,
   clients: [
     EvmRpcClient(zeniqSmartRPCEndpoint),
   ],
@@ -427,7 +428,7 @@ class SwapProvider {
 
         swapState.value = SwapState.WaitingForUserApproval;
 
-        final signed = await signer(tx.serializedTransactionHex);
+        final signed = await signer(tx.serializedHex);
 
         swapState.value = SwapState.ApprovingToken;
 
@@ -516,7 +517,7 @@ class SwapProvider {
     swapState.value = SwapState.WaitingForUserApproval;
 
     try {
-      final signedTX = await signer(unsignedTX.serializedTransactionHex);
+      final signedTX = await signer(unsignedTX.serializedHex);
 
       swapState.value = SwapState.Broadcasting;
 

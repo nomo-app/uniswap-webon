@@ -125,12 +125,12 @@ class AssetNotifier {
     }
   }
 
-  ValueNotifier<AsyncValue<Amount>> notifierForToken(TokenEntity token) =>
-      _balances[token]!;
+  ValueNotifier<AsyncValue<Amount>>? notifierForToken(TokenEntity token) =>
+      _balances[token];
 
-  ValueNotifier<AsyncValue<PriceState>> priceNotifierForToken(
+  ValueNotifier<AsyncValue<PriceState>>? priceNotifierForToken(
           TokenEntity token) =>
-      _prices[token]!;
+      _prices[token];
 
   ValueNotifier<AsyncValue<ImageEntity>>? imageNotifierForToken(
           TokenEntity token) =>

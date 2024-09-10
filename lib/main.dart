@@ -4,11 +4,8 @@ import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_ui_kit/app/nomo_app.dart';
 import 'package:nomo_ui_kit/components/app/routebody/nomo_route_body.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
-import 'package:nomo_ui_kit/components/card/nomo_card.dart';
-import 'package:nomo_ui_kit/components/loading/loading.dart';
 import 'package:nomo_ui_kit/components/loading/shimmer/shimmer.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
-import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
@@ -22,15 +19,18 @@ import 'package:zeniq_swap_frontend/theme.dart';
 
 final appRouter = AppRouter();
 
+final assetsNotifier = ValueNotifier(<TokenEntity>[]);
+
 void main() async {
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
+
   final String address;
 
   try {
-    if (WebonKitDart.isFallBackMode()) {
-      throw Exception('Fallback mode is active');
-    }
+    // if (WebonKitDart.isFallBackMode()) {
+    //   throw Exception('Fallback mode is active');
+    // }
 
     address = await WebonKitDart.getEvmAddress();
   } catch (e) {
@@ -90,6 +90,8 @@ void main() async {
     return;
   }
 
+  fetchTokens();
+
   runApp(
     InheritedSwapProvider(
       swapProvider: SwapProvider(
@@ -113,74 +115,26 @@ class MyApp extends StatelessWidget {
         routerConfig: appRouter.config,
         supportedLocales: const [Locale('en', 'US')],
         themeDelegate: AppThemeDelegate(),
+        appWrapper: (context, app) {
+          return ValueListenableBuilder(
+            valueListenable: assetsNotifier,
+            builder: (context, assets, snapshot) {
+              return InheritedAssetProvider(
+                notifier: AssetNotifier(
+                  InheritedSwapProvider.of(context).ownAddress,
+                  assets,
+                ),
+                child: app,
+              );
+            },
+          );
+        },
       ),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  late final assetsFuture = fetchTokens();
-
-  @override
-  Widget build(BuildContext context) {
-    return Shimmer(
-      child: NomoRouteBody(
-        background: AppBackground(),
-        maxContentWidth: 480,
-        padding: EdgeInsets.zero,
-        child: FutureBuilder(
-          future: assetsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return Align(
-                alignment: Alignment(0, -0.2),
-                child: NomoCard(
-                  backgroundColor: context.colors.background2.withOpacity(0.5),
-                  padding: const EdgeInsets.all(16.0),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Loading(),
-                ),
-              );
-            }
-
-            if (snapshot.hasError) {
-              return Align(
-                alignment: Alignment(0, -0.2),
-                child: NomoCard(
-                  backgroundColor: context.colors.background2.withOpacity(0.5),
-                  padding: const EdgeInsets.all(16.0),
-                  borderRadius: BorderRadius.circular(12),
-                  child: NomoText(
-                    'Error fetching assets',
-                    color: context.colors.error,
-                  ),
-                ),
-              );
-            }
-
-            final assets = snapshot.data!;
-            return InheritedAssetProvider(
-              notifier: AssetNotifier(
-                InheritedSwapProvider.of(context).ownAddress,
-                assets,
-              ),
-              child: SwappingScreen(),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-Future<List<TokenEntity>> fetchTokens() async {
+Future<void> fetchTokens() async {
   final Set<TokenEntity> assets = {zeniqSmart};
   try {
     final allAppAssets = await WebonKitDart.getAllAssets().then(
@@ -224,5 +178,6 @@ Future<List<TokenEntity>> fetchTokens() async {
       assets.addAll([tupanToken, iLoveSafirToken, avinocZSC]);
     }
   }
-  return assets.toList();
+
+  assetsNotifier.value = assets.toList();
 }

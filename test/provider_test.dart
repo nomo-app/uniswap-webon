@@ -13,10 +13,9 @@ void main() {
   final swapProvider = SwapProvider(
     rejectEVM,
     (tx) async {
-      return InternalEVMTransaction.signTransaction(
-        RawEVMTransaction.fromHex(tx),
-        pk,
-      ).serializedTransactionHex;
+      return RawEVMTransactionType2.fromUnsignedHex(tx)
+          .sign(privateKey: pk)
+          .serializedHex;
     },
   );
 

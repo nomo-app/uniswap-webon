@@ -63,9 +63,9 @@ abstract class TokenRepository {
     required List<EthBasedTokenEntity> allTokens,
     required double minZeniqInPool,
   }) async {
-    final allPairs = [
+    final allPairs = await Future.wait([
       for (final token in allTokens)
-        await factory
+        factory
             .getPair(
               tokenA: wrappedZeniqSmart.contractAddress,
               tokenB: token.contractAddress,
@@ -78,13 +78,13 @@ abstract class TokenRepository {
                 tokenB: token,
               ),
             )
-    ];
+    ]);
 
-    final tokensWithLiquidity = <EthBasedTokenEntity>[];
-    for (final pair in allPairs) {
+    Future<EthBasedTokenEntity?> fetchTokenWithLiquidityFromPair(
+        UniswapV2Pair pair) async {
       if (pair.contractAddress ==
           "0x0000000000000000000000000000000000000000") {
-        continue;
+        return null;
       }
       final token0 = await pair.token0();
       final token1 = await pair.token1();
@@ -107,9 +107,17 @@ abstract class TokenRepository {
       );
 
       if (reservesAmount.displayDouble > minZeniqInPool) {
-        tokensWithLiquidity.add(nonZeniqToken);
+        return nonZeniqToken;
       }
+
+      return null;
     }
+
+    final tokensWithLiquidity = await Future.wait(
+      [for (final pair in allPairs) fetchTokenWithLiquidityFromPair(pair)],
+    ).then(
+      (value) => value.whereType<EthBasedTokenEntity>().toSet(),
+    );
 
     return tokensWithLiquidity.toList();
   }

@@ -255,36 +255,37 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                                 style: context.typography.b2,
                               ),
                               const Spacer(),
-                              ValueListenableBuilder(
-                                valueListenable: balanceListenable,
-                                builder: (context, value, child) {
-                                  return value.when(
-                                    data: (value) {
-                                      return NomoText(
-                                        value.displayDouble
-                                            .toStringAsPrecision(5),
-                                        style: context.typography.b1,
-                                      );
-                                    },
-                                    error: (error) => NomoText(
-                                      "Error",
-                                      style: context.typography.h1,
-                                    ),
-                                    loading: () => ShimmerLoading(
-                                      isLoading: true,
-                                      child: Container(
-                                        width: 64,
-                                        height: 24,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                          color: context.colors.background2,
+                              if (balanceListenable != null)
+                                ValueListenableBuilder(
+                                  valueListenable: balanceListenable,
+                                  builder: (context, value, child) {
+                                    return value.when(
+                                      data: (value) {
+                                        return NomoText(
+                                          value.displayDouble
+                                              .toStringAsPrecision(5),
+                                          style: context.typography.b1,
+                                        );
+                                      },
+                                      error: (error) => NomoText(
+                                        "Error",
+                                        style: context.typography.h1,
+                                      ),
+                                      loading: () => ShimmerLoading(
+                                        isLoading: true,
+                                        child: Container(
+                                          width: 64,
+                                          height: 24,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            color: context.colors.background2,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
+                                    );
+                                  },
+                                ),
                               12.hSpacing,
                             ],
                           ),
