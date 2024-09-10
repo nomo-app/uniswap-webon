@@ -25,8 +25,6 @@ import 'package:zeniq_swap_frontend/pages/background.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
-import 'package:zeniq_swap_frontend/widgets/select_asset_dialog.dart';
-import 'package:zeniq_swap_frontend/widgets/settings_dialog.dart';
 
 class SwappingScreen extends StatefulWidget {
   const SwappingScreen({super.key});
