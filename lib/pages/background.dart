@@ -8,7 +8,7 @@ class AppBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: context.colors.background3,
+      color: Color(0xEF000000),
       child: OMeshGradient(
         mesh: OMeshRect(
           width: 3,
@@ -21,7 +21,7 @@ class AppBackground extends StatelessWidget {
           ],
           colors: [
             Colors.transparent, Colors.transparent, Colors.transparent, // Row 1
-            Colors.transparent, context.colors.primary,
+            Colors.transparent, primaryColor,
             Colors.transparent, // Row 2
             Colors.transparent, Colors.transparent, Colors.transparent, // Row 3
             Colors.transparent, Colors.transparent, Colors.transparent, // Row 4
