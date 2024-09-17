@@ -424,11 +424,13 @@ class SwapProvider {
             FromSwapInfo info => info.fromAmount.value,
             ToSwapInfo info => info.amountInMax.value,
           },
-        );
+        ) as RawEVMTransactionType0;
 
         swapState.value = SwapState.WaitingForUserApproval;
 
-        final signed = await signer(tx.serializedHex);
+        final signed = await signer(
+          tx.serializedUnsigned(rpc.type.chainId).toHex,
+        );
 
         swapState.value = SwapState.ApprovingToken;
 
@@ -512,12 +514,14 @@ class SwapProvider {
           to: ownAddress,
         ),
       _ => throw Exception("Invalid swap type"), // This should never happen
-    };
+    } as RawEVMTransactionType0;
 
     swapState.value = SwapState.WaitingForUserApproval;
 
     try {
-      final signedTX = await signer(unsignedTX.serializedHex);
+      final signedTX = await signer(
+        unsignedTX.serializedUnsigned(rpc.type.chainId).toHex,
+      );
 
       swapState.value = SwapState.Broadcasting;
 
@@ -706,11 +710,12 @@ Future<double> calculatePriceImpact(
               tokenB: path[i + 1].contractAddress,
             )
             .then(
-              (value) => UniswapV2Pair(
-                rpc: factory.rpc,
-                contractAddress: value,
-                tokenA: path[i],
-                tokenB: path[i + 1],
+              (value) => (
+                UniswapV2Pair(
+                  rpc: factory.rpc,
+                  contractAddress: value,
+                ),
+                path[i]
               ),
             ),
     ],
@@ -719,10 +724,10 @@ Future<double> calculatePriceImpact(
   final pairInfos = await Future.wait([
     for (final pair in pairs)
       () async {
-        final reserves = await pair.getReserves();
-        final token0 = await pair.token0();
+        final reserves = await pair.$1.getReserves();
+        final token0 = await pair.$1.token0();
 
-        return (reserves, token0, pair.tokenA);
+        return (reserves, token0, pair.$2);
       }.call()
   ]);
 

@@ -74,8 +74,6 @@ abstract class TokenRepository {
               (value) => UniswapV2Pair(
                 rpc: factory.rpc,
                 contractAddress: value,
-                tokenA: wrappedZeniqSmart,
-                tokenB: token,
               ),
             )
     ]);

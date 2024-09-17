@@ -194,6 +194,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                           child: SizedBox(
                             height: 56,
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 12.hSpacing,
                                 AssetPicture(
@@ -201,15 +202,15 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                                   size: 32,
                                 ),
                                 12.hSpacing,
-                                Column(
-                                  children: [
-                                    NomoText(
-                                      customToken.name,
-                                      style: context.typography.b3,
-                                    ),
-                                  ],
+                                Expanded(
+                                  child: NomoText(
+                                    customToken.name,
+                                    style: context.typography.b2,
+                                    maxLines: 1,
+                                    fit: true,
+                                  ),
                                 ),
-                                const Spacer(),
+                                12.hSpacing,
                                 PrimaryNomoButton(
                                   height: 42,
                                   width: 42,
@@ -250,11 +251,15 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                                 size: 32,
                               ),
                               12.hSpacing,
-                              NomoText(
-                                asset.name,
-                                style: context.typography.b2,
+                              Expanded(
+                                child: NomoText(
+                                  asset.name,
+                                  style: context.typography.b2,
+                                  maxLines: 1,
+                                  fit: true,
+                                ),
                               ),
-                              const Spacer(),
+                              12.hSpacing,
                               if (balanceListenable != null)
                                 ValueListenableBuilder(
                                   valueListenable: balanceListenable,
