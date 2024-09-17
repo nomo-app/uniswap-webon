@@ -29,7 +29,7 @@ dependencies:
   collection: ^1.18.0
   url_launcher: ^6.3.0
   mesh: ^0.4.1
-  pretty_qr_code: ^3.3.0
+  barcode_widget: ^2.0.4
 
 dev_dependencies:
   flutter_test:

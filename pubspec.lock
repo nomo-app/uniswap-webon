@@ -62,6 +62,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.11.0"
+  barcode:
+    dependency: transitive
+    description:
+      name: barcode
+      sha256: ab180ce22c6555d77d45f0178a523669db67f95856e3378259ef2ffeb43e6003
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.8"
+  barcode_widget:
+    dependency: "direct main"
+    description:
+      name: barcode_widget
+      sha256: "6f2c5b08659b1a5f4d88d183e6007133ea2f96e50e7b8bb628f03266c3931427"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.4"
   bip32:
     dependency: transitive
     description:
@@ -721,14 +737,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.1"
-  pretty_qr_code:
-    dependency: "direct main"
-    description:
-      name: pretty_qr_code
-      sha256: cbdb4af29da1c1fa21dd76f809646c591320ab9e435d3b0eab867492d43607d5
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.3.0"
   protobuf:
     dependency: transitive
     description:

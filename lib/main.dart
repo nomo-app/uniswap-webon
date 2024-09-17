@@ -1,3 +1,4 @@
+import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
@@ -9,7 +10,6 @@ import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart'
 import 'package:nomo_ui_kit/components/card/nomo_card.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
-import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
@@ -40,20 +40,6 @@ void main() async {
     address = await WebonKitDart.getEvmAddress();
   } catch (e) {
     print(e);
-    final qrCode = QrCode.fromData(
-      data: deeplink,
-      errorCorrectLevel: QrErrorCorrectLevel.H,
-    );
-
-    final qrImage = QrImage(qrCode);
-
-    const decoration = PrettyQrDecoration(
-      shape: PrettyQrSmoothSymbol(
-        color: Colors.black,
-        roundFactor: 0,
-      ),
-      // image: ,
-    );
 
     final textStyle = GoogleFonts.roboto(
       color: Colors.white,
@@ -142,9 +128,12 @@ void main() async {
                                         'https://nomo.app/webon/dex.zeniqswap.com',
                                       );
                                     },
-                                    child: PrettyQrView(
-                                      qrImage: qrImage,
-                                      decoration: decoration,
+                                    child: BarcodeWidget(
+                                      data: deeplink,
+                                      color: Colors.black,
+                                      barcode: Barcode.fromType(
+                                        BarcodeType.QrCode,
+                                      ),
                                     ),
                                   ),
                                 ),
