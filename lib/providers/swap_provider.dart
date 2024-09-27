@@ -85,7 +85,17 @@ final class FromSwapInfo extends SwapInfo {
   final Amount amountOut;
 
   double get rate {
-    return amountOut.value / fromAmount.value;
+    if (fromToken.decimals == toToken.decimals) {
+      return amountOut.value / fromAmount.value;
+    } else if (fromToken.decimals > toToken.decimals) {
+      return amountOut.value /
+          fromAmount.value /
+          BigInt.from(10).pow(fromToken.decimals - toToken.decimals).toDouble();
+    } else {
+      return amountOut.value /
+          fromAmount.value *
+          BigInt.from(10).pow(toToken.decimals - fromToken.decimals).toDouble();
+    }
   }
 
   String getPrice() {
@@ -117,7 +127,17 @@ final class ToSwapInfo extends SwapInfo {
   final Amount amountIn;
 
   double get rate {
-    return toAmount.value / amountIn.value;
+    if (fromToken.decimals == toToken.decimals) {
+      return amountIn.value / toAmount.value;
+    } else if (fromToken.decimals > toToken.decimals) {
+      return amountIn.value /
+          toAmount.value /
+          BigInt.from(10).pow(fromToken.decimals - toToken.decimals).toDouble();
+    } else {
+      return amountIn.value /
+          toAmount.value *
+          BigInt.from(10).pow(toToken.decimals - fromToken.decimals).toDouble();
+    }
   }
 
   String getPrice() {
@@ -588,10 +608,13 @@ Future<FromSwapInfo> fromSwapInfo({
     needsApproval = false;
   }
 
+  final firstOutput = outputs.first;
+
   final feeValue = switch (outputs.length) {
-    2 => outputs.first - ((outputs.first * 997.toBigInt) ~/ 1000.toBigInt),
-    3 => outputs.first -
-        ((outputs.first * 997.toBigInt * 997.toBigInt) ~/ 1000000.toBigInt),
+    _ when firstOutput < 1000.toBigInt => 0.toBigInt, // No fee
+    2 => firstOutput - ((firstOutput * 997.toBigInt) ~/ 1000.toBigInt),
+    3 => firstOutput -
+        ((firstOutput * 997.toBigInt * 997.toBigInt) ~/ 1000000.toBigInt),
     _ => throw Exception("Invalid path length"),
   };
 
@@ -649,9 +672,10 @@ Future<ToSwapInfo> toSwapInfo({
   }
 
   final feeValue = switch (inputs.length) {
-    2 => inputs.first - ((inputs.first * 997.toBigInt) ~/ 1000.toBigInt),
-    3 => inputs.first -
-        ((inputs.first * 997.toBigInt * 997.toBigInt) ~/ 1000000.toBigInt),
+    _ when inputValue < 1000.toBigInt => 0.toBigInt, // No fee
+    2 => inputValue - ((inputValue * 997.toBigInt) ~/ 1000.toBigInt),
+    3 => inputValue -
+        ((inputValue * 997.toBigInt * 997.toBigInt) ~/ 1000000.toBigInt),
     _ => throw Exception("Invalid path length"),
   };
 
@@ -715,7 +739,8 @@ Future<double> calculatePriceImpact(
                   rpc: factory.rpc,
                   contractAddress: value,
                 ),
-                path[i]
+                path[i],
+                path[i + 1],
               ),
             ),
     ],
@@ -724,23 +749,44 @@ Future<double> calculatePriceImpact(
   final pairInfos = await Future.wait([
     for (final pair in pairs)
       () async {
-        final reserves = await pair.$1.getReserves();
-        final token0 = await pair.$1.token0();
+        final (_pair, path1, path2) = pair;
 
-        return (reserves, token0, pair.$2);
+        final reserves = await _pair.getReserves();
+        final token0Contract = await _pair.token0();
+        final token1Contract = await _pair.token1();
+
+        final token0 = path.singleWhere(
+          (erc20) => erc20.lowerCaseAddress == token0Contract,
+        );
+
+        final token1 = path.singleWhere(
+          (erc20) => erc20.lowerCaseAddress == token1Contract,
+        );
+
+        return ((token0, reserves.$1), (token1, reserves.$2), (path1, path2));
       }.call()
   ]);
 
   final quotedAmount = pairInfos.fold(
     amountIn,
     (amountIn, pairInfo) {
-      final reserves = pairInfo.$1;
-      final token0 = pairInfo.$2;
-      final tokenA = pairInfo.$3;
+      final (token0Info, token1Info, path) = pairInfo;
 
-      final price = token0 == tokenA.contractAddress.toLowerCase()
-          ? reserves.$2 / reserves.$1
-          : reserves.$1 / reserves.$2;
+      final token0Decimals = token0Info.$1.decimals;
+      final token1Decimals = token1Info.$1.decimals;
+      final decimalsFactor =
+          BigInt.from(10).pow((token0Decimals - token1Decimals).abs());
+
+      var price = token0Info.$1 == path.$1
+          ? token1Info.$2 / token0Info.$2
+          : token0Info.$2 / token1Info.$2;
+
+      if (path.$1.decimals < path.$2.decimals) {
+        amountIn = amountIn * decimalsFactor; // Correct for decimals
+        price = price / decimalsFactor.toInt();
+      } else {
+        price = price * decimalsFactor.toInt();
+      }
 
       final amountOut = amountIn.multiply(0.997).multiply(price);
       return amountOut;
