@@ -306,11 +306,15 @@ class SwapProvider {
     final String oldValue;
     if (lastAmountChanged == LastAmountChanged.From) {
       oldValue = fromAmountString.value;
+
       fromAmountString.value = '';
     } else {
       oldValue = toAmountString.value;
+
       toAmountString.value = '';
     }
+
+    swapInfo.value = null;
 
     shouldRecalculateSwapType = true;
 
