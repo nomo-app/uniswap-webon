@@ -120,7 +120,7 @@ final class FromSwapInfo extends SwapInfo {
 
   String getPrice(bool inverse) {
     if (inverse) {
-      return "${(1 / rate).toString().format(3)} ${toToken.name} per ${fromToken.name}";
+      return "${(1 / rate).toString().format(3)} ${fromToken.name} per ${toToken.name}";
     }
     return "${rate.toString().format(3)} ${toToken.name} per ${fromToken.name}";
   }
@@ -167,7 +167,7 @@ final class ToSwapInfo extends SwapInfo {
     if (inverse) {
       return "${rate.toString().format(3)} ${fromToken.symbol} per ${toToken.symbol}";
     }
-    return "${(1 / rate).toString().format(3)} ${fromToken.symbol} per ${toToken.symbol}";
+    return "${(1 / rate).toString().format(3)} ${toToken.symbol} per ${fromToken.symbol}";
   }
 
   const ToSwapInfo({
