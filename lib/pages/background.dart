@@ -19,7 +19,7 @@ class AppBackground extends StatelessWidget {
             (0.0, 0.8).v, (0.5, 0.8).v, (1.0, 0.8).v, // Row 3
             (0.0, 1.0).v, (0.5, 1.0).v, (1.0, 1.0).v, // Row 4
           ],
-          colors: [
+          colors: const [
             Colors.transparent, Colors.transparent, Colors.transparent, // Row 1
             Colors.transparent, primaryColor,
             Colors.transparent, // Row 2
