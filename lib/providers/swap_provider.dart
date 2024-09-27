@@ -87,6 +87,16 @@ sealed class SwapInfo {
     required this.path,
     required this.fee,
   });
+
+  Amount get fromAmount => switch (this) {
+        FromSwapInfo info => info.fromAmount,
+        ToSwapInfo info => info.amountIn,
+      };
+
+  Amount get toAmount => switch (this) {
+        FromSwapInfo info => info.amountOut,
+        ToSwapInfo info => info.toAmount,
+      };
 }
 
 final class FromSwapInfo extends SwapInfo {
@@ -293,12 +303,21 @@ class SwapProvider {
     fromToken.value = to;
     toToken.value = from;
 
+    final String oldValue;
+    if (lastAmountChanged == LastAmountChanged.From) {
+      oldValue = fromAmountString.value;
+      fromAmountString.value = '';
+    } else {
+      oldValue = toAmountString.value;
+      toAmountString.value = '';
+    }
+
     shouldRecalculateSwapType = true;
 
     if (lastAmountChanged == LastAmountChanged.From) {
-      toAmountString.value = fromAmountString.value;
-    } else if (lastAmountChanged == LastAmountChanged.To) {
-      fromAmountString.value = toAmountString.value;
+      toAmountString.value = oldValue;
+    } else {
+      fromAmountString.value = oldValue;
     }
   }
 

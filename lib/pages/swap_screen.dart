@@ -416,10 +416,16 @@ class _SwappingScreenState extends State<SwappingScreen> {
                             margin: const EdgeInsets.symmetric(vertical: 8),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 16),
-                            bottom: SwapInputBottom(
-                              token: token,
-                              showMax: false,
-                              isFrom: false,
+                            bottom: ValueListenableBuilder(
+                              valueListenable: swapProvider.fromToken,
+                              builder: (context, fromToken, _) {
+                                return SwapInputBottom(
+                                  token: token,
+                                  showMax: false,
+                                  isFrom: false,
+                                  otherToken: fromToken,
+                                );
+                              },
                             ),
                             border: const Border.fromBorderSide(
                               BorderSide(color: Colors.white10),
@@ -727,7 +733,7 @@ class _SwappingScreenState extends State<SwappingScreen> {
                       final priceImpact =
                           swapProvider.swapInfo.value?.priceImpact;
 
-                      if (priceImpact != null && priceImpact > 0.03) {
+                      if (priceImpact != null && priceImpact > 5) {
                         return NomoCard(
                           backgroundColor: context.colors.error,
                           padding: EdgeInsets.symmetric(
@@ -896,6 +902,7 @@ class SwapInputTrailling extends StatelessWidget {
 
 class SwapInputBottom extends StatelessWidget {
   final CoinEntity? token;
+  final CoinEntity? otherToken;
   final bool showMax;
   final bool isFrom;
 
@@ -903,6 +910,7 @@ class SwapInputBottom extends StatelessWidget {
     super.key,
     required this.token,
     required this.isFrom,
+    this.otherToken,
     this.showMax = true,
   });
 
@@ -914,6 +922,10 @@ class SwapInputBottom extends StatelessWidget {
         token != null ? balanceNotifier.notifierForToken(token!) : null;
     final priceListenable =
         token != null ? balanceNotifier.priceNotifierForToken(token!) : null;
+
+    final otherPriceListenable = otherToken != null
+        ? balanceNotifier.priceNotifierForToken(otherToken!)
+        : null;
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 200),
@@ -928,30 +940,94 @@ class SwapInputBottom extends StatelessWidget {
               [
                 balanceListenable,
                 priceListenable,
-                isFrom ? swapProvider.fromAmount : swapProvider.toAmount
+                swapProvider.swapInfo,
               ],
             ),
             builder: (context, child) {
               final balanceAsync = balanceListenable.value;
               final priceAsync = priceListenable.value;
+              final otherPriceAsync = otherPriceListenable?.value;
               final amount = isFrom
-                  ? swapProvider.fromAmount.value
-                  : swapProvider.toAmount.value;
+                  ? swapProvider.swapInfo.value?.fromAmount
+                  : swapProvider.swapInfo.value?.toAmount;
+
+              final otherAmount = isFrom
+                  ? swapProvider.swapInfo.value?.toAmount
+                  : swapProvider.swapInfo.value?.fromAmount;
+
               return Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: Row(
                   children: [
                     priceAsync.when(
-                      data: (value) {
-                        return NomoText(
-                          switch (amount) {
-                            Amount amount when amount.value > BigInt.zero =>
-                              "${value.currency.symbol}${(value.price * amount.displayDouble).toStringAsFixed(5)}",
-                            _ => "${value.currency.symbol}0.00",
-                          },
-                          style: context.typography.b1,
-                          fontWeight: FontWeight.bold,
-                          opacity: 0.8,
+                      data: (price) {
+                        final priceAmount = switch (amount) {
+                          Amount amount when amount.value > BigInt.zero =>
+                            price.price * amount.displayDouble,
+                          _ => null,
+                        };
+                        final priceAmountString = switch (amount) {
+                          Amount amount when amount.value > BigInt.zero =>
+                            "${price.currency.symbol}${(price.price * amount.displayDouble).toStringAsFixed(5)}",
+                          _ => "${price.currency.symbol}0.00",
+                        };
+                        return Row(
+                          children: [
+                            NomoText(
+                              priceAmountString,
+                              style: context.typography.b1,
+                              fontWeight: FontWeight.bold,
+                              opacity: 0.8,
+                            ),
+                            if (otherPriceAsync != null)
+                              otherPriceAsync.when(
+                                data: (otherPrice) {
+                                  final otherPriceAmount =
+                                      switch (otherAmount) {
+                                    Amount amount
+                                        when amount.value > BigInt.zero =>
+                                      (otherPrice.price * amount.displayDouble),
+                                    _ => null,
+                                  };
+
+                                  if (otherPriceAmount == null ||
+                                      priceAmount == null ||
+                                      otherAmount == null) {
+                                    return SizedBox.shrink();
+                                  }
+
+                                  final priceDiff =
+                                      (priceAmount - otherPriceAmount) /
+                                          otherPriceAmount *
+                                          100;
+
+                                  if (priceDiff.abs() < 1) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  return NomoText(
+                                    "  (${priceDiff > 0 ? "+" : "-"}${priceDiff.abs().toStringAsFixed(0)}%)",
+                                    style: context.typography.b1,
+                                    fontWeight: FontWeight.bold,
+                                    color: priceDiff > 0
+                                        ? Colors.greenAccent
+                                        : context.colors.error,
+                                  );
+                                },
+                                loading: () => ShimmerLoading(
+                                  isLoading: true,
+                                  child: Container(
+                                    width: 64,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      color: context.colors.background2,
+                                    ),
+                                  ),
+                                ),
+                                error: (error) => SizedBox.shrink(),
+                              ),
+                          ],
                         );
                       },
                       loading: () => ShimmerLoading(
@@ -1084,7 +1160,13 @@ class AssetPicture extends StatelessWidget {
               ),
             ),
           ),
-          error: (error) => const Icon(Icons.error),
+          error: (error) => ClipOval(
+            child: Image.asset(
+              "assets/blank-token.png",
+              width: size,
+              height: size,
+            ),
+          ),
         );
       },
     );

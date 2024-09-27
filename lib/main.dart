@@ -33,7 +33,7 @@ void main() async {
   final String address;
 
   try {
-    if (WebonKitDart.isFallBackMode()) {
+    if (WebonKitDart.isFallBackMode() && kDebugMode == false) {
       throw Exception('Fallback mode is active');
     }
 
@@ -256,7 +256,7 @@ Future<void> fetchTokens() async {
 
     final assetsWithLiquidity = await TokenRepository.fetchTokensWhereLiquidty(
       allTokens: allAppAssets,
-      minZeniqInPool: 10000,
+      minZeniqInPool: 1,
     );
 
     assets.addAll(assetsWithLiquidity);
@@ -265,7 +265,7 @@ Future<void> fetchTokens() async {
       final fixedTokens = await TokenRepository.fetchFixedTokens();
       final tokens = await TokenRepository.fetchTokensWhereLiquidty(
         allTokens: fixedTokens,
-        minZeniqInPool: 10000,
+        minZeniqInPool: 1,
       );
 
       assets.addAll(tokens);
