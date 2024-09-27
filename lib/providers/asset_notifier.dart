@@ -10,7 +10,7 @@ const _fetchInterval = Duration(minutes: 1);
 
 class AssetNotifier {
   final String address;
-  final List<TokenEntity> tokens;
+  final List<CoinEntity> tokens;
   final EvmRpcInterface rpc = EvmRpcInterface(
     type: ZeniqSmartNetwork,
     clients: [
@@ -22,11 +22,11 @@ class AssetNotifier {
 
   Currency get currency => currencyNotifier.value;
 
-  final Map<TokenEntity, ValueNotifier<AsyncValue<Amount>>> _balances = {};
-  final Map<TokenEntity, ValueNotifier<AsyncValue<PriceState>>> _prices = {};
-  final Map<TokenEntity, ValueNotifier<AsyncValue<ImageEntity>>> _images = {};
+  final Map<CoinEntity, ValueNotifier<AsyncValue<Amount>>> _balances = {};
+  final Map<CoinEntity, ValueNotifier<AsyncValue<PriceState>>> _prices = {};
+  final Map<CoinEntity, ValueNotifier<AsyncValue<ImageEntity>>> _images = {};
 
-  void addPreviewToken(TokenEntity token) {
+  void addPreviewToken(CoinEntity token) {
     _balances[token] = ValueNotifier(AsyncValue.loading());
     _prices[token] = ValueNotifier(AsyncValue.loading());
     _images[token] = ValueNotifier(AsyncValue.loading());
@@ -35,7 +35,7 @@ class AssetNotifier {
     fetchImageForToken(token);
   }
 
-  void addToken(TokenEntity token) {
+  void addToken(CoinEntity token) {
     tokens.add(token);
 
     fetchBalanceForToken(token);
@@ -68,7 +68,7 @@ class AssetNotifier {
   Future<void> fetchAllImages() async =>
       await Future.wait(tokens.map(fetchImageForToken));
 
-  Future<void> fetchImageForToken(TokenEntity token) async {
+  Future<void> fetchImageForToken(CoinEntity token) async {
     final currentImage = _images[token]!.value;
 
     if (currentImage.hasValue) return;
@@ -84,7 +84,7 @@ class AssetNotifier {
   Future<void> fetchAllBalances() async =>
       await Future.wait(tokens.map(fetchBalanceForToken));
 
-  Future<void> fetchBalanceForToken(TokenEntity token) async {
+  Future<void> fetchBalanceForToken(CoinEntity token) async {
     try {
       final balance = await (token.isERC20
           ? rpc.fetchTokenBalance(address, token.asEthBased!)
@@ -114,7 +114,7 @@ class AssetNotifier {
     }
   }
 
-  Future<void> fetchPriceForToken(TokenEntity token) async {
+  Future<void> fetchPriceForToken(CoinEntity token) async {
     try {
       final result = await PriceRepository.fetchSingle(token, currency);
       _prices[token]!.value = AsyncValue.value(
@@ -125,15 +125,15 @@ class AssetNotifier {
     }
   }
 
-  ValueNotifier<AsyncValue<Amount>>? notifierForToken(TokenEntity token) =>
+  ValueNotifier<AsyncValue<Amount>>? notifierForToken(CoinEntity token) =>
       _balances[token];
 
   ValueNotifier<AsyncValue<PriceState>>? priceNotifierForToken(
-          TokenEntity token) =>
+          CoinEntity token) =>
       _prices[token];
 
   ValueNotifier<AsyncValue<ImageEntity>>? imageNotifierForToken(
-          TokenEntity token) =>
+          CoinEntity token) =>
       _images[token];
 }
 

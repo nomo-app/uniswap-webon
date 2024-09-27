@@ -63,8 +63,8 @@ sealed class SwapInfo {
   final double slippage;
   final double priceImpact;
   final Amount fee;
-  final TokenEntity fromToken;
-  final TokenEntity toToken;
+  final CoinEntity fromToken;
+  final CoinEntity toToken;
   final bool needsApproval;
   final List<String> path;
 
@@ -176,8 +176,8 @@ class SwapProvider {
   final String ownAddress;
   final Future<String> Function(String tx) signer;
 
-  final ValueNotifier<TokenEntity?> fromToken = ValueNotifier(zeniqSmart);
-  final ValueNotifier<TokenEntity?> toToken = ValueNotifier(null);
+  final ValueNotifier<CoinEntity?> fromToken = ValueNotifier(zeniqSmart);
+  final ValueNotifier<CoinEntity?> toToken = ValueNotifier(null);
   final ValueNotifier<Amount?> fromAmount = ValueNotifier(null);
   final ValueNotifier<Amount?> toAmount = ValueNotifier(null);
   final ValueNotifier<String> fromAmountString = ValueNotifier('');
@@ -266,14 +266,14 @@ class SwapProvider {
     }
   }
 
-  void setFromToken(TokenEntity token) {
+  void setFromToken(CoinEntity token) {
     if (token == toToken.value) {
       toToken.value = fromToken.value;
     }
     fromToken.value = token;
   }
 
-  void setToToken(TokenEntity token) {
+  void setToToken(CoinEntity token) {
     if (token == fromToken.value) {
       fromToken.value = toToken.value;
     }
@@ -339,44 +339,44 @@ class SwapProvider {
 
     swapInfo.value = await switch (swapType!) {
       SwapType.ExactZeniqForToken => fromSwapInfo(
-          path: [wrappedZeniqSmart, toToken.value as EthBasedTokenEntity],
+          path: [wrappedZeniqSmart, toToken.value as ERC20Entity],
           own: ownAddress,
           fromAmount: fromAmount.value!,
           slippage: slippage,
         ),
       SwapType.ExactTokenForZeniq => fromSwapInfo(
-          path: [fromToken.value as EthBasedTokenEntity, wrappedZeniqSmart],
+          path: [fromToken.value as ERC20Entity, wrappedZeniqSmart],
           own: ownAddress,
           fromAmount: fromAmount.value!,
           slippage: slippage,
         ),
       SwapType.ExactTokenForToken => fromSwapInfo(
           path: [
-            fromToken.value as EthBasedTokenEntity,
+            fromToken.value as ERC20Entity,
             wrappedZeniqSmart,
-            toToken.value as EthBasedTokenEntity,
+            toToken.value as ERC20Entity,
           ],
           own: ownAddress,
           fromAmount: fromAmount.value!,
           slippage: slippage,
         ),
       SwapType.ZeniqForExactToken => toSwapInfo(
-          path: [wrappedZeniqSmart, toToken.value as EthBasedTokenEntity],
+          path: [wrappedZeniqSmart, toToken.value as ERC20Entity],
           toAmount: toAmount.value!,
           own: ownAddress,
           slippage: slippage,
         ),
       SwapType.TokenForExactZeniq => toSwapInfo(
-          path: [fromToken.value as EthBasedTokenEntity, wrappedZeniqSmart],
+          path: [fromToken.value as ERC20Entity, wrappedZeniqSmart],
           toAmount: toAmount.value!,
           own: ownAddress,
           slippage: slippage,
         ),
       SwapType.TokenForExactToken => toSwapInfo(
           path: [
-            fromToken.value as EthBasedTokenEntity,
+            fromToken.value as ERC20Entity,
             wrappedZeniqSmart,
-            toToken.value as EthBasedTokenEntity
+            toToken.value as ERC20Entity
           ],
           toAmount: toAmount.value!,
           own: ownAddress,
@@ -552,7 +552,7 @@ class SwapProvider {
 }
 
 Future<FromSwapInfo> fromSwapInfo({
-  required List<EthBasedTokenEntity> path,
+  required List<ERC20Entity> path,
   required Amount fromAmount,
   required String own,
   required double slippage,
@@ -614,7 +614,7 @@ Future<FromSwapInfo> fromSwapInfo({
 }
 
 Future<ToSwapInfo> toSwapInfo({
-  required List<EthBasedTokenEntity> path,
+  required List<ERC20Entity> path,
   required Amount toAmount,
   required String own,
   required double slippage,
@@ -698,7 +698,7 @@ class InheritedSwapProvider extends InheritedWidget {
 }
 
 Future<double> calculatePriceImpact(
-  List<EthBasedTokenEntity> path,
+  List<ERC20Entity> path,
   BigInt amountIn,
 ) async {
   final pairs = await Future.wait(

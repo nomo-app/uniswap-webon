@@ -22,7 +22,7 @@ import 'package:zeniq_swap_frontend/theme.dart';
 
 final appRouter = AppRouter();
 
-final assetsNotifier = ValueNotifier(<TokenEntity>[]);
+final assetsNotifier = ValueNotifier(<CoinEntity>[]);
 
 const deeplink = 'https://nomo.app/webon/dex.zeniqswap.com';
 
@@ -230,7 +230,7 @@ class MyApp extends StatelessWidget {
 }
 
 Future<void> fetchTokens() async {
-  final Set<TokenEntity> assets = {zeniqSmart};
+  final Set<CoinEntity> assets = {zeniqSmart};
   try {
     final allAppAssets = await WebonKitDart.getAllAssets().then(
       (assets) => assets
@@ -239,7 +239,7 @@ Future<void> fetchTokens() async {
           })
           .map((asset) {
             if (asset.contractAddress != null) {
-              return EthBasedTokenEntity(
+              return ERC20Entity(
                 name: asset.name,
                 symbol: asset.symbol,
                 decimals: asset.decimals,
@@ -250,7 +250,7 @@ Future<void> fetchTokens() async {
 
             return null;
           })
-          .whereType<EthBasedTokenEntity>()
+          .whereType<ERC20Entity>()
           .toList(),
     );
 

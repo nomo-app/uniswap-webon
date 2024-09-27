@@ -64,7 +64,7 @@ class PriceEntity {
         isPending: json['isPending'] as bool,
       );
 
-  bool matchToken(TokenEntity token) {
+  bool matchToken(CoinEntity token) {
     if (token.asEthBased?.contractAddress.toLowerCase() ==
             avinocZSC.contractAddress.toLowerCase() &&
         contract.toLowerCase() == avinocETH.contractAddress.toLowerCase()) {
@@ -82,7 +82,7 @@ abstract class PriceRepository {
   ///
   static Future<List<PriceEntity>> fetchAll({
     required Currency currency,
-    required Iterable<TokenEntity> tokens,
+    required Iterable<CoinEntity> tokens,
   }) async {
     if (tokens.length <= 20) {
       return _fetchAllCatchEmpty(currency: currency, tokens: tokens);
@@ -103,7 +103,7 @@ abstract class PriceRepository {
 
   static Future<List<PriceEntity>> _fetchAllCatchEmpty({
     required Currency currency,
-    required Iterable<TokenEntity> tokens,
+    required Iterable<CoinEntity> tokens,
   }) async {
     final List<PriceEntity> prices = [];
     try {
@@ -121,7 +121,7 @@ abstract class PriceRepository {
 
   static Future<List<PriceEntity>> _fetchAll({
     required Currency currency,
-    required Iterable<TokenEntity> tokens,
+    required Iterable<CoinEntity> tokens,
   }) async {
     final uri = Uri.parse('$PRICE_ENDPOINT/currentpricelist');
 
@@ -171,13 +171,13 @@ abstract class PriceRepository {
   /// Single
   ///
   static Future<double> fetchSingle(
-    TokenEntity token,
+    CoinEntity token,
     Currency currency,
   ) async {
     if (token == avinocZSC) {
       token = avinocETH; // workaround for a price-service bug
     }
-    final endpoint = token is EthBasedTokenEntity && token != tupanToken
+    final endpoint = token is ERC20Entity && token != tupanToken
         ? "$PRICE_ENDPOINT/currentprice/${token.contractAddress}/${currency.name}/${chaindIdMap[token.chainID]!}"
         : "$PRICE_ENDPOINT/currentprice/${getAssetName(token)}/${currency.name}";
 
@@ -241,13 +241,13 @@ abstract class PriceRepository {
   ///
 
   static List<String> _getTokenRequestBody(
-    TokenEntity token,
+    CoinEntity token,
     final Currency currency,
   ) {
     if (token == avinocZSC) {
       token = avinocETH; // workaround for a price-service bug
     }
-    if (token is EthBasedTokenEntity && token != tupanToken) {
+    if (token is ERC20Entity && token != tupanToken) {
       return [
         token.contractAddress,
         currency.name,
@@ -261,7 +261,7 @@ abstract class PriceRepository {
     ];
   }
 
-  static String getAssetName(TokenEntity token) {
+  static String getAssetName(CoinEntity token) {
     final String symbol;
 
     if (token == zeniqCoin ||

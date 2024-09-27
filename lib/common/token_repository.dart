@@ -9,7 +9,7 @@ import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 abstract class TokenRepository {
   static const String endpoint = "https://webon.info/api/tokens";
 
-  static Future<List<EthBasedTokenEntity>> fetchFixedTokens() async {
+  static Future<List<ERC20Entity>> fetchFixedTokens() async {
     final response = await HTTPService.client.get(
       Uri.parse(endpoint),
       headers: {"Content-Type": "application/json"},
@@ -48,7 +48,7 @@ abstract class TokenRepository {
             if (chainId_i == null) {
               return null;
             }
-            return EthBasedTokenEntity.fromJson(
+            return ERC20Entity.fromJson(
               jsonMap,
               allowDeletion: true,
               chainID: chainId_i,
@@ -56,11 +56,11 @@ abstract class TokenRepository {
           }
           return null;
         }.call()
-    ].whereType<EthBasedTokenEntity>().toList();
+    ].whereType<ERC20Entity>().toList();
   }
 
-  static Future<List<EthBasedTokenEntity>> fetchTokensWhereLiquidty({
-    required List<EthBasedTokenEntity> allTokens,
+  static Future<List<ERC20Entity>> fetchTokensWhereLiquidty({
+    required List<ERC20Entity> allTokens,
     required double minZeniqInPool,
   }) async {
     final allPairs = await Future.wait([
@@ -78,7 +78,7 @@ abstract class TokenRepository {
             )
     ]);
 
-    Future<EthBasedTokenEntity?> fetchTokenWithLiquidityFromPair(
+    Future<ERC20Entity?> fetchTokenWithLiquidityFromPair(
         UniswapV2Pair pair) async {
       if (pair.contractAddress ==
           "0x0000000000000000000000000000000000000000") {
@@ -114,7 +114,7 @@ abstract class TokenRepository {
     final tokensWithLiquidity = await Future.wait(
       [for (final pair in allPairs) fetchTokenWithLiquidityFromPair(pair)],
     ).then(
-      (value) => value.whereType<EthBasedTokenEntity>().toSet(),
+      (value) => value.whereType<ERC20Entity>().toSet(),
     );
 
     return tokensWithLiquidity.toList();

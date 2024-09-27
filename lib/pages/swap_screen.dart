@@ -669,9 +669,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
 }
 
 class SwapInputTrailling extends StatelessWidget {
-  final TokenEntity? token;
+  final CoinEntity? token;
 
-  final void Function(TokenEntity token) onTokenSelected;
+  final void Function(CoinEntity token) onTokenSelected;
 
   const SwapInputTrailling({
     super.key,
@@ -682,7 +682,7 @@ class SwapInputTrailling extends StatelessWidget {
   void onPressed(BuildContext context) async {
     final result = await NomoNavigator.fromKey.push(SelectAssetDialogRoute());
 
-    if (result is TokenEntity) {
+    if (result is CoinEntity) {
       onTokenSelected(result);
     }
   }
@@ -745,7 +745,7 @@ class SwapInputTrailling extends StatelessWidget {
 }
 
 class SwapInputBottom extends StatelessWidget {
-  final TokenEntity? token;
+  final CoinEntity? token;
   final bool showMax;
   final bool isFrom;
 
@@ -881,7 +881,7 @@ class SwapInputBottom extends StatelessWidget {
 }
 
 class AssetPicture extends StatelessWidget {
-  final TokenEntity token;
+  final CoinEntity token;
   final double size;
 
   const AssetPicture({

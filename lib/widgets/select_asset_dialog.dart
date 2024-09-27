@@ -23,10 +23,10 @@ class SelectAssetDialog extends StatefulWidget {
 
 class _SelectAssetDialogState extends State<SelectAssetDialog> {
   late final ValueNotifier<String> searchNotifier = ValueNotifier('');
-  late final ValueNotifier<EthBasedTokenEntity?> customTokenNotifier =
+  late final ValueNotifier<ERC20Entity?> customTokenNotifier =
       ValueNotifier(null);
 
-  late ValueNotifier<List<TokenEntity>> filteredAssetsNotifer;
+  late ValueNotifier<List<CoinEntity>> filteredAssetsNotifer;
   late AssetNotifier assetNotifier;
 
   @override
@@ -69,7 +69,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
 
     final existsAlready = assetNotifier.tokens.any(
       (token) {
-        return token is EthBasedTokenEntity &&
+        return token is ERC20Entity &&
             token.contractAddress.toLowerCase() == searchText;
       },
     );
@@ -86,7 +86,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
       return;
     }
 
-    final customToken = EthBasedTokenEntity(
+    final customToken = ERC20Entity(
       name: tokenInfo.name,
       symbol: tokenInfo.symbol,
       decimals: tokenInfo.decimals,
@@ -110,7 +110,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
       (asset) {
         final name = asset.name.toLowerCase().contains(searchText);
         final symbol = asset.symbol.toLowerCase().contains(searchText);
-        final address = asset is EthBasedTokenEntity
+        final address = asset is ERC20Entity
             ? asset.contractAddress.toLowerCase().contains(searchText)
             : false;
 
