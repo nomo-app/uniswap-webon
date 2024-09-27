@@ -28,7 +28,15 @@ enum SwapType {
   ExactZeniqForToken,
   ZeniqForExactToken,
   TokenForExactZeniq,
-  TokenForExactToken,
+  TokenForExactToken;
+
+  bool get isFrom => switch (this) {
+        SwapType.ExactTokenForToken ||
+        SwapType.ExactTokenForZeniq ||
+        SwapType.ExactZeniqForToken =>
+          true,
+        _ => false,
+      };
 }
 
 enum SwapState {
@@ -41,14 +49,16 @@ enum SwapState {
   Broadcasting,
   Confirming,
   Swapped,
-  Error;
+  Error,
+  InsufficientLiquidity;
 
   bool get inputEnabled => switch (this) {
         SwapState.None ||
         SwapState.ReadyForSwap ||
         SwapState.Error ||
         SwapState.TokenApprovalError ||
-        SwapState.NeedsTokenApproval =>
+        SwapState.NeedsTokenApproval ||
+        SwapState.InsufficientLiquidity =>
           true,
         _ => false,
       };
@@ -98,7 +108,10 @@ final class FromSwapInfo extends SwapInfo {
     }
   }
 
-  String getPrice() {
+  String getPrice(bool inverse) {
+    if (inverse) {
+      return "${(1 / rate).toString().format(3)} ${toToken.name} per ${fromToken.name}";
+    }
     return "${rate.toString().format(3)} ${toToken.name} per ${fromToken.name}";
   }
 
@@ -140,7 +153,10 @@ final class ToSwapInfo extends SwapInfo {
     }
   }
 
-  String getPrice() {
+  String getPrice(bool inverse) {
+    if (inverse) {
+      return "${rate.toString().format(3)} ${fromToken.symbol} per ${toToken.symbol}";
+    }
     return "${(1 / rate).toString().format(3)} ${fromToken.symbol} per ${toToken.symbol}";
   }
 
@@ -404,9 +420,11 @@ class SwapProvider {
         ),
     };
 
-    swapState.value = swapInfo.value!.needsApproval
-        ? SwapState.NeedsTokenApproval
-        : SwapState.ReadyForSwap;
+    swapState.value = swapInfo.value == null
+        ? SwapState.InsufficientLiquidity
+        : swapInfo.value!.needsApproval
+            ? SwapState.NeedsTokenApproval
+            : SwapState.ReadyForSwap;
 
     shouldRecalculateSwapType = false;
 
@@ -417,6 +435,12 @@ class SwapProvider {
       case ToSwapInfo swapInfo:
         fromAmountString.value = swapInfo.amountIn.displayValue.format(5);
         break;
+      case null:
+        if (swapType!.isFrom) {
+          toAmountString.value = '';
+        } else {
+          fromAmountString.value = '';
+        }
       default:
     }
 
@@ -571,18 +595,23 @@ class SwapProvider {
   }
 }
 
-Future<FromSwapInfo> fromSwapInfo({
+Future<FromSwapInfo?> fromSwapInfo({
   required List<ERC20Entity> path,
   required Amount fromAmount,
   required String own,
   required double slippage,
 }) async {
   final contractPath = path.map((e) => e.contractAddress).toList();
-
-  final outputs = await zeniqSwapRouter.getAmountsOut(
-    amountIn: fromAmount.value,
-    path: contractPath,
-  );
+  final List<BigInt> outputs;
+  try {
+    outputs = await zeniqSwapRouter.getAmountsOut(
+      amountIn: fromAmount.value,
+      path: contractPath,
+    );
+    if (outputs.last == BigInt.zero) return null;
+  } catch (e) {
+    return null;
+  }
 
   final _s = 1000.toBigInt - Amount.convert(value: slippage, decimals: 1).value;
 
@@ -636,7 +665,7 @@ Future<FromSwapInfo> fromSwapInfo({
   );
 }
 
-Future<ToSwapInfo> toSwapInfo({
+Future<ToSwapInfo?> toSwapInfo({
   required List<ERC20Entity> path,
   required Amount toAmount,
   required String own,
@@ -644,10 +673,17 @@ Future<ToSwapInfo> toSwapInfo({
 }) async {
   final contractPath = path.map((e) => e.contractAddress).toList();
 
-  final inputs = await zeniqSwapRouter.getAmountsIn(
-    amountOut: toAmount.value,
-    path: contractPath,
-  );
+  final List<BigInt> inputs;
+
+  try {
+    inputs = await zeniqSwapRouter.getAmountsIn(
+      amountOut: toAmount.value,
+      path: contractPath,
+    );
+    if (inputs.first == BigInt.zero) return null;
+  } catch (e) {
+    return null;
+  }
 
   final _s = 1000.toBigInt + Amount.convert(value: slippage, decimals: 1).value;
 

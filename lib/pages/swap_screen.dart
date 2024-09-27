@@ -40,6 +40,8 @@ class _SwappingScreenState extends State<SwappingScreen> {
   late final ValueNotifier<String?> fromErrorNotifier = ValueNotifier(null);
   late final ValueNotifier<String?> toErrorNotifier = ValueNotifier(null);
 
+  late final ValueNotifier<bool> inversePriceRateNotifer = ValueNotifier(false);
+
   late final FocusNode fromFocusNode = FocusNode();
   late final FocusNode toFocusNode = FocusNode();
 
@@ -457,157 +459,301 @@ class _SwappingScreenState extends State<SwappingScreen> {
                   ValueListenableBuilder(
                     valueListenable: swapProvider.swapInfo,
                     builder: (context, swapInfo, child) {
-                      if (swapInfo == null) {
-                        return const SizedBox();
-                      }
+                      return AnimatedOpacity(
+                        duration: const Duration(milliseconds: 200),
+                        opacity: swapInfo == null ? 0 : 1,
+                        child: AnimatedSize(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeInOut,
+                          child: swapInfo == null
+                              ? Row()
+                              : Builder(builder: (context) {
+                                  final priceImpactInfo =
+                                      swapInfo.priceImpact.formatPriceImpact();
 
-                      final priceImpactInfo =
-                          swapInfo.priceImpact.formatPriceImpact();
+                                  final priceImpactStyle =
+                                      context.typography.b1.copyWith(
+                                    color: priceImpactInfo.$2,
+                                  );
 
-                      final priceImpactStyle = context.typography.b1.copyWith(
-                        color: priceImpactInfo.$2,
-                      );
-
-                      return Column(
-                        children: [
-                          NomoDividerThemeOverride(
-                            data: NomoDividerThemeDataNullable(
-                              crossAxisSpacing: 12,
-                              color: Colors.white12,
-                            ),
-                            child: NomoInfoItemThemeOverride(
-                              data: NomoInfoItemThemeDataNullable(
-                                titleStyle: context.typography.b1
-                                    .copyWith(color: Colors.white60),
-                                valueStyle: context.typography.b1,
-                              ),
-                              child: NomoCard(
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 24),
-                                backgroundColor:
-                                    context.colors.background2.withOpacity(0.5),
-                                border: const Border.fromBorderSide(
-                                  BorderSide(color: Colors.white10),
-                                ),
-                                borderRadius: BorderRadius.circular(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ...switch (swapInfo) {
-                                      FromSwapInfo info => [
-                                          NomoInfoItem(
-                                            title: "Price",
-                                            value: info.getPrice(),
+                                  return Column(
+                                    children: [
+                                      NomoDividerThemeOverride(
+                                        data: NomoDividerThemeDataNullable(
+                                          crossAxisSpacing: 12,
+                                          color: Colors.white12,
+                                        ),
+                                        child: NomoInfoItemThemeOverride(
+                                          data: NomoInfoItemThemeDataNullable(
+                                            titleStyle: context.typography.b1
+                                                .copyWith(
+                                                    color: Colors.white60),
+                                            valueStyle: context.typography.b1,
                                           ),
-                                          const NomoDivider(),
-                                          NomoInfoItem(
-                                            title: "Slippage Tolerance",
-                                            value: "${info.slippage}%",
-                                          ),
-                                          const NomoDivider(),
-                                          NomoInfoItem(
-                                            title: "Price Impact",
-                                            value: "${priceImpactInfo.$1}%",
-                                            valueStyle: priceImpactStyle,
-                                          ),
-                                          const NomoDivider(),
-                                          NomoInfoItem(
-                                            title: "Fee",
-                                            value:
-                                                "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
-                                          ),
-                                          const NomoDivider(),
-                                          NomoInfoItem(
-                                            title: "Minimum Received",
-                                            value:
-                                                "${info.amountOutMin.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.toToken.symbol}",
-                                          ),
-                                        ],
-                                      ToSwapInfo info => [
-                                          NomoInfoItem(
-                                            title: "Price",
-                                            value: info.getPrice(),
-                                          ),
-                                          const NomoDivider(),
-                                          NomoInfoItem(
-                                            title: "Slippage Tolerance",
-                                            value: "${info.slippage}%",
-                                          ),
-                                          const NomoDivider(),
-                                          NomoInfoItem(
-                                            title: "Price Impact",
-                                            value: "${priceImpactInfo.$1}%",
-                                            valueStyle: priceImpactStyle,
-                                          ),
-                                          const NomoDivider(),
-                                          NomoInfoItem(
-                                            title: "Fee",
-                                            value:
-                                                "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
-                                          ),
-                                          const NomoDivider(),
-                                          NomoInfoItem(
-                                            title: "Maximum sold",
-                                            value:
-                                                "${info.amountInMax.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
-                                          ),
-                                        ]
-                                    },
-                                    if (swapInfo.path.length > 2) ...[
-                                      const NomoDivider(),
-                                      4.vSpacing,
-                                      NomoText(
-                                        "Route",
-                                        style: context.typography.b1
-                                            .copyWith(color: Colors.white60),
-                                      ),
-                                      12.vSpacing,
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            AssetPicture(
-                                              token: swapInfo.fromToken,
+                                          child: NomoCard(
+                                            elevation: 0,
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 16, vertical: 24),
+                                            backgroundColor: context
+                                                .colors.background2
+                                                .withOpacity(0.5),
+                                            border: const Border.fromBorderSide(
+                                              BorderSide(color: Colors.white10),
                                             ),
-                                            8.hSpacing,
-                                            NomoText(swapInfo.fromToken.symbol),
-                                            const Spacer(),
-                                            const Icon(
-                                              Icons.arrow_forward,
-                                              color: Colors.white60,
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                ...switch (swapInfo) {
+                                                  FromSwapInfo info => [
+                                                      ValueListenableBuilder(
+                                                        valueListenable:
+                                                            inversePriceRateNotifer,
+                                                        builder: (context,
+                                                            inverse, _) {
+                                                          return Row(
+                                                            children: [
+                                                              Expanded(
+                                                                child:
+                                                                    NomoInfoItem(
+                                                                  title:
+                                                                      "Price",
+                                                                  value: info
+                                                                      .getPrice(
+                                                                          inverse),
+                                                                ),
+                                                              ),
+                                                              8.hSpacing,
+                                                              PrimaryNomoButton(
+                                                                icon: Icons
+                                                                    .swap_horiz,
+                                                                backgroundColor: context
+                                                                    .colors
+                                                                    .background2
+                                                                    .withOpacity(
+                                                                        0.5),
+                                                                padding:
+                                                                    EdgeInsets
+                                                                        .all(8),
+                                                                iconSize: 20,
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                                onPressed: () =>
+                                                                    inversePriceRateNotifer
+                                                                            .value =
+                                                                        !inversePriceRateNotifer
+                                                                            .value,
+                                                              ),
+                                                            ],
+                                                          );
+                                                        },
+                                                      ),
+                                                      const NomoDivider(),
+                                                      NomoInfoItem(
+                                                        title:
+                                                            "Slippage Tolerance",
+                                                        value:
+                                                            "${info.slippage}%",
+                                                      ),
+                                                      const NomoDivider(),
+                                                      NomoInfoItem(
+                                                        title: "Price Impact",
+                                                        value:
+                                                            "${priceImpactInfo.$1}%",
+                                                        valueStyle:
+                                                            priceImpactStyle,
+                                                      ),
+                                                      const NomoDivider(),
+                                                      NomoInfoItem(
+                                                        title: "Fee",
+                                                        value:
+                                                            "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
+                                                      ),
+                                                      const NomoDivider(),
+                                                      NomoInfoItem(
+                                                        title:
+                                                            "Minimum Received",
+                                                        value:
+                                                            "${info.amountOutMin.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.toToken.symbol}",
+                                                      ),
+                                                    ],
+                                                  ToSwapInfo info => [
+                                                      ValueListenableBuilder(
+                                                        valueListenable:
+                                                            inversePriceRateNotifer,
+                                                        builder: (context,
+                                                            inverse, _) {
+                                                          return Row(
+                                                            children: [
+                                                              Expanded(
+                                                                child:
+                                                                    NomoInfoItem(
+                                                                  title:
+                                                                      "Price",
+                                                                  value: info
+                                                                      .getPrice(
+                                                                          inverse),
+                                                                ),
+                                                              ),
+                                                              8.hSpacing,
+                                                              PrimaryNomoButton(
+                                                                icon: Icons
+                                                                    .swap_horiz,
+                                                                iconSize: 20,
+                                                                backgroundColor: context
+                                                                    .colors
+                                                                    .background2
+                                                                    .withOpacity(
+                                                                        0.5),
+                                                                padding:
+                                                                    EdgeInsets
+                                                                        .all(8),
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                                onPressed: () =>
+                                                                    inversePriceRateNotifer
+                                                                            .value =
+                                                                        !inversePriceRateNotifer
+                                                                            .value,
+                                                              ),
+                                                            ],
+                                                          );
+                                                        },
+                                                      ),
+                                                      const NomoDivider(),
+                                                      NomoInfoItem(
+                                                        title:
+                                                            "Slippage Tolerance",
+                                                        value:
+                                                            "${info.slippage}%",
+                                                      ),
+                                                      const NomoDivider(),
+                                                      NomoInfoItem(
+                                                        title: "Price Impact",
+                                                        value:
+                                                            "${priceImpactInfo.$1}%",
+                                                        valueStyle:
+                                                            priceImpactStyle,
+                                                      ),
+                                                      const NomoDivider(),
+                                                      NomoInfoItem(
+                                                        title: "Fee",
+                                                        value:
+                                                            "${info.fee.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
+                                                      ),
+                                                      const NomoDivider(),
+                                                      NomoInfoItem(
+                                                        title: "Maximum sold",
+                                                        value:
+                                                            "${info.amountInMax.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
+                                                      ),
+                                                    ]
+                                                },
+                                                if (swapInfo.path.length >
+                                                    2) ...[
+                                                  const NomoDivider(),
+                                                  4.vSpacing,
+                                                  NomoText(
+                                                    "Route",
+                                                    style: context.typography.b1
+                                                        .copyWith(
+                                                            color:
+                                                                Colors.white60),
+                                                  ),
+                                                  12.vSpacing,
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        AssetPicture(
+                                                          token: swapInfo
+                                                              .fromToken,
+                                                        ),
+                                                        8.hSpacing,
+                                                        NomoText(swapInfo
+                                                            .fromToken.symbol),
+                                                        const Spacer(),
+                                                        const Icon(
+                                                          Icons.arrow_forward,
+                                                          color: Colors.white60,
+                                                        ),
+                                                        const Spacer(),
+                                                        const AssetPicture(
+                                                          token: zeniqSmart,
+                                                        ),
+                                                        8.hSpacing,
+                                                        NomoText(
+                                                            zeniqSmart.name),
+                                                        const Spacer(),
+                                                        const Icon(
+                                                          Icons.arrow_forward,
+                                                          color: Colors.white60,
+                                                        ),
+                                                        const Spacer(),
+                                                        AssetPicture(
+                                                          token:
+                                                              swapInfo.toToken,
+                                                        ),
+                                                        8.hSpacing,
+                                                        NomoText(swapInfo
+                                                            .toToken.symbol),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
                                             ),
-                                            const Spacer(),
-                                            const AssetPicture(
-                                              token: zeniqSmart,
-                                            ),
-                                            8.hSpacing,
-                                            NomoText(zeniqSmart.name),
-                                            const Spacer(),
-                                            const Icon(
-                                              Icons.arrow_forward,
-                                              color: Colors.white60,
-                                            ),
-                                            const Spacer(),
-                                            AssetPicture(
-                                              token: swapInfo.toToken,
-                                            ),
-                                            8.hSpacing,
-                                            NomoText(swapInfo.toToken.symbol),
-                                          ],
+                                          ),
                                         ),
                                       ),
+                                      32.vSpacing,
                                     ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          32.vSpacing,
-                        ],
+                                  );
+                                }),
+                        ),
                       );
+                    },
+                  ),
+                  ListenableBuilder(
+                    listenable: swapProvider.swapInfo,
+                    builder: (context, child) {
+                      final priceImpact =
+                          swapProvider.swapInfo.value?.priceImpact;
+
+                      if (priceImpact != null && priceImpact > 0.03) {
+                        return NomoCard(
+                          backgroundColor: context.colors.error,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          margin: EdgeInsets.only(bottom: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error, color: Colors.white),
+                              8.hSpacing,
+                              NomoText(
+                                "High Price Impact, you may get a bad price",
+                                style: context.typography.b1.copyWith(
+                                  color: Colors.white,
+                                ),
+                                maxLines: 2,
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return const SizedBox.shrink();
                     },
                   ),
                   ValueListenableBuilder(
@@ -626,6 +772,8 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                   SwapState.Confirming ||
                                   SwapState.WaitingForUserApproval =>
                                     'Swapping',
+                                  SwapState.InsufficientLiquidity =>
+                                    'Insufficient Liquidity',
                                   _ => 'Swap',
                                 },
                                 type: switch (state) {
@@ -634,7 +782,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                   SwapState.WaitingForUserApproval ||
                                   SwapState.ApprovingToken =>
                                     ActionType.loading,
-                                  SwapState.None => ActionType.nonInteractive,
+                                  SwapState.None ||
+                                  SwapState.InsufficientLiquidity =>
+                                    ActionType.nonInteractive,
                                   _ => ActionType.def,
                                 },
                                 height: 64,
