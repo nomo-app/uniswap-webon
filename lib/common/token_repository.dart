@@ -65,20 +65,20 @@ abstract class TokenRepository {
   }) async {
     final allPairs = await Future.wait([
       for (final token in allTokens)
-        factory
+        zfactory
             .getPair(
               tokenA: wrappedZeniqSmart.contractAddress,
               tokenB: token.contractAddress,
             )
             .then(
               (value) => UniswapV2Pair(
-                rpc: factory.rpc,
+                rpc: zfactory.rpc,
                 contractAddress: value,
               ),
             )
     ]);
 
-    Future<ERC20Entity?> fetchTokenWithLiquidityFromPair(
+    Future<(ERC20Entity, BigInt)?> fetchTokenWithLiquidityFromPair(
         UniswapV2Pair pair) async {
       if (pair.contractAddress ==
           "0x0000000000000000000000000000000000000000") {
@@ -105,7 +105,7 @@ abstract class TokenRepository {
       );
 
       if (reservesAmount.displayDouble > minZeniqInPool) {
-        return nonZeniqToken;
+        return (nonZeniqToken, wZeniqReserves);
       }
 
       return null;
@@ -114,9 +114,11 @@ abstract class TokenRepository {
     final tokensWithLiquidity = await Future.wait(
       [for (final pair in allPairs) fetchTokenWithLiquidityFromPair(pair)],
     ).then(
-      (value) => value.whereType<ERC20Entity>().toSet(),
+      (value) => value.whereType<(ERC20Entity, BigInt)>().toList(),
     );
 
-    return tokensWithLiquidity.toList();
+    tokensWithLiquidity.sort((a, b) => b.$2.compareTo(a.$2));
+
+    return tokensWithLiquidity.map((e) => e.$1).toList();
   }
 }

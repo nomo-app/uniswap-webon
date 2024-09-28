@@ -16,7 +16,7 @@ final zeniqSwapRouter = UniswapV2Router(
   rpc: rpc,
   contractAddress: "0x7963c1bd24E4511A0b14bf148F93e2556AFe3C27",
 );
-final factory = UniswapV2Factory(
+final zfactory = UniswapV2Factory(
   rpc: rpc,
   contractAddress: "0x7D0cbcE25EaaB8D5434a53fB3B42077034a9bB99",
 );
@@ -787,7 +787,7 @@ Future<double> calculatePriceImpact(
   final pairs = await Future.wait(
     [
       for (var i = 0; i < path.length - 1; i++)
-        factory
+        zfactory
             .getPair(
               tokenA: path[i].contractAddress,
               tokenB: path[i + 1].contractAddress,
@@ -795,7 +795,7 @@ Future<double> calculatePriceImpact(
             .then(
               (value) => (
                 UniswapV2Pair(
-                  rpc: factory.rpc,
+                  rpc: zfactory.rpc,
                   contractAddress: value,
                 ),
                 path[i],

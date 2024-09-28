@@ -29,7 +29,7 @@ class ImageEntity {
 abstract class ImageRepository {
   static Future<ImageEntity> getImage(CoinEntity token) async {
     final endpoint =
-        '$PRICE_ENDPOINT/info/image/${token is ERC20Entity ? '${token.contractAddress}/${chaindIdMap[token.chainID]}' : PriceRepository.getAssetName(token)}';
+        '$PRICE_ENDPOINT/info/image/${token is ERC20Entity ? '${token.contractAddress}/${chaindIdMap[token.chainID]}' : token.name}';
     try {
       final result = await (_getImage(endpoint).timeout(REQUEST_TIMEOUT_LIMIT));
       return result;

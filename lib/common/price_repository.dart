@@ -40,40 +40,27 @@ class PriceState {
 
 class PriceEntity {
   final String symbol;
-  final String contract;
+  final CoinEntity token;
   final double price;
-  final String currency;
-  final String network;
   final bool isPending;
+  final String currency;
 
   const PriceEntity({
+    required this.token,
     required this.symbol,
-    required this.contract,
     required this.price,
-    required this.currency,
-    required this.network,
     required this.isPending,
+    required this.currency,
   });
 
-  factory PriceEntity.fromJson(Map<String, dynamic> json) => PriceEntity(
+  factory PriceEntity.fromJson(Map<String, dynamic> json, CoinEntity token) =>
+      PriceEntity(
         symbol: json['symbol'] as String,
-        contract: json['contract'] as String,
         price: (json['price'] as num).toDouble(),
         currency: json['fiat'] as String,
-        network: json['platform'] as String,
         isPending: json['isPending'] as bool,
+        token: token,
       );
-
-  bool matchToken(CoinEntity token) {
-    if (token.asEthBased?.contractAddress.toLowerCase() ==
-            avinocZSC.contractAddress.toLowerCase() &&
-        contract.toLowerCase() == avinocETH.contractAddress.toLowerCase()) {
-      return true; // workaround for temporary ZSC testing token
-    }
-    return PriceRepository.getAssetName(token) == symbol ||
-        token.asEthBased?.contractAddress.toLowerCase() ==
-            contract.toLowerCase();
-  }
 }
 
 abstract class PriceRepository {
@@ -113,8 +100,8 @@ abstract class PriceRepository {
       );
 
       prices.addAll(priceEntities);
-    } catch (e, s) {
-      Logger.logError(e, hint: "PriceRepository", s: s);
+    } catch (e) {
+      Logger.log("Price Fetch Error: $e", "PriceFetch");
     }
     return prices;
   }
@@ -162,8 +149,8 @@ abstract class PriceRepository {
     }
 
     return [
-      for (final result in body)
-        if (result != null) PriceEntity.fromJson(result)
+      for (int i = 0; i < body.length; i++)
+        if (body[i] != null) PriceEntity.fromJson(body[i], tokens[i]),
     ];
   }
 
@@ -177,14 +164,15 @@ abstract class PriceRepository {
     if (token == avinocZSC) {
       token = avinocETH; // workaround for a price-service bug
     }
-    final endpoint = token is ERC20Entity && token != tupanToken
+    final endpoint = token is ERC20Entity
         ? "$PRICE_ENDPOINT/currentprice/${token.contractAddress}/${currency.name}/${chaindIdMap[token.chainID]!}"
-        : "$PRICE_ENDPOINT/currentprice/${getAssetName(token)}/${currency.name}";
+        : "$PRICE_ENDPOINT/currentprice/${token.name}/${currency.name}";
 
     try {
       final price = await (_fetchSingle(
         endpoint: endpoint,
         currency: currency.name,
+        token: token,
       ).timeout(REQUEST_TIMEOUT_LIMIT));
 
       return price;
@@ -196,6 +184,7 @@ abstract class PriceRepository {
   static Future<double> _fetchSingle({
     required String endpoint,
     required String currency,
+    required CoinEntity token,
   }) async {
     final uri = Uri.parse(endpoint);
 
@@ -225,7 +214,7 @@ abstract class PriceRepository {
       );
     }
 
-    final priceEntity = PriceEntity.fromJson(body);
+    final priceEntity = PriceEntity.fromJson(body, token);
     Logger.log("Price Entity pending: ${priceEntity.isPending}", "PriceFetch");
     if (priceEntity.isPending) {
       throw Exception(
@@ -244,10 +233,7 @@ abstract class PriceRepository {
     CoinEntity token,
     final Currency currency,
   ) {
-    if (token == avinocZSC) {
-      token = avinocETH; // workaround for a price-service bug
-    }
-    if (token is ERC20Entity && token != tupanToken) {
+    if (token is ERC20Entity) {
       return [
         token.contractAddress,
         currency.name,
@@ -256,7 +242,7 @@ abstract class PriceRepository {
     }
 
     return [
-      getAssetName(token),
+      token.name,
       currency.name,
     ];
   }
@@ -280,5 +266,15 @@ abstract class PriceRepository {
     }
 
     return symbol.toLowerCase();
+  }
+}
+
+extension TokenName on CoinEntity {
+  String get name {
+    if (this == zeniqCoin || this == zeniqSmart) {
+      return zeniqCoin.name.toLowerCase();
+    } else {
+      return symbol.toLowerCase();
+    }
   }
 }

@@ -1002,11 +1002,14 @@ class SwapInputBottom extends StatelessWidget {
                                           100;
 
                                   if (priceDiff.abs() < 1) {
-                                    return const SizedBox.shrink();
+                                    return SizedBox.shrink();
                                   }
 
+                                  final info =
+                                      priceDiff.abs().formatPriceImpact();
+
                                   return NomoText(
-                                    "  (${priceDiff > 0 ? "+" : "-"}${priceDiff.abs().toStringAsFixed(0)}%)",
+                                    "  (${priceDiff > 0 ? '+' : '-'}${info.$1}%)",
                                     style: context.typography.b1,
                                     fontWeight: FontWeight.bold,
                                     color: priceDiff > 0
