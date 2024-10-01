@@ -1035,6 +1035,7 @@ class SwapInputBottom extends StatelessWidget {
                 balanceListenable,
                 priceListenable,
                 swapProvider.swapInfo,
+                if (isFrom) swapProvider.fromAmount else swapProvider.toAmount,
               ],
             ),
             builder: (context, child) {
@@ -1042,12 +1043,16 @@ class SwapInputBottom extends StatelessWidget {
               final priceAsync = priceListenable.value;
               final otherPriceAsync = otherPriceListenable?.value;
               final amount = isFrom
-                  ? swapProvider.swapInfo.value?.fromAmount
-                  : swapProvider.swapInfo.value?.toAmount;
+                  ? swapProvider.swapInfo.value?.fromAmount ??
+                      swapProvider.fromAmount.value
+                  : swapProvider.swapInfo.value?.toAmount ??
+                      swapProvider.toAmount.value;
 
               final otherAmount = isFrom
-                  ? swapProvider.swapInfo.value?.toAmount
-                  : swapProvider.swapInfo.value?.fromAmount;
+                  ? swapProvider.swapInfo.value?.toAmount ??
+                      swapProvider.toAmount.value
+                  : swapProvider.swapInfo.value?.fromAmount ??
+                      swapProvider.fromAmount.value;
 
               return Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -1076,6 +1081,10 @@ class SwapInputBottom extends StatelessWidget {
                             if (otherPriceAsync != null)
                               otherPriceAsync.when(
                                 data: (otherPrice) {
+                                  if (swapProvider.swapInfo.value == null) {
+                                    return SizedBox.shrink();
+                                  }
+
                                   final otherPriceAmount =
                                       switch (otherAmount) {
                                     Amount amount
