@@ -308,6 +308,24 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                     "From",
                                     style: context.typography.b2,
                                   ),
+                                  ValueListenableBuilder(
+                                    valueListenable: swapProvider.swapInfo,
+                                    builder: (context, swapInfo, child) {
+                                      final fromEstimated =
+                                          swapInfo is ToSwapInfo;
+                                      if (fromEstimated) {
+                                        return NomoText(
+                                          " (estimated)",
+                                          style: context.typography.b1,
+                                          opacity: 0.8,
+                                        );
+                                      }
+                                      return const SizedBox.shrink();
+                                    },
+                                  ),
+                                  Spacer(),
+                                  if (token != null)
+                                    TokenPriceDisplay(token: token),
                                 ],
                               ),
                             ),
@@ -391,6 +409,24 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                     "To",
                                     style: context.typography.b2,
                                   ),
+                                  ValueListenableBuilder(
+                                    valueListenable: swapProvider.swapInfo,
+                                    builder: (context, swapInfo, child) {
+                                      final toEstimated =
+                                          swapInfo is FromSwapInfo;
+                                      if (toEstimated) {
+                                        return NomoText(
+                                          " (estimated)",
+                                          style: context.typography.b1,
+                                          opacity: 0.8,
+                                        );
+                                      }
+                                      return const SizedBox.shrink();
+                                    },
+                                  ),
+                                  Spacer(),
+                                  if (token != null)
+                                    TokenPriceDisplay(token: token),
                                 ],
                               ),
                             ),
@@ -824,6 +860,64 @@ class _SwappingScreenState extends State<SwappingScreen> {
   }
 }
 
+class TokenPriceDisplay extends StatelessWidget {
+  final CoinEntity token;
+  const TokenPriceDisplay({
+    super.key,
+    required this.token,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final priceNotifier =
+        InheritedAssetProvider.of(context).priceNotifierForToken(token);
+
+    if (priceNotifier == null) return const SizedBox.shrink();
+
+    return ValueListenableBuilder(
+      valueListenable: priceNotifier,
+      builder: (context, priceAsync, child) {
+        return priceAsync.when(
+          loading: () => ShimmerLoading(
+            isLoading: true,
+            child: Container(
+              width: 64,
+              height: 24,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: context.colors.background2,
+              ),
+            ),
+          ),
+          data: (pricestate) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  NomoText(
+                    "Price: ",
+                    style: context.typography.b1,
+                    color: context.colors.foreground1,
+                    opacity: 0.6,
+                  ),
+                  NomoText(
+                    "${pricestate.currency.symbol}${pricestate.price.toStringAsFixed(5)}",
+                    style: context.typography.b1,
+                    color: context.colors.foreground1,
+                    opacity: 0.8,
+                  ),
+                ],
+              ),
+            );
+          },
+          error: (error) => SizedBox.shrink(),
+        );
+      },
+    );
+  }
+}
+
 class SwapInputTrailling extends StatelessWidget {
   final CoinEntity? token;
 
@@ -1056,28 +1150,18 @@ class SwapInputBottom extends StatelessWidget {
                     balanceAsync.when(
                       data: (balance) {
                         return Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
+                            NomoText(
+                              "Balance: ",
+                              style: context.typography.b1,
+                              opacity: 0.6,
+                            ),
                             NomoText(
                               balance.displayDouble.toStringAsFixed(2),
                               style: context.typography.b1,
-                              fontWeight: FontWeight.bold,
                               opacity: 0.8,
                             ),
-                            if (balance.displayDouble > 0)
-                              priceAsync.when(
-                                loading: () => const SizedBox.shrink(),
-                                data: (value) {
-                                  final totalValue =
-                                      value.price * balance.displayDouble;
-                                  return NomoText(
-                                    " (${value.currency.symbol}${totalValue.toStringAsFixed(2)})",
-                                    style: context.typography.b1,
-                                    color: context.colors.foreground1,
-                                    opacity: 0.6,
-                                  );
-                                },
-                                error: (e) => const SizedBox.shrink(),
-                              ),
                             if (showMax && balance.displayDouble > 0) ...[
                               8.hSpacing,
                               NomoLinkButton(
