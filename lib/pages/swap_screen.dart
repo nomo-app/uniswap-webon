@@ -1054,16 +1054,31 @@ class SwapInputBottom extends StatelessWidget {
                     ),
                     const Spacer(),
                     balanceAsync.when(
-                      data: (value) {
+                      data: (balance) {
                         return Row(
                           children: [
                             NomoText(
-                              value.displayDouble.toStringAsFixed(5),
+                              balance.displayDouble.toStringAsFixed(2),
                               style: context.typography.b1,
                               fontWeight: FontWeight.bold,
                               opacity: 0.8,
                             ),
-                            if (showMax) ...[
+                            if (balance.displayDouble > 0)
+                              priceAsync.when(
+                                loading: () => const SizedBox.shrink(),
+                                data: (value) {
+                                  final totalValue =
+                                      value.price * balance.displayDouble;
+                                  return NomoText(
+                                    " (${value.currency.symbol}${totalValue.toStringAsFixed(2)})",
+                                    style: context.typography.b1,
+                                    color: context.colors.foreground1,
+                                    opacity: 0.6,
+                                  );
+                                },
+                                error: (e) => const SizedBox.shrink(),
+                              ),
+                            if (showMax && balance.displayDouble > 0) ...[
                               8.hSpacing,
                               NomoLinkButton(
                                 text: "Max",
@@ -1077,7 +1092,7 @@ class SwapInputBottom extends StatelessWidget {
                                 textStyle: context.typography.b1,
                                 onPressed: () {
                                   swapProvider.fromAmountString.value =
-                                      value.displayValue;
+                                      balance.displayValue;
                                 },
                               ),
                             ],
