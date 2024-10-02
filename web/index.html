@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-  <!--
+  <head>
+    <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
 
@@ -15,35 +14,59 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-  <base href="$FLUTTER_BASE_HREF">
+    <base href="$FLUTTER_BASE_HREF" />
 
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Decentralized Exchange of the ZeniqSmartChain">
+    <meta charset="UTF-8" />
+    <meta content="IE=Edge" http-equiv="X-UA-Compatible" />
+    <meta
+      name="description"
+      content="Decentralized Exchange of the ZeniqSmartChain"
+    />
 
-  <!-- iOS meta tags & icons -->
-  <meta name="apple-mobile-web-app-title" content="Zeniq Dex">
-  <!-- Sets the status bar style to transparent -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="icons/192x192_App_Icon.png">
+    <!-- iOS meta tags & icons -->
+    <meta name="apple-mobile-web-app-title" content="Zeniq Dex" />
+    <!-- Sets the status bar style to transparent -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="apple-touch-icon" href="icons/192x192_App_Icon.png" />
+    <meta name="theme-color" content="#ffffff" />
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png" />
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png" />
+    <title>Zeniq Dex</title>
 
-  <title>Zeniq Dex</title>
-  <link rel="manifest" href="manifest.json">
-  <script type="module" src="nomo-webon-kit/dart_interface.js" defer></script>
-  <script type="module" src="nomo-webon-kit/nomo_auth.js" defer></script>
-  <script type="module" src="nomo-webon-kit/nomo_multi_webons.js" defer></script>
-  <script type="module" src="nomo-webon-kit/util.js" defer></script>
-  <script type="module" src="nomo-webon-kit/nomo_platform.js" defer></script>
-  <script type="module" src="nomo-webon-kit/nomo_theming.js" defer></script>
-  <script type="module" src="nomo-webon-kit/nomo_web3.js" defer></script>
-</head>
+    <!-- Meta Tags for other social media sharing -->
+    <meta property="og:title" content="Zeniq Dex" />
+    <meta
+      property="og:description"
+      content="Decentralized Exchange of the ZeniqSmartChain" />
+    <meta property="og:image" content="https://dex.zeniqswap.com/card.svg" />
+    <meta property="og:image:width" content="320" />
+    <meta property="og:image:height" content="196" />
+    <meta property="og:url" content="https://dex.zeniqswap.com" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Zeniq Dex" />
+    <meta name="twitter:description" content="Decentralized Exchange of the ZeniqSmartChain" />
+    <meta
+      name="twitter:image"
+      content="https://dex.zeniqswap.com/card.svg"
+    />
 
-<body>
-  <script src="flutter_bootstrap.js" async></script>
-</body>
+    <link rel="manifest" href="manifest.json" />
+    <script type="module" src="nomo-webon-kit/dart_interface.js" defer></script>
+    <script type="module" src="nomo-webon-kit/nomo_auth.js" defer></script>
+    <script
+      type="module"
+      src="nomo-webon-kit/nomo_multi_webons.js"
+      defer
+    ></script>
+    <script type="module" src="nomo-webon-kit/util.js" defer></script>
+    <script type="module" src="nomo-webon-kit/nomo_platform.js" defer></script>
+    <script type="module" src="nomo-webon-kit/nomo_theming.js" defer></script>
+    <script type="module" src="nomo-webon-kit/nomo_web3.js" defer></script>
+  </head>
 
+  <body>
+    <script src="flutter_bootstrap.js" async></script>
+  </body>
 </html>
