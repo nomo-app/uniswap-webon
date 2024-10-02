@@ -82,7 +82,7 @@ void main() async {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Swap',
+                                'Dex',
                                 style: GoogleFonts.dancingScript(
                                   color: Colors.white,
                                   fontSize: 24,

@@ -1,11 +1,11 @@
 {
-    "name": "Zeniq Swap",
-    "short_name": "Zeniq Swap",
+    "name": "Zeniq Dex",
+    "short_name": "Zeniq Dex",
     "start_url": ".",
     "display": "standalone",
     "theme_color": "#282828",
     "background_color": "#fff",
-    "description": "UI of the UniswapV2 Fork for the ZeniqSmartChain",
+    "description": "Decentralized Exchange of the ZeniqSmartChain",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
