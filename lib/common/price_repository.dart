@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/http_client.dart';
 import 'package:zeniq_swap_frontend/common/logger.dart';
+import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
 const REQUEST_TIMEOUT_LIMIT = Duration(seconds: 10);
 const PRICE_ENDPOINT = "https://price.zeniq.services/v2";
@@ -233,7 +234,7 @@ abstract class PriceRepository {
     CoinEntity token,
     final Currency currency,
   ) {
-    if (token is ERC20Entity) {
+    if (token is ERC20Entity && token != zeniqTokenWrapper) {
       return [
         token.contractAddress,
         currency.name,
@@ -246,32 +247,11 @@ abstract class PriceRepository {
       currency.name,
     ];
   }
-
-  static String getAssetName(CoinEntity token) {
-    final String symbol;
-
-    if (token == zeniqCoin ||
-        token == zeniqSmart ||
-        token == zeniqETHToken ||
-        token == zeniqBSCToken) {
-      symbol = zeniqCoin.name;
-    } else if (token == usdcToken) {
-      symbol = "usd-coin";
-    } else if (token == avinocETH || token == avinocZSC) {
-      symbol = 'avinoc';
-    } else if (token == wbtcToken) {
-      symbol = btcCoin.symbol;
-    } else {
-      symbol = token.symbol;
-    }
-
-    return symbol.toLowerCase();
-  }
 }
 
 extension TokenName on CoinEntity {
   String get name {
-    if (this == zeniqCoin || this == zeniqSmart) {
+    if (this == zeniqCoin || this == zeniqSmart || this == zeniqTokenWrapper) {
       return zeniqCoin.name.toLowerCase();
     } else {
       return symbol.toLowerCase();

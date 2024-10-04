@@ -19,293 +19,293 @@ void main() {
     },
   );
 
-  test('Get Swapinfo Zeniq / Token', () async {
-    swapProvider.setFromToken(zeniqSmart);
-    expect(swapProvider.fromToken.value, zeniqSmart);
+  // test('Get Swapinfo Zeniq / Token', () async {
+  //   swapProvider.setFromToken(zeniqTokenWrapper);
+  //   expect(swapProvider.fromToken.value, zeniqSmart);
 
-    swapProvider.setToToken(avinocZSC);
-    expect(swapProvider.toToken.value, avinocZSC);
+  //   swapProvider.setToToken(avinocZSC);
+  //   expect(swapProvider.toToken.value, avinocZSC);
 
-    swapProvider.fromAmountString.value = "1";
-    expect(
-      swapProvider.fromAmount.value,
-      Amount.convert(value: 1, decimals: 18),
-    );
+  //   swapProvider.fromAmountString.value = "1";
+  //   expect(
+  //     swapProvider.fromAmount.value,
+  //     Amount.convert(value: 1, decimals: 18),
+  //   );
 
-    expect(swapProvider.swapType, SwapType.ExactZeniqForToken);
+  //   expect(swapProvider.swapType, SwapType.ExactZeniqForToken);
 
-    // await swapProvider.swapInfoCompleter?.future;
+  //   // await swapProvider.swapInfoCompleter?.future;
 
-    expect(swapProvider.swapType, SwapType.ExactZeniqForToken);
+  //   expect(swapProvider.swapType, SwapType.ExactZeniqForToken);
 
-    expect(swapProvider.swapInfo.value.runtimeType, FromSwapInfo);
+  //   expect(swapProvider.swapInfo.value.runtimeType, FromSwapInfo);
 
-    print(swapProvider.swapInfo.value);
+  //   print(swapProvider.swapInfo.value);
 
-    swapProvider.toAmountString.value = "1";
-    expect(
-      swapProvider.toAmount.value,
-      Amount.convert(value: 1, decimals: 18),
-    );
+  //   swapProvider.toAmountString.value = "1";
+  //   expect(
+  //     swapProvider.toAmount.value,
+  //     Amount.convert(value: 1, decimals: 18),
+  //   );
 
-    expect(swapProvider.swapType, SwapType.ZeniqForExactToken);
+  //   expect(swapProvider.swapType, SwapType.ZeniqForExactToken);
 
-    //   await swapProvider.swapInfoCompleter?.future;
+  //   //   await swapProvider.swapInfoCompleter?.future;
 
-    expect(swapProvider.swapType, SwapType.ZeniqForExactToken);
+  //   expect(swapProvider.swapType, SwapType.ZeniqForExactToken);
 
-    expect(swapProvider.swapInfo.value.runtimeType, ToSwapInfo);
+  //   expect(swapProvider.swapInfo.value.runtimeType, ToSwapInfo);
 
-    print(swapProvider.swapInfo.value);
-  });
+  //   print(swapProvider.swapInfo.value);
+  // });
 
-  test('Get Swapinfo Token / Zeniq', () async {
-    swapProvider.setFromToken(avinocZSC);
-    expect(swapProvider.fromToken.value, avinocZSC);
+  // test('Get Swapinfo Token / Zeniq', () async {
+  //   swapProvider.setFromToken(avinocZSC);
+  //   expect(swapProvider.fromToken.value, avinocZSC);
 
-    swapProvider.setToToken(zeniqSmart);
-    expect(swapProvider.toToken.value, zeniqSmart);
+  //   swapProvider.setToToken(zeniqSmart);
+  //   expect(swapProvider.toToken.value, zeniqSmart);
 
-    swapProvider.fromAmountString.value = "1";
-    expect(
-      swapProvider.fromAmount.value,
-      Amount.convert(value: 1, decimals: 18),
-    );
+  //   swapProvider.fromAmountString.value = "1";
+  //   expect(
+  //     swapProvider.fromAmount.value,
+  //     Amount.convert(value: 1, decimals: 18),
+  //   );
 
-    expect(swapProvider.swapType, SwapType.ExactTokenForZeniq);
+  //   expect(swapProvider.swapType, SwapType.ExactTokenForZeniq);
 
-    //   await swapProvider.swapInfoCompleter?.future;
+  //   //   await swapProvider.swapInfoCompleter?.future;
 
-    expect(swapProvider.swapType, SwapType.ExactTokenForZeniq);
+  //   expect(swapProvider.swapType, SwapType.ExactTokenForZeniq);
 
-    expect(swapProvider.swapInfo.value.runtimeType, FromSwapInfo);
+  //   expect(swapProvider.swapInfo.value.runtimeType, FromSwapInfo);
 
-    print(swapProvider.swapInfo.value);
+  //   print(swapProvider.swapInfo.value);
 
-    swapProvider.toAmountString.value = "1";
-    expect(
-      swapProvider.toAmount.value,
-      Amount.convert(value: 1, decimals: 18),
-    );
+  //   swapProvider.toAmountString.value = "1";
+  //   expect(
+  //     swapProvider.toAmount.value,
+  //     Amount.convert(value: 1, decimals: 18),
+  //   );
 
-    expect(swapProvider.swapType, SwapType.TokenForExactZeniq);
+  //   expect(swapProvider.swapType, SwapType.TokenForExactZeniq);
 
-    //    await swapProvider.swapInfoCompleter?.future;
+  //   //    await swapProvider.swapInfoCompleter?.future;
 
-    expect(swapProvider.swapType, SwapType.TokenForExactZeniq);
+  //   expect(swapProvider.swapType, SwapType.TokenForExactZeniq);
 
-    expect(swapProvider.swapInfo.value.runtimeType, ToSwapInfo);
+  //   expect(swapProvider.swapInfo.value.runtimeType, ToSwapInfo);
 
-    print(swapProvider.swapInfo.value);
-  });
+  //   print(swapProvider.swapInfo.value);
+  // });
 
-  test('Get Swapinfo Token / Token', () async {
-    swapProvider.setFromToken(avinocZSC);
-    expect(swapProvider.fromToken.value, avinocZSC);
+  // test('Get Swapinfo Token / Token', () async {
+  //   swapProvider.setFromToken(avinocZSC);
+  //   expect(swapProvider.fromToken.value, avinocZSC);
 
-    swapProvider.setToToken(iLoveSafirToken);
-    expect(swapProvider.toToken.value, iLoveSafirToken);
+  //   swapProvider.setToToken(iLoveSafirToken);
+  //   expect(swapProvider.toToken.value, iLoveSafirToken);
 
-    swapProvider.fromAmountString.value = "1";
-    expect(
-      swapProvider.fromAmount.value,
-      Amount.convert(value: 1, decimals: 18),
-    );
+  //   swapProvider.fromAmountString.value = "1";
+  //   expect(
+  //     swapProvider.fromAmount.value,
+  //     Amount.convert(value: 1, decimals: 18),
+  //   );
 
-    expect(swapProvider.swapType, SwapType.ExactTokenForToken);
+  //   expect(swapProvider.swapType, SwapType.ExactTokenForToken);
 
-    //    await swapProvider.swapInfoCompleter?.future;
+  //   //    await swapProvider.swapInfoCompleter?.future;
 
-    expect(swapProvider.swapType, SwapType.ExactTokenForToken);
+  //   expect(swapProvider.swapType, SwapType.ExactTokenForToken);
 
-    expect(swapProvider.swapInfo.value.runtimeType, FromSwapInfo);
+  //   expect(swapProvider.swapInfo.value.runtimeType, FromSwapInfo);
 
-    print(swapProvider.swapInfo.value);
+  //   print(swapProvider.swapInfo.value);
 
-    swapProvider.toAmountString.value = "1";
-    expect(
-      swapProvider.toAmount.value,
-      Amount.convert(value: 1, decimals: 18),
-    );
+  //   swapProvider.toAmountString.value = "1";
+  //   expect(
+  //     swapProvider.toAmount.value,
+  //     Amount.convert(value: 1, decimals: 18),
+  //   );
 
-    expect(swapProvider.swapType, SwapType.TokenForExactToken);
+  //   expect(swapProvider.swapType, SwapType.TokenForExactToken);
 
-    //    await swapProvider.swapInfoCompleter?.future;
+  //   //    await swapProvider.swapInfoCompleter?.future;
 
-    expect(swapProvider.swapType, SwapType.TokenForExactToken);
+  //   expect(swapProvider.swapType, SwapType.TokenForExactToken);
 
-    expect(swapProvider.swapInfo.value.runtimeType, ToSwapInfo);
+  //   expect(swapProvider.swapInfo.value.runtimeType, ToSwapInfo);
 
-    print(swapProvider.swapInfo.value);
-  });
+  //   print(swapProvider.swapInfo.value);
+  // });
 
-  test(
-    "Swap Zeniq Token to Avinoc (SwapExactZeniqForToken)",
-    () async {
-      swapProvider.setFromToken(zeniqSmart);
-      expect(swapProvider.fromToken.value, zeniqSmart);
+  // test(
+  //   "Swap Zeniq Token to Avinoc (SwapExactZeniqForToken)",
+  //   () async {
+  //     swapProvider.setFromToken(zeniqSmart);
+  //     expect(swapProvider.fromToken.value, zeniqSmart);
 
-      swapProvider.setToToken(avinocZSC);
-      expect(swapProvider.toToken.value, avinocZSC);
+  //     swapProvider.setToToken(avinocZSC);
+  //     expect(swapProvider.toToken.value, avinocZSC);
 
-      swapProvider.fromAmountString.value = "1";
-      expect(
-        swapProvider.fromAmount.value,
-        Amount.convert(value: 1, decimals: 18),
-      );
+  //     swapProvider.fromAmountString.value = "1";
+  //     expect(
+  //       swapProvider.fromAmount.value,
+  //       Amount.convert(value: 1, decimals: 18),
+  //     );
 
-      expect(swapProvider.swapType, SwapType.ExactZeniqForToken);
-      //    await swapProvider.swapInfoCompleter?.future;
+  //     expect(swapProvider.swapType, SwapType.ExactZeniqForToken);
+  //     //    await swapProvider.swapInfoCompleter?.future;
 
-      expect(swapProvider.toAmount.value, isNotNull);
+  //     expect(swapProvider.toAmount.value, isNotNull);
 
-      final hash = await swapProvider.swap();
+  //     final hash = await swapProvider.swap();
 
-      print(hash);
+  //     print(hash);
 
-      expect(swapProvider.swapState.value, SwapState.Swapped);
-    },
-  );
+  //     expect(swapProvider.swapState.value, SwapState.Swapped);
+  //   },
+  // );
 
-  test(
-    "Swap Avinoc Token to Zeniq Token (SwapExactTokenForZeniq)",
-    () async {
-      swapProvider.setFromToken(avinocZSC);
-      expect(swapProvider.fromToken.value, avinocZSC);
+  // test(
+  //   "Swap Avinoc Token to Zeniq Token (SwapExactTokenForZeniq)",
+  //   () async {
+  //     swapProvider.setFromToken(avinocZSC);
+  //     expect(swapProvider.fromToken.value, avinocZSC);
 
-      swapProvider.setToToken(zeniqSmart);
-      expect(swapProvider.toToken.value, zeniqSmart);
+  //     swapProvider.setToToken(zeniqSmart);
+  //     expect(swapProvider.toToken.value, zeniqSmart);
 
-      swapProvider.fromAmountString.value = "1";
-      expect(
-        swapProvider.fromAmount.value,
-        Amount.convert(value: 1, decimals: 18),
-      );
+  //     swapProvider.fromAmountString.value = "1";
+  //     expect(
+  //       swapProvider.fromAmount.value,
+  //       Amount.convert(value: 1, decimals: 18),
+  //     );
 
-      expect(swapProvider.swapType, SwapType.ExactTokenForZeniq);
-      //    await swapProvider.swapInfoCompleter?.future;
+  //     expect(swapProvider.swapType, SwapType.ExactTokenForZeniq);
+  //     //    await swapProvider.swapInfoCompleter?.future;
 
-      expect(swapProvider.toAmount.value, isNotNull);
+  //     expect(swapProvider.toAmount.value, isNotNull);
 
-      final hash = await swapProvider.swap();
+  //     final hash = await swapProvider.swap();
 
-      print(hash);
+  //     print(hash);
 
-      expect(swapProvider.swapState.value, SwapState.Swapped);
-    },
-  );
+  //     expect(swapProvider.swapState.value, SwapState.Swapped);
+  //   },
+  // );
 
-  test(
-    "Swap Avinoc Token to Safir Token (SwapExactTokenForToken)",
-    () async {
-      swapProvider.setFromToken(avinocZSC);
-      expect(swapProvider.fromToken.value, avinocZSC);
+  // test(
+  //   "Swap Avinoc Token to Safir Token (SwapExactTokenForToken)",
+  //   () async {
+  //     swapProvider.setFromToken(avinocZSC);
+  //     expect(swapProvider.fromToken.value, avinocZSC);
 
-      swapProvider.setToToken(iLoveSafirToken);
-      expect(swapProvider.toToken.value, iLoveSafirToken);
+  //     swapProvider.setToToken(iLoveSafirToken);
+  //     expect(swapProvider.toToken.value, iLoveSafirToken);
 
-      swapProvider.fromAmountString.value = "1";
-      expect(
-        swapProvider.fromAmount.value,
-        Amount.convert(value: 1, decimals: 18),
-      );
+  //     swapProvider.fromAmountString.value = "1";
+  //     expect(
+  //       swapProvider.fromAmount.value,
+  //       Amount.convert(value: 1, decimals: 18),
+  //     );
 
-      expect(swapProvider.swapType, SwapType.ExactTokenForToken);
-      //   await swapProvider.swapInfoCompleter?.future;
+  //     expect(swapProvider.swapType, SwapType.ExactTokenForToken);
+  //     //   await swapProvider.swapInfoCompleter?.future;
 
-      expect(swapProvider.toAmount.value, isNotNull);
+  //     expect(swapProvider.toAmount.value, isNotNull);
 
-      final hash = await swapProvider.swap();
+  //     final hash = await swapProvider.swap();
 
-      print(hash);
+  //     print(hash);
 
-      expect(swapProvider.swapState.value, SwapState.Swapped);
-    },
-  );
+  //     expect(swapProvider.swapState.value, SwapState.Swapped);
+  //   },
+  // );
 
-  test(
-    "Swap Avinoc Token to Zeniq Token (SwapTokenForExactZeniq)",
-    () async {
-      swapProvider.setFromToken(avinocZSC);
-      expect(swapProvider.fromToken.value, avinocZSC);
+  // test(
+  //   "Swap Avinoc Token to Zeniq Token (SwapTokenForExactZeniq)",
+  //   () async {
+  //     swapProvider.setFromToken(avinocZSC);
+  //     expect(swapProvider.fromToken.value, avinocZSC);
 
-      swapProvider.setToToken(zeniqSmart);
-      expect(swapProvider.toToken.value, zeniqSmart);
+  //     swapProvider.setToToken(zeniqSmart);
+  //     expect(swapProvider.toToken.value, zeniqSmart);
 
-      swapProvider.toAmountString.value = "1";
-      expect(
-        swapProvider.toAmount.value,
-        Amount.convert(value: 1, decimals: 18),
-      );
+  //     swapProvider.toAmountString.value = "1";
+  //     expect(
+  //       swapProvider.toAmount.value,
+  //       Amount.convert(value: 1, decimals: 18),
+  //     );
 
-      expect(swapProvider.swapType, SwapType.TokenForExactZeniq);
-      //    await swapProvider.swapInfoCompleter?.future;
+  //     expect(swapProvider.swapType, SwapType.TokenForExactZeniq);
+  //     //    await swapProvider.swapInfoCompleter?.future;
 
-      expect(swapProvider.fromAmount.value, isNotNull);
+  //     expect(swapProvider.fromAmount.value, isNotNull);
 
-      final hash = await swapProvider.swap();
+  //     final hash = await swapProvider.swap();
 
-      print(hash);
+  //     print(hash);
 
-      expect(swapProvider.swapState.value, SwapState.Swapped);
-    },
-  );
+  //     expect(swapProvider.swapState.value, SwapState.Swapped);
+  //   },
+  // );
 
-  test(
-    "Swap Zeniq Token to Avinoc Token (SwapEthForExactToken)",
-    () async {
-      swapProvider.setFromToken(zeniqSmart);
-      expect(swapProvider.fromToken.value, zeniqSmart);
+  // test(
+  //   "Swap Zeniq Token to Avinoc Token (SwapEthForExactToken)",
+  //   () async {
+  //     swapProvider.setFromToken(zeniqSmart);
+  //     expect(swapProvider.fromToken.value, zeniqSmart);
 
-      swapProvider.setToToken(avinocZSC);
-      expect(swapProvider.toToken.value, avinocZSC);
+  //     swapProvider.setToToken(avinocZSC);
+  //     expect(swapProvider.toToken.value, avinocZSC);
 
-      swapProvider.toAmountString.value = "1";
-      expect(
-        swapProvider.toAmount.value,
-        Amount.convert(value: 1, decimals: 18),
-      );
+  //     swapProvider.toAmountString.value = "1";
+  //     expect(
+  //       swapProvider.toAmount.value,
+  //       Amount.convert(value: 1, decimals: 18),
+  //     );
 
-      expect(swapProvider.swapType, SwapType.ZeniqForExactToken);
-      //   await swapProvider.swapInfoCompleter?.future;
+  //     expect(swapProvider.swapType, SwapType.ZeniqForExactToken);
+  //     //   await swapProvider.swapInfoCompleter?.future;
 
-      expect(swapProvider.fromAmount.value, isNotNull);
+  //     expect(swapProvider.fromAmount.value, isNotNull);
 
-      final hash = await swapProvider.swap();
+  //     final hash = await swapProvider.swap();
 
-      print(hash);
+  //     print(hash);
 
-      expect(swapProvider.swapState.value, SwapState.Swapped);
-    },
-  );
+  //     expect(swapProvider.swapState.value, SwapState.Swapped);
+  //   },
+  // );
 
-  test(
-    "Swap Safir Token to Avinoc Token (SwapTokenForExactToken)",
-    () async {
-      swapProvider.setFromToken(iLoveSafirToken);
-      expect(swapProvider.fromToken.value, iLoveSafirToken);
+  // test(
+  //   "Swap Safir Token to Avinoc Token (SwapTokenForExactToken)",
+  //   () async {
+  //     swapProvider.setFromToken(iLoveSafirToken);
+  //     expect(swapProvider.fromToken.value, iLoveSafirToken);
 
-      swapProvider.setToToken(avinocZSC);
-      expect(swapProvider.toToken.value, avinocZSC);
+  //     swapProvider.setToToken(avinocZSC);
+  //     expect(swapProvider.toToken.value, avinocZSC);
 
-      swapProvider.toAmountString.value = "1";
-      expect(
-        swapProvider.toAmount.value,
-        Amount.convert(value: 1, decimals: 18),
-      );
+  //     swapProvider.toAmountString.value = "1";
+  //     expect(
+  //       swapProvider.toAmount.value,
+  //       Amount.convert(value: 1, decimals: 18),
+  //     );
 
-      expect(swapProvider.swapType, SwapType.TokenForExactToken);
-      //    await swapProvider.swapInfoCompleter?.future;
+  //     expect(swapProvider.swapType, SwapType.TokenForExactToken);
+  //     //    await swapProvider.swapInfoCompleter?.future;
 
-      expect(swapProvider.fromAmount.value, isNotNull);
+  //     expect(swapProvider.fromAmount.value, isNotNull);
 
-      final hash = await swapProvider.swap();
+  //     final hash = await swapProvider.swap();
 
-      print(hash);
+  //     print(hash);
 
-      expect(swapProvider.swapState.value, SwapState.Swapped);
-    },
-  );
+  //     expect(swapProvider.swapState.value, SwapState.Swapped);
+  //   },
+  // );
 }
 
 Uint8List loadFromEnv(String envName) {

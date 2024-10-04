@@ -20,7 +20,7 @@ void main() {
   );
 
   test('Test Price Impact Calculation', () async {
-    const tokenA = wrappedZeniqSmart;
+    const tokenA = zeniqTokenWrapper;
     const tokenB = avinocZSC;
     const tokenC = tupanToken;
 

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
+import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
 void main() {
   final rpc = EvmRpcInterface(
@@ -17,7 +18,7 @@ void main() {
     final result = await zeniqSwapRouter.getAmountsOut(
       amountIn: Amount.convert(value: 1, decimals: 18).value,
       path: [
-        wrappedZeniqSmart.contractAddress,
+        zeniqTokenWrapper.contractAddress,
         avinocZSC.contractAddress,
       ],
     );
@@ -33,7 +34,7 @@ void main() {
       final result = await zeniqSwapRouter.getAmountsIn(
         amountOut: Amount.convert(value: 1, decimals: 18).value,
         path: [
-          wrappedZeniqSmart.contractAddress,
+          zeniqTokenWrapper.contractAddress,
           avinocZSC.contractAddress,
         ],
       );

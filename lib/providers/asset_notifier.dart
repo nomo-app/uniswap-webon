@@ -12,7 +12,7 @@ const _fetchInterval = Duration(minutes: 1);
 
 class AssetNotifier {
   final String address;
-  final List<CoinEntity> tokens;
+  final List<ERC20Entity> tokens;
   final EvmRpcInterface rpc = EvmRpcInterface(
     type: ZeniqSmartNetwork,
     clients: [
@@ -26,11 +26,11 @@ class AssetNotifier {
 
   List<PairInfo> tokenPairs = [];
 
-  final Map<CoinEntity, ValueNotifier<AsyncValue<Amount>>> _balances = {};
-  final Map<CoinEntity, ValueNotifier<AsyncValue<PriceState>>> _prices = {};
-  final Map<CoinEntity, ValueNotifier<AsyncValue<ImageEntity>>> _images = {};
+  final Map<ERC20Entity, ValueNotifier<AsyncValue<Amount>>> _balances = {};
+  final Map<ERC20Entity, ValueNotifier<AsyncValue<PriceState>>> _prices = {};
+  final Map<ERC20Entity, ValueNotifier<AsyncValue<ImageEntity>>> _images = {};
 
-  void addPreviewToken(CoinEntity token) {
+  void addPreviewToken(ERC20Entity token) {
     _balances[token] = ValueNotifier(AsyncValue.loading());
     _prices[token] = ValueNotifier(AsyncValue.loading());
     _images[token] = ValueNotifier(AsyncValue.loading());
@@ -39,7 +39,7 @@ class AssetNotifier {
     fetchImageForToken(token);
   }
 
-  void addToken(CoinEntity token) {
+  void addToken(ERC20Entity token) {
     tokens.add(token);
 
     fetchBalanceForToken(token);
@@ -78,7 +78,12 @@ class AssetNotifier {
     if (currentImage.hasValue) return;
 
     try {
-      final image = await ImageRepository.getImage(token);
+      final image = await ImageRepository.getImage(
+        switch (token) {
+          zeniqTokenWrapper => zeniqSmart,
+          _ => token,
+        },
+      );
       _images[token]!.value = AsyncValue.value(image);
     } catch (e) {
       _images[token]!.value = AsyncValue.error(e);
@@ -161,7 +166,7 @@ class AssetNotifier {
     if (pair == null) {
       pair = await zfactory
           .getPair(
-            tokenA: wrappedZeniqSmart.contractAddress,
+            tokenA: zeniqTokenWrapper.contractAddress,
             tokenB: token.contractAddress,
           )
           .then(
@@ -247,7 +252,7 @@ class PairInfo extends UniswapV2Pair {
     final reserves = await getReserves();
     final token0Contract = await token0();
 
-    final token0IsZeniq = token0Contract == wrappedZeniqSmart.lowerCaseAddress;
+    final token0IsZeniq = token0Contract == zeniqTokenWrapper.lowerCaseAddress;
 
     var (zeniqReserves, tokenReserves) =
         token0IsZeniq ? (reserves.$1, reserves.$2) : (reserves.$2, reserves.$1);

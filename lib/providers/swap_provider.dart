@@ -5,6 +5,13 @@ import 'package:flutter/widgets.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/extensions.dart';
 
+const zeniqTokenWrapper = ERC20Entity(
+  chainID: 383414847825,
+  name: 'ZENIQ',
+  symbol: 'ZENIQ Token',
+  decimals: 18,
+  contractAddress: "0x5b52bfB8062Ce664D74bbCd4Cd6DC7Df53Fd7233",
+);
 final rpc = EvmRpcInterface(
   type: ZeniqSmartNetwork,
   useQueuedManager: false,
@@ -14,27 +21,20 @@ final rpc = EvmRpcInterface(
 );
 final zeniqSwapRouter = UniswapV2Router(
   rpc: rpc,
-  contractAddress: "0x7963c1bd24E4511A0b14bf148F93e2556AFe3C27",
+  contractAddress: "0xEBb0C81b3450520f54282A9ca9996A1960Be7c7A",
 );
 final zfactory = UniswapV2Factory(
   rpc: rpc,
-  contractAddress: "0x7D0cbcE25EaaB8D5434a53fB3B42077034a9bB99",
+  contractAddress: "0x40a4E23Cc9E57161699Fd37c0A4d8bca383325f3",
 );
 const _refreshInterval = Duration(seconds: 15);
 
 enum SwapType {
   ExactTokenForToken,
-  ExactTokenForZeniq,
-  ExactZeniqForToken,
-  ZeniqForExactToken,
-  TokenForExactZeniq,
   TokenForExactToken;
 
   bool get isFrom => switch (this) {
-        SwapType.ExactTokenForToken ||
-        SwapType.ExactTokenForZeniq ||
-        SwapType.ExactZeniqForToken =>
-          true,
+        SwapType.ExactTokenForToken => true,
         _ => false,
       };
 }
@@ -222,8 +222,9 @@ class SwapProvider {
   final String ownAddress;
   final Future<String> Function(String tx) signer;
 
-  final ValueNotifier<CoinEntity?> fromToken = ValueNotifier(zeniqSmart);
-  final ValueNotifier<CoinEntity?> toToken = ValueNotifier(null);
+  final ValueNotifier<ERC20Entity?> fromToken =
+      ValueNotifier(zeniqTokenWrapper);
+  final ValueNotifier<ERC20Entity?> toToken = ValueNotifier(null);
   final ValueNotifier<Amount?> fromAmount = ValueNotifier(null);
   final ValueNotifier<Amount?> toAmount = ValueNotifier(null);
   final ValueNotifier<String> fromAmountString = ValueNotifier('');
@@ -325,14 +326,14 @@ class SwapProvider {
     }
   }
 
-  void setFromToken(CoinEntity token) {
+  void setFromToken(ERC20Entity token) {
     if (token == toToken.value) {
       toToken.value = fromToken.value;
     }
     fromToken.value = token;
   }
 
-  void setToToken(CoinEntity token) {
+  void setToToken(ERC20Entity token) {
     if (token == fromToken.value) {
       fromToken.value = toToken.value;
     }
@@ -363,13 +364,9 @@ class SwapProvider {
     if (shouldRecalculateSwapType == false) return;
 
     // Set the swap type
-    swapType = switch ((fromToken.value, toToken.value, lastAmountChanged!)) {
-      (zeniqSmart, _, LastAmountChanged.From) => SwapType.ExactZeniqForToken,
-      (zeniqSmart, _, LastAmountChanged.To) => SwapType.ZeniqForExactToken,
-      (_, zeniqSmart, LastAmountChanged.From) => SwapType.ExactTokenForZeniq,
-      (_, zeniqSmart, LastAmountChanged.To) => SwapType.TokenForExactZeniq,
-      (_, _, LastAmountChanged.From) => SwapType.ExactTokenForToken,
-      (_, _, LastAmountChanged.To) => SwapType.TokenForExactToken,
+    swapType = switch (lastAmountChanged!) {
+      LastAmountChanged.From => SwapType.ExactTokenForToken,
+      LastAmountChanged.To => SwapType.TokenForExactToken,
     };
 
     if (lastAmountChanged == LastAmountChanged.From) {
@@ -396,47 +393,27 @@ class SwapProvider {
   void calculateSwapInfo() async {
     // swapInfoCompleter = Completer();
 
+    final fromToken = this.fromToken.value!;
+    final toToken = this.toToken.value!;
+
+    final containsZeniq =
+        fromToken == zeniqTokenWrapper || toToken == zeniqTokenWrapper;
+
+    final path = [
+      fromToken,
+      if (containsZeniq == false) zeniqTokenWrapper,
+      toToken
+    ];
+
     swapInfo.value = await switch (swapType!) {
-      SwapType.ExactZeniqForToken => fromSwapInfo(
-          path: [wrappedZeniqSmart, toToken.value as ERC20Entity],
-          own: ownAddress,
-          fromAmount: fromAmount.value!,
-          slippage: slippage,
-        ),
-      SwapType.ExactTokenForZeniq => fromSwapInfo(
-          path: [fromToken.value as ERC20Entity, wrappedZeniqSmart],
-          own: ownAddress,
-          fromAmount: fromAmount.value!,
-          slippage: slippage,
-        ),
       SwapType.ExactTokenForToken => fromSwapInfo(
-          path: [
-            fromToken.value as ERC20Entity,
-            wrappedZeniqSmart,
-            toToken.value as ERC20Entity,
-          ],
+          path: path,
           own: ownAddress,
           fromAmount: fromAmount.value!,
-          slippage: slippage,
-        ),
-      SwapType.ZeniqForExactToken => toSwapInfo(
-          path: [wrappedZeniqSmart, toToken.value as ERC20Entity],
-          toAmount: toAmount.value!,
-          own: ownAddress,
-          slippage: slippage,
-        ),
-      SwapType.TokenForExactZeniq => toSwapInfo(
-          path: [fromToken.value as ERC20Entity, wrappedZeniqSmart],
-          toAmount: toAmount.value!,
-          own: ownAddress,
           slippage: slippage,
         ),
       SwapType.TokenForExactToken => toSwapInfo(
-          path: [
-            fromToken.value as ERC20Entity,
-            wrappedZeniqSmart,
-            toToken.value as ERC20Entity
-          ],
+          path: path,
           toAmount: toAmount.value!,
           own: ownAddress,
           slippage: slippage,
@@ -526,24 +503,6 @@ class SwapProvider {
             1000;
 
     final unsignedTX = await switch ((swapType!, swapInfo.value!)) {
-      (SwapType.ExactZeniqForToken, FromSwapInfo info) =>
-        zeniqSwapRouter.swapExactEthForTokensTransaction(
-          amountIn: info.fromAmount.value,
-          amountOutMin: info.amountOutMin.value,
-          path: info.path,
-          to: ownAddress,
-          deadline: deadline.toBigInt,
-          sender: ownAddress,
-        ),
-      (SwapType.ExactTokenForZeniq, FromSwapInfo info) =>
-        zeniqSwapRouter.swapExactTokensForEthTx(
-          amountIn: info.fromAmount.value,
-          amountOutMin: info.amountOutMin.value,
-          path: info.path,
-          to: ownAddress,
-          deadline: deadline.toBigInt,
-          sender: ownAddress,
-        ),
       (SwapType.ExactTokenForToken, FromSwapInfo info) =>
         zeniqSwapRouter.swapExactTokenForTokensTx(
           amountIn: info.fromAmount.value,
@@ -552,24 +511,6 @@ class SwapProvider {
           to: ownAddress,
           deadline: deadline.toBigInt,
           sender: ownAddress,
-        ),
-      (SwapType.ZeniqForExactToken, ToSwapInfo info) =>
-        zeniqSwapRouter.swapEthForExactTokensTx(
-          amountOut: info.toAmount.value,
-          amountInMax: info.amountInMax.value,
-          deadline: deadline.toBigInt,
-          path: info.path,
-          sender: ownAddress,
-          to: ownAddress,
-        ),
-      (SwapType.TokenForExactZeniq, ToSwapInfo info) =>
-        zeniqSwapRouter.swapTokenForExactEthTx(
-          amountOut: info.toAmount.value,
-          amountInMax: info.amountInMax.value,
-          deadline: deadline.toBigInt,
-          path: info.path,
-          sender: ownAddress,
-          to: ownAddress,
         ),
       (SwapType.TokenForExactToken, ToSwapInfo info) =>
         zeniqSwapRouter.swapTokenForExactTokensTx(
@@ -645,7 +586,7 @@ Future<FromSwapInfo?> fromSwapInfo({
   final bool needsApproval;
 
   /// Check if the token allowance is enough
-  if (path.first != wrappedZeniqSmart) {
+  if (path.first != zeniqTokenWrapper) {
     /// Check if the token allowance is enough
     final tokenERC20 = ERC20Contract(
       rpc: rpc,
@@ -715,7 +656,7 @@ Future<ToSwapInfo?> toSwapInfo({
 
   final bool needsApproval;
 
-  if (path.first != wrappedZeniqSmart) {
+  if (path.first != zeniqTokenWrapper) {
     /// Check if the token allowance is enough
     final tokenERC20 = ERC20Contract(
       rpc: rpc,

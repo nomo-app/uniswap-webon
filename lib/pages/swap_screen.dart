@@ -919,9 +919,9 @@ class TokenPriceDisplay extends StatelessWidget {
 }
 
 class SwapInputTrailling extends StatelessWidget {
-  final CoinEntity? token;
+  final ERC20Entity? token;
 
-  final void Function(CoinEntity token) onTokenSelected;
+  final void Function(ERC20Entity token) onTokenSelected;
 
   const SwapInputTrailling({
     super.key,
@@ -932,7 +932,7 @@ class SwapInputTrailling extends StatelessWidget {
   void onPressed(BuildContext context) async {
     final result = await NomoNavigator.fromKey.push(SelectAssetDialogRoute());
 
-    if (result is CoinEntity) {
+    if (result is ERC20Entity) {
       onTokenSelected(result);
     }
   }
