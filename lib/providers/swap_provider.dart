@@ -464,10 +464,9 @@ class SwapProvider {
         final tx = await erc20.approveTx(
           sender: ownAddress,
           spender: zeniqSwapRouter.contractAddress,
-          value: switch (swapInfo.value!) {
-            FromSwapInfo info => info.fromAmount.value,
-            ToSwapInfo info => info.amountInMax.value,
-          },
+          value: BigInt.tryParse(
+            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          )!,
         ) as RawEVMTransactionType0;
 
         swapState.value = SwapState.WaitingForUserApproval;
@@ -586,20 +585,15 @@ Future<FromSwapInfo?> fromSwapInfo({
   final bool needsApproval;
 
   /// Check if the token allowance is enough
-  if (path.first != zeniqTokenWrapper) {
-    /// Check if the token allowance is enough
-    final tokenERC20 = ERC20Contract(
-      rpc: rpc,
-      contractAddress: path.first.contractAddress,
-    );
-    final allowance = await tokenERC20.allowance(
-      owner: own,
-      spender: zeniqSwapRouter.contractAddress,
-    );
-    needsApproval = allowance < fromAmount.value;
-  } else {
-    needsApproval = false;
-  }
+  final tokenERC20 = ERC20Contract(
+    rpc: rpc,
+    contractAddress: path.first.contractAddress,
+  );
+  final allowance = await tokenERC20.allowance(
+    owner: own,
+    spender: zeniqSwapRouter.contractAddress,
+  );
+  needsApproval = allowance < fromAmount.value;
 
   final firstOutput = outputs.first;
 
@@ -656,20 +650,16 @@ Future<ToSwapInfo?> toSwapInfo({
 
   final bool needsApproval;
 
-  if (path.first != zeniqTokenWrapper) {
-    /// Check if the token allowance is enough
-    final tokenERC20 = ERC20Contract(
-      rpc: rpc,
-      contractAddress: path.first.contractAddress,
-    );
-    final allowance = await tokenERC20.allowance(
-      owner: own,
-      spender: zeniqSwapRouter.contractAddress,
-    );
-    needsApproval = allowance < maxInputValue;
-  } else {
-    needsApproval = false;
-  }
+  /// Check if the token allowance is enough
+  final tokenERC20 = ERC20Contract(
+    rpc: rpc,
+    contractAddress: path.first.contractAddress,
+  );
+  final allowance = await tokenERC20.allowance(
+    owner: own,
+    spender: zeniqSwapRouter.contractAddress,
+  );
+  needsApproval = allowance < maxInputValue;
 
   final feeValue = switch (inputs.length) {
     _ when inputValue < 1000.toBigInt => 0.toBigInt, // No fee
