@@ -12,6 +12,7 @@ import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/pages/swap_screen.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/image_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
 class SelectAssetDialog extends StatefulWidget {
@@ -26,13 +27,19 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
   late final ValueNotifier<ERC20Entity?> customTokenNotifier =
       ValueNotifier(null);
 
-  late ValueNotifier<List<CoinEntity>> filteredAssetsNotifer;
+  late ValueNotifier<List<ERC20Entity>> filteredAssetsNotifer;
   late AssetNotifier assetNotifier;
 
   @override
   void didChangeDependencies() {
     assetNotifier = InheritedAssetProvider.of(context);
-    filteredAssetsNotifer = ValueNotifier(assetNotifier.tokens);
+    assetNotifier.tokenNotifier.addListener(
+      () {
+        filteredAssetsNotifer.value = assetNotifier.tokens.toList();
+        onSearchInputChanged();
+      },
+    );
+    filteredAssetsNotifer = ValueNotifier(assetNotifier.tokens.toList());
     super.didChangeDependencies();
   }
 
@@ -69,8 +76,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
 
     final existsAlready = assetNotifier.tokens.any(
       (token) {
-        return token is ERC20Entity &&
-            token.contractAddress.toLowerCase() == searchText;
+        return token.contractAddress.toLowerCase() == searchText;
       },
     );
 
@@ -94,7 +100,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
       chainID: rpc.type.chainId,
     );
 
-    assetNotifier.addPreviewToken(customToken);
+    assetNotifier.fetchBalanceForToken(customToken);
     customTokenNotifier.value = customToken;
   }
 
@@ -102,7 +108,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
     final searchText = searchNotifier.value.trim().toLowerCase();
 
     if (searchText.isEmpty) {
-      filteredAssetsNotifer.value = assetNotifier.tokens;
+      filteredAssetsNotifer.value = assetNotifier.tokens.toList();
       return;
     }
 
@@ -110,9 +116,8 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
       (asset) {
         final name = asset.name.toLowerCase().contains(searchText);
         final symbol = asset.symbol.toLowerCase().contains(searchText);
-        final address = asset is ERC20Entity
-            ? asset.contractAddress.toLowerCase().contains(searchText)
-            : false;
+        final address =
+            asset.contractAddress.toLowerCase().contains(searchText);
 
         return name || symbol || address;
       },
@@ -233,7 +238,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
 
                     final asset = assets[index];
                     final balanceListenable =
-                        balanceNotifer.notifierForToken(asset);
+                        balanceNotifer.balanceNotifierForToken(asset);
                     return Material(
                       color: Colors.transparent,
                       child: InkWell(

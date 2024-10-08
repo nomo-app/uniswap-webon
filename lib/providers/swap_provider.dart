@@ -50,7 +50,8 @@ enum SwapState {
   Confirming,
   Swapped,
   Error,
-  InsufficientLiquidity;
+  InsufficientLiquidity,
+  Preview;
 
   bool get inputEnabled => switch (this) {
         SwapState.None ||
@@ -58,7 +59,8 @@ enum SwapState {
         SwapState.Error ||
         SwapState.TokenApprovalError ||
         SwapState.NeedsTokenApproval ||
-        SwapState.InsufficientLiquidity =>
+        SwapState.InsufficientLiquidity ||
+        SwapState.Preview =>
           true,
         _ => false,
       };
@@ -73,8 +75,8 @@ sealed class SwapInfo {
   final double slippage;
   final double priceImpact;
   final Amount fee;
-  final CoinEntity fromToken;
-  final CoinEntity toToken;
+  final ERC20Entity fromToken;
+  final ERC20Entity toToken;
   final bool needsApproval;
   final List<String> path;
 
@@ -219,7 +221,8 @@ BigInt? parseFromString(String value, int decimals) {
 }
 
 class SwapProvider {
-  final String ownAddress;
+  final String? ownAddress;
+
   final Future<String> Function(String tx) signer;
 
   final ValueNotifier<ERC20Entity?> fromToken =
@@ -391,8 +394,11 @@ class SwapProvider {
   }
 
   void calculateSwapInfo() async {
+    if (this.ownAddress == null) {
+      swapState.value = SwapState.Preview;
+    }
     // swapInfoCompleter = Completer();
-
+    final ownAddress = this.ownAddress ?? arbitrumTestWallet;
     final fromToken = this.fromToken.value!;
     final toToken = this.toToken.value!;
 
@@ -420,11 +426,13 @@ class SwapProvider {
         ),
     };
 
-    swapState.value = swapInfo.value == null
-        ? SwapState.InsufficientLiquidity
-        : swapInfo.value!.needsApproval
-            ? SwapState.NeedsTokenApproval
-            : SwapState.ReadyForSwap;
+    if (swapState.value != SwapState.Preview) {
+      swapState.value = swapInfo.value == null
+          ? SwapState.InsufficientLiquidity
+          : swapInfo.value!.needsApproval
+              ? SwapState.NeedsTokenApproval
+              : SwapState.ReadyForSwap;
+    }
 
     shouldRecalculateSwapType = false;
 
@@ -451,6 +459,8 @@ class SwapProvider {
 
   Future<String> swap() async {
     shouldRecalculateSwapType = false;
+
+    final ownAddress = this.ownAddress!;
 
     if (swapState.value == SwapState.NeedsTokenApproval ||
         swapState.value == SwapState.TokenApprovalError) {
@@ -707,7 +717,7 @@ class InheritedSwapProvider extends InheritedWidget {
 
   @override
   bool updateShouldNotify(InheritedSwapProvider oldWidget) {
-    return true;
+    return oldWidget.swapProvider.ownAddress != swapProvider.ownAddress;
   }
 }
 

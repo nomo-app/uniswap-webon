@@ -23,6 +23,7 @@ import 'package:zeniq_swap_frontend/common/extensions.dart';
 import 'package:zeniq_swap_frontend/common/price_repository.dart';
 import 'package:zeniq_swap_frontend/pages/background.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/image_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 
@@ -74,7 +75,8 @@ class _SwappingScreenState extends State<SwappingScreen> {
       return;
     }
 
-    final balance = assetNotifer.notifierForToken(toToken)?.value.valueOrNull;
+    final balance =
+        assetNotifer.balanceNotifierForToken(toToken)?.value.valueOrNull;
 
     if (balance == null) return;
 
@@ -99,7 +101,8 @@ class _SwappingScreenState extends State<SwappingScreen> {
       return;
     }
 
-    final balance = assetNotifer.notifierForToken(fromToken)?.value.valueOrNull;
+    final balance =
+        assetNotifer.balanceNotifierForToken(fromToken)?.value.valueOrNull;
 
     if (balance == null) return;
 
@@ -127,8 +130,7 @@ class _SwappingScreenState extends State<SwappingScreen> {
     if (swapState == SwapState.Swapped) {
       final swapInfo = swapProvider.swapInfo.value;
       print(swapInfo);
-      assetNotifer.fetchAllBalances();
-      assetNotifer.fetchAllPrices();
+      assetNotifer.refresh();
       InAppNotification.show(
         right: 16,
         top: 16,
@@ -150,8 +152,7 @@ class _SwappingScreenState extends State<SwappingScreen> {
 
     /// User just completed the swap
     if (swapState == SwapState.Confirming) {
-      assetNotifer.fetchAllBalances();
-      assetNotifer.fetchAllPrices();
+      assetNotifer.refresh();
       InAppNotification.show(
         right: 16,
         top: 16,
@@ -259,8 +260,7 @@ class _SwappingScreenState extends State<SwappingScreen> {
                         padding: EdgeInsets.zero,
                         onPressed: () {
                           swapProvider.checkSwapInfo();
-                          assetNotifer.fetchAllBalances();
-                          assetNotifer.fetchAllPrices();
+                          assetNotifer.refresh();
                         },
                       ),
                       12.hSpacing,
@@ -728,11 +728,14 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                                         ),
                                                         const Spacer(),
                                                         const AssetPicture(
-                                                          token: zeniqSmart,
+                                                          token:
+                                                              zeniqTokenWrapper,
                                                         ),
                                                         8.hSpacing,
                                                         NomoText(
-                                                            zeniqSmart.name),
+                                                          zeniqTokenWrapper
+                                                              .name,
+                                                        ),
                                                         const Spacer(),
                                                         const Icon(
                                                           Icons.arrow_forward,
@@ -744,8 +747,10 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                                               swapInfo.toToken,
                                                         ),
                                                         8.hSpacing,
-                                                        NomoText(swapInfo
-                                                            .toToken.symbol),
+                                                        NomoText(
+                                                          swapInfo
+                                                              .toToken.symbol,
+                                                        ),
                                                       ],
                                                     ),
                                                   ),
@@ -825,7 +830,8 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                   SwapState.ApprovingToken =>
                                     ActionType.loading,
                                   SwapState.None ||
-                                  SwapState.InsufficientLiquidity =>
+                                  SwapState.InsufficientLiquidity ||
+                                  SwapState.Preview =>
                                     ActionType.nonInteractive,
                                   _ => ActionType.def,
                                 },
@@ -861,7 +867,7 @@ class _SwappingScreenState extends State<SwappingScreen> {
 }
 
 class TokenPriceDisplay extends StatelessWidget {
-  final CoinEntity token;
+  final ERC20Entity token;
   const TokenPriceDisplay({
     super.key,
     required this.token,
@@ -871,8 +877,6 @@ class TokenPriceDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     final priceNotifier =
         InheritedAssetProvider.of(context).priceNotifierForToken(token);
-
-    if (priceNotifier == null) return const SizedBox.shrink();
 
     return ValueListenableBuilder(
       valueListenable: priceNotifier,
@@ -995,8 +999,8 @@ class SwapInputTrailling extends StatelessWidget {
 }
 
 class SwapInputBottom extends StatelessWidget {
-  final CoinEntity? token;
-  final CoinEntity? otherToken;
+  final ERC20Entity? token;
+  final ERC20Entity? otherToken;
   final bool showMax;
   final bool isFrom;
 
@@ -1013,7 +1017,7 @@ class SwapInputBottom extends StatelessWidget {
     final balanceNotifier = InheritedAssetProvider.of(context);
     final swapProvider = InheritedSwapProvider.of(context);
     final balanceListenable =
-        token != null ? balanceNotifier.notifierForToken(token!) : null;
+        token != null ? balanceNotifier.balanceNotifierForToken(token!) : null;
     final priceListenable =
         token != null ? balanceNotifier.priceNotifierForToken(token!) : null;
 
@@ -1218,7 +1222,7 @@ class SwapInputBottom extends StatelessWidget {
 }
 
 class AssetPicture extends StatelessWidget {
-  final CoinEntity token;
+  final ERC20Entity token;
   final double size;
 
   const AssetPicture({
@@ -1229,23 +1233,9 @@ class AssetPicture extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final assetNotifer = InheritedAssetProvider.of(context);
+    final imageProvider = InheritedImageProvider.of(context);
 
-    final image = assetNotifer.imageNotifierForToken(token);
-
-    if (image == null) {
-      return ShimmerLoading(
-        isLoading: true,
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: context.colors.background2,
-          ),
-        ),
-      );
-    }
+    final image = imageProvider.imageNotifierForToken(token);
 
     return ValueListenableBuilder(
       valueListenable: image,
