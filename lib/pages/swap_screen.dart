@@ -177,6 +177,7 @@ class _SwappingScreenState extends State<SwappingScreen> {
   }
 
   void swapStateChanged() {
+    if (mounted == false) return;
     print("Swap State: ${swapProvider.swapState.value}");
 
     final swapState = swapProvider.swapState.value;
@@ -184,7 +185,7 @@ class _SwappingScreenState extends State<SwappingScreen> {
     /// User just completed the swap
     if (swapState == SwapState.Swapped) {
       final swapInfo = swapProvider.swapInfo.value;
-      print(swapInfo);
+
       assetProvider.refresh();
       InAppNotification.show(
         right: 16,
@@ -197,7 +198,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
             color: context.colors.primary,
             size: 36,
           ),
-          spacing: 12,
+          titleStyle: context.typography.b2,
+          subtitleStyle: context.typography.b1,
+          spacing: 16,
           showCloseButton: false,
         ),
         context: context,
@@ -211,13 +214,15 @@ class _SwappingScreenState extends State<SwappingScreen> {
       InAppNotification.show(
         right: 16,
         top: 16,
-        child: const NomoNotification(
+        child: NomoNotification(
           title: "Transaction Pending",
           subtitle: "Waiting for transaction confirmation",
           leading: Loading(
             size: 20,
           ),
-          spacing: 12,
+          titleStyle: context.typography.b2,
+          subtitleStyle: context.typography.b1,
+          spacing: 16,
           showCloseButton: false,
         ),
         context: context,
@@ -234,7 +239,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
           title: "Swap Error",
           subtitle: "An error occurred while swapping",
           showCloseButton: false,
-          spacing: 12,
+          titleStyle: context.typography.b2,
+          subtitleStyle: context.typography.b1,
+          spacing: 16,
           leading: Icon(
             Icons.error,
             color: context.colors.error,
@@ -255,7 +262,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
           title: "Token Approval Error",
           subtitle: "An error occurred while approving the token",
           showCloseButton: false,
-          spacing: 12,
+          titleStyle: context.typography.b2,
+          subtitleStyle: context.typography.b1,
+          spacing: 16,
           leading: Icon(
             Icons.error,
             color: context.colors.error,

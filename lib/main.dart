@@ -47,15 +47,6 @@ void main() async {
   $inNomo = WebonKitDart.isFallBackMode() == false;
   $inMetamask = !$inNomo;
 
-  // MetamaskBridge.ethereumAddToken(
-  //   (
-  //     address: "0xF1cA9cb74685755965c7458528A36934Df52A3EF",
-  //     symbol: "AVINOC",
-  //     decimals: 18,
-  //     image: "https://price.zeniq.services/images/868.png",
-  //   ),
-  // );
-
   if ($inNomo) {
     $addressNotifier.value = await WebonKitDart.getEvmAddress();
     initNomo();
