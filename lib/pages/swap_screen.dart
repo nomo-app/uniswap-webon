@@ -21,8 +21,10 @@ import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/common/extensions.dart';
 import 'package:zeniq_swap_frontend/common/price_repository.dart';
+import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/pages/background.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/image_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 
@@ -35,7 +37,7 @@ class SwappingScreen extends StatefulWidget {
 
 class _SwappingScreenState extends State<SwappingScreen> {
   late SwapProvider swapProvider;
-  late AssetNotifier assetNotifer;
+  late AssetNotifier assetProvider;
 
   late final ValueNotifier<String?> fromErrorNotifier = ValueNotifier(null);
   late final ValueNotifier<String?> toErrorNotifier = ValueNotifier(null);
@@ -50,16 +52,25 @@ class _SwappingScreenState extends State<SwappingScreen> {
   @override
   void didChangeDependencies() {
     swapProvider = InheritedSwapProvider.of(context);
-    assetNotifer = InheritedAssetProvider.of(context);
+    assetProvider = InheritedAssetProvider.of(context);
 
     swapProvider.swapState.addListener(swapStateChanged);
-
     swapProvider.fromAmount.addListener(fromAmountChanged);
     swapProvider.toAmount.addListener(toAmountChanged);
+
+    swapProvider.addressNotifier.addListener(recheckBalances);
 
     keyboardShown = MediaQuery.of(context).viewInsets.bottom > 0;
 
     super.didChangeDependencies();
+  }
+
+  void recheckBalances() {
+    if (swapProvider.lastAmountChanged == LastAmountChanged.From) {
+      fromAmountChanged();
+    } else {
+      toAmountChanged();
+    }
   }
 
   /// Checking Balance
@@ -74,16 +85,38 @@ class _SwappingScreenState extends State<SwappingScreen> {
       return;
     }
 
-    final balance = assetNotifer.notifierForToken(toToken)?.value.valueOrNull;
+    final balanceNotifier = assetProvider.balanceNotifierForToken(toToken);
+    final balanceAsync = balanceNotifier.value;
 
-    if (balance == null) return;
+    void checkToAmountError(Amount balance, Amount toAmount) {
+      fromErrorNotifier.value = null;
+      if (toAmount.value > balance.value) {
+        toErrorNotifier.value = "Insufficient balance";
+        swapProvider.swapState.value = SwapState.InsufficientBalance;
+      } else {
+        toErrorNotifier.value = null;
+        swapProvider.swapState.value = SwapState.None;
+      }
+    }
 
-    fromErrorNotifier.value = null;
+    if (balanceAsync is Value) {
+      checkToAmountError((balanceAsync as Value<Amount>).value, toAmount);
+      return;
+    }
 
-    if (toAmount.value > balance.value) {
-      toErrorNotifier.value = "Insufficient balance";
-    } else {
-      toErrorNotifier.value = null;
+    if (balanceAsync is AsyncLoading) {
+      void listener() {
+        final balanceAsync = balanceNotifier.value;
+        if (balanceAsync is Value) {
+          checkToAmountError(
+            (balanceAsync as Value<Amount>).value,
+            toAmount,
+          );
+          balanceNotifier.removeListener(listener);
+        }
+      }
+
+      balanceNotifier.addListener(listener);
     }
   }
 
@@ -99,26 +132,52 @@ class _SwappingScreenState extends State<SwappingScreen> {
       return;
     }
 
-    final balance = assetNotifer.notifierForToken(fromToken)?.value.valueOrNull;
+    final balanceNotifier = assetProvider.balanceNotifierForToken(fromToken);
+    final balanceAsync = balanceNotifier.value;
 
-    if (balance == null) return;
+    void checkFromAmountError(Amount balance, Amount fromAmount) {
+      toErrorNotifier.value = null;
+      if (fromAmount.value > balance.value) {
+        fromErrorNotifier.value = "Insufficient balance";
+        swapProvider.swapState.value = SwapState.InsufficientBalance;
+      } else {
+        fromErrorNotifier.value = null;
+        swapProvider.swapState.value = SwapState.None;
+      }
+    }
 
-    toErrorNotifier.value = null;
+    if (balanceAsync is Value) {
+      checkFromAmountError((balanceAsync as Value<Amount>).value, fromAmount);
+      return;
+    }
 
-    if (fromAmount.value > balance.value) {
-      fromErrorNotifier.value = "Insufficient balance";
-    } else {
-      fromErrorNotifier.value = null;
+    if (balanceAsync is AsyncLoading) {
+      void listener() {
+        final balanceAsync = balanceNotifier.value;
+        if (balanceAsync is Value) {
+          checkFromAmountError(
+            (balanceAsync as Value<Amount>).value,
+            fromAmount,
+          );
+          balanceNotifier.removeListener(listener);
+        }
+      }
+
+      balanceNotifier.addListener(listener);
     }
   }
 
   @override
   void dispose() {
     swapProvider.swapState.removeListener(swapStateChanged);
+    swapProvider.fromAmount.removeListener(fromAmountChanged);
+    swapProvider.toAmount.removeListener(toAmountChanged);
+    swapProvider.addressNotifier.removeListener(recheckBalances);
     super.dispose();
   }
 
   void swapStateChanged() {
+    if (mounted == false) return;
     print("Swap State: ${swapProvider.swapState.value}");
 
     final swapState = swapProvider.swapState.value;
@@ -126,9 +185,8 @@ class _SwappingScreenState extends State<SwappingScreen> {
     /// User just completed the swap
     if (swapState == SwapState.Swapped) {
       final swapInfo = swapProvider.swapInfo.value;
-      print(swapInfo);
-      assetNotifer.fetchAllBalances();
-      assetNotifer.fetchAllPrices();
+
+      assetProvider.refresh();
       InAppNotification.show(
         right: 16,
         top: 16,
@@ -140,7 +198,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
             color: context.colors.primary,
             size: 36,
           ),
-          spacing: 12,
+          titleStyle: context.typography.b2,
+          subtitleStyle: context.typography.b1,
+          spacing: 16,
           showCloseButton: false,
         ),
         context: context,
@@ -150,18 +210,19 @@ class _SwappingScreenState extends State<SwappingScreen> {
 
     /// User just completed the swap
     if (swapState == SwapState.Confirming) {
-      assetNotifer.fetchAllBalances();
-      assetNotifer.fetchAllPrices();
+      assetProvider.refresh();
       InAppNotification.show(
         right: 16,
         top: 16,
-        child: const NomoNotification(
+        child: NomoNotification(
           title: "Transaction Pending",
           subtitle: "Waiting for transaction confirmation",
           leading: Loading(
             size: 20,
           ),
-          spacing: 12,
+          titleStyle: context.typography.b2,
+          subtitleStyle: context.typography.b1,
+          spacing: 16,
           showCloseButton: false,
         ),
         context: context,
@@ -178,7 +239,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
           title: "Swap Error",
           subtitle: "An error occurred while swapping",
           showCloseButton: false,
-          spacing: 12,
+          titleStyle: context.typography.b2,
+          subtitleStyle: context.typography.b1,
+          spacing: 16,
           leading: Icon(
             Icons.error,
             color: context.colors.error,
@@ -199,7 +262,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
           title: "Token Approval Error",
           subtitle: "An error occurred while approving the token",
           showCloseButton: false,
-          spacing: 12,
+          titleStyle: context.typography.b2,
+          subtitleStyle: context.typography.b1,
+          spacing: 16,
           leading: Icon(
             Icons.error,
             color: context.colors.error,
@@ -259,8 +324,7 @@ class _SwappingScreenState extends State<SwappingScreen> {
                         padding: EdgeInsets.zero,
                         onPressed: () {
                           swapProvider.checkSwapInfo();
-                          assetNotifer.fetchAllBalances();
-                          assetNotifer.fetchAllPrices();
+                          assetProvider.refresh();
                         },
                       ),
                       12.hSpacing,
@@ -295,7 +359,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
                             margin: const EdgeInsets.symmetric(vertical: 8),
                             placeHolderStyle: context.typography.b3,
                             borderRadius: BorderRadius.circular(16),
-                            style: context.typography.b3,
+                            style: context.typography.b3.copyWith(
+                              color: context.colors.foreground1,
+                            ),
                             border: const Border.fromBorderSide(
                               BorderSide(color: Colors.white10),
                             ),
@@ -442,7 +508,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
                             enabled: enabled,
                             maxLines: 1,
                             scrollable: true,
-                            style: context.typography.b3,
+                            style: context.typography.b3.copyWith(
+                              color: context.colors.foreground1,
+                            ),
                             placeHolderStyle: context.typography.b3,
                             background:
                                 context.colors.background2.withOpacity(0.5),
@@ -529,7 +597,8 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                           data: NomoInfoItemThemeDataNullable(
                                             titleStyle: context.typography.b1
                                                 .copyWith(
-                                                    color: Colors.white60),
+                                                    color: context
+                                                        .colors.foreground3),
                                             valueStyle: context.typography.b1,
                                           ),
                                           child: NomoCard(
@@ -728,11 +797,14 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                                         ),
                                                         const Spacer(),
                                                         const AssetPicture(
-                                                          token: zeniqSmart,
+                                                          token:
+                                                              zeniqTokenWrapper,
                                                         ),
                                                         8.hSpacing,
                                                         NomoText(
-                                                            zeniqSmart.name),
+                                                          zeniqTokenWrapper
+                                                              .name,
+                                                        ),
                                                         const Spacer(),
                                                         const Icon(
                                                           Icons.arrow_forward,
@@ -744,8 +816,10 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                                               swapInfo.toToken,
                                                         ),
                                                         8.hSpacing,
-                                                        NomoText(swapInfo
-                                                            .toToken.symbol),
+                                                        NomoText(
+                                                          swapInfo
+                                                              .toToken.symbol,
+                                                        ),
                                                       ],
                                                     ),
                                                   ),
@@ -798,9 +872,42 @@ class _SwappingScreenState extends State<SwappingScreen> {
                       return const SizedBox.shrink();
                     },
                   ),
-                  ValueListenableBuilder(
-                    valueListenable: swapProvider.swapState,
-                    builder: (context, state, child) {
+                  ListenableBuilder(
+                    listenable: Listenable.merge([
+                      swapProvider.swapState,
+                      if ($inMetamask && $metamask != null) ...[
+                        $metamask!.chainIdNotifier,
+                        $metamask!.currentAccountNotifier,
+                      ]
+                    ]),
+                    builder: (context, child) {
+                      final showMetamask = $inMetamask &&
+                          $metamask != null &&
+                          ($metamask!.currentAccount == null ||
+                              $metamask!.chainId != ZeniqSmartNetwork.chainId);
+
+                      if (showMetamask) {
+                        final connect = $metamask!.currentAccount == null;
+
+                        return PrimaryNomoButton(
+                          text: connect ? 'Connect Wallet' : 'Switch Network',
+                          expandToConstraints: true,
+                          height: 64,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          borderRadius: BorderRadius.circular(16),
+                          textStyle: context.typography.h1,
+                          onPressed: () {
+                            if (connect) {
+                              $metamask!.connect();
+                              return;
+                            }
+
+                            $metamask!.switchChain(zeniqSmartChainInfo);
+                          },
+                        );
+                      }
+
+                      final state = swapProvider.swapState.value;
                       return AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
                         child: Row(
@@ -825,7 +932,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                   SwapState.ApprovingToken =>
                                     ActionType.loading,
                                   SwapState.None ||
-                                  SwapState.InsufficientLiquidity =>
+                                  SwapState.InsufficientLiquidity ||
+                                  SwapState.Preview ||
+                                  SwapState.InsufficientBalance =>
                                     ActionType.nonInteractive,
                                   _ => ActionType.def,
                                 },
@@ -861,7 +970,7 @@ class _SwappingScreenState extends State<SwappingScreen> {
 }
 
 class TokenPriceDisplay extends StatelessWidget {
-  final CoinEntity token;
+  final ERC20Entity token;
   const TokenPriceDisplay({
     super.key,
     required this.token,
@@ -871,8 +980,6 @@ class TokenPriceDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     final priceNotifier =
         InheritedAssetProvider.of(context).priceNotifierForToken(token);
-
-    if (priceNotifier == null) return const SizedBox.shrink();
 
     return ValueListenableBuilder(
       valueListenable: priceNotifier,
@@ -964,7 +1071,7 @@ class SwapInputTrailling extends StatelessWidget {
               ),
             )
           : SecondaryNomoButton(
-              backgroundColor: context.colors.background1,
+              backgroundColor: context.colors.background2,
               height: 42,
               onPressed: () => onPressed(context),
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -995,8 +1102,8 @@ class SwapInputTrailling extends StatelessWidget {
 }
 
 class SwapInputBottom extends StatelessWidget {
-  final CoinEntity? token;
-  final CoinEntity? otherToken;
+  final ERC20Entity? token;
+  final ERC20Entity? otherToken;
   final bool showMax;
   final bool isFrom;
 
@@ -1012,8 +1119,9 @@ class SwapInputBottom extends StatelessWidget {
   Widget build(BuildContext context) {
     final balanceNotifier = InheritedAssetProvider.of(context);
     final swapProvider = InheritedSwapProvider.of(context);
+
     final balanceListenable =
-        token != null ? balanceNotifier.notifierForToken(token!) : null;
+        token != null ? balanceNotifier.balanceNotifierForToken(token!) : null;
     final priceListenable =
         token != null ? balanceNotifier.priceNotifierForToken(token!) : null;
 
@@ -1032,6 +1140,7 @@ class SwapInputBottom extends StatelessWidget {
           ListenableBuilder(
             listenable: Listenable.merge(
               [
+                $addressNotifier,
                 balanceListenable,
                 priceListenable,
                 swapProvider.swapInfo,
@@ -1039,6 +1148,7 @@ class SwapInputBottom extends StatelessWidget {
               ],
             ),
             builder: (context, child) {
+              final hasAddress = $addressNotifier.value != null;
               final balanceAsync = balanceListenable.value;
               final priceAsync = priceListenable.value;
               final otherPriceAsync = otherPriceListenable?.value;
@@ -1156,56 +1266,57 @@ class SwapInputBottom extends StatelessWidget {
                       },
                     ),
                     const Spacer(),
-                    balanceAsync.when(
-                      data: (balance) {
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            NomoText(
-                              "Balance: ",
-                              style: context.typography.b1,
-                              opacity: 0.6,
-                            ),
-                            NomoText(
-                              balance.displayDouble.toStringAsFixed(2),
-                              style: context.typography.b1,
-                              opacity: 0.8,
-                            ),
-                            if (showMax && balance.displayDouble > 0) ...[
-                              8.hSpacing,
-                              NomoLinkButton(
-                                text: "Max",
-                                width: 48,
-                                height: 32,
-                                foregroundColor: context.colors.primary,
-                                selectionColor:
-                                    context.colors.primary.lighten(),
-                                tapDownColor: context.colors.primary.darken(),
-                                padding: EdgeInsets.zero,
-                                textStyle: context.typography.b1,
-                                onPressed: () {
-                                  swapProvider.fromAmountString.value =
-                                      balance.displayValue;
-                                },
+                    if (hasAddress)
+                      balanceAsync.when(
+                        data: (balance) {
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              NomoText(
+                                "Balance: ",
+                                style: context.typography.b1,
+                                opacity: 0.6,
                               ),
+                              NomoText(
+                                balance.displayDouble.toStringAsFixed(2),
+                                style: context.typography.b1,
+                                opacity: 0.8,
+                              ),
+                              if (showMax && balance.displayDouble > 0) ...[
+                                8.hSpacing,
+                                NomoLinkButton(
+                                  text: "Max",
+                                  width: 48,
+                                  height: 32,
+                                  foregroundColor: context.colors.primary,
+                                  selectionColor:
+                                      context.colors.primary.lighten(),
+                                  tapDownColor: context.colors.primary.darken(),
+                                  padding: EdgeInsets.zero,
+                                  textStyle: context.typography.b1,
+                                  onPressed: () {
+                                    swapProvider.fromAmountString.value =
+                                        balance.displayValue;
+                                  },
+                                ),
+                              ],
+                              4.hSpacing,
                             ],
-                            4.hSpacing,
-                          ],
-                        );
-                      },
-                      loading: () => ShimmerLoading(
-                        isLoading: true,
-                        child: Container(
-                          width: 64,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
-                            color: context.colors.background2,
+                          );
+                        },
+                        loading: () => ShimmerLoading(
+                          isLoading: true,
+                          child: Container(
+                            width: 64,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                              color: context.colors.background2,
+                            ),
                           ),
                         ),
+                        error: (error) => const Icon(Icons.error),
                       ),
-                      error: (error) => const Icon(Icons.error),
-                    ),
                   ],
                 ),
               );
@@ -1218,7 +1329,7 @@ class SwapInputBottom extends StatelessWidget {
 }
 
 class AssetPicture extends StatelessWidget {
-  final CoinEntity token;
+  final ERC20Entity token;
   final double size;
 
   const AssetPicture({
@@ -1229,23 +1340,9 @@ class AssetPicture extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final assetNotifer = InheritedAssetProvider.of(context);
+    final imageProvider = InheritedImageProvider.of(context);
 
-    final image = assetNotifer.imageNotifierForToken(token);
-
-    if (image == null) {
-      return ShimmerLoading(
-        isLoading: true,
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: context.colors.background2,
-          ),
-        ),
-      );
-    }
+    final image = imageProvider.imageNotifierForToken(token);
 
     return ValueListenableBuilder(
       valueListenable: image,

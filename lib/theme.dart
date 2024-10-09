@@ -10,6 +10,7 @@ import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/theme/sub/nomo_color_theme.dart';
 import 'package:nomo_ui_kit/theme/sub/nomo_constants.dart';
 import 'package:nomo_ui_kit/theme/sub/nomo_sizing_theme.dart';
+import 'package:webon_kit_dart/webon_kit_dart.dart';
 
 enum ColorMode { LIGHT, DARK }
 
@@ -37,7 +38,8 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
 
   @override
   ColorMode initialColorTheme() {
-    return ColorMode.DARK;
+    final key = WebLocalStorage.getItem("theme");
+    return key == "light" ? ColorMode.LIGHT : ColorMode.DARK;
   }
 
   @override
@@ -47,12 +49,12 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
 
   @override
   NomoTypographyTheme get typography => NomoTypographyTheme(
-        b1: GoogleFonts.roboto(),
-        b2: GoogleFonts.roboto(),
-        b3: GoogleFonts.roboto(),
-        h1: GoogleFonts.dancingScript(),
-        h2: GoogleFonts.dancingScript(),
-        h3: GoogleFonts.dancingScript(),
+        b1: TextStyle(fontFamily: "Roboto"),
+        b2: TextStyle(fontFamily: "Roboto"),
+        b3: TextStyle(fontFamily: "Roboto"),
+        h1: TextStyle(fontFamily: "DancingScript"),
+        h2: TextStyle(fontFamily: "DancingScript"),
+        h3: TextStyle(fontFamily: "DancingScript"),
       );
 
   @override
@@ -94,18 +96,25 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
           secondary: secondary,
           onSecondary: Color(0xff000000),
           secondaryContainer: Color(0xffe6d0a3),
-          background1: Color(0xFFF5F5F5),
-          background2: Color(0xFFE0E0E0),
-          background3: Color(0xFFBDBDBD),
+          background1: Color(0xFFffffff),
+          background2: Color(0xFFfafafa),
+          background3: Color(0xFFf5f5f5),
           surface: Colors.white,
           error: Colors.redAccent,
-          disabled: Color(0xFFE0E0E0),
+          disabled: Color(0xFFf0f0f0),
           foreground1: Color(0xCF000000),
           foreground2: Color(0xDF000000),
-          foreground3: Color(0xEF000000),
+          foreground3: Colors.black54,
           brightness: Brightness.light,
-          onDisabled: Colors.grey,
+          onDisabled: Color(0xFFd9d9d9),
         ),
+        buildComponents: (core) {
+          return NomoComponentColorsNullable(
+            secondaryButtonColor: SecondaryNomoButtonColorDataNullable(
+              foregroundColor: core.foreground1,
+            ),
+          );
+        },
       ),
       ColorMode.DARK: NomoColorThemeDataNullable(
         key: const ValueKey('dark'),
@@ -163,4 +172,8 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
       ),
     );
   }
+}
+
+extension ThemeExtension on BuildContext {
+  bool get isDark => colorTheme.key.value == "dark";
 }

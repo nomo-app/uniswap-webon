@@ -3,7 +3,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
-import 'package:zeniq_swap_frontend/common/image_repository.dart';
 import 'package:zeniq_swap_frontend/common/logger.dart';
 import 'package:zeniq_swap_frontend/common/price_repository.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
@@ -11,8 +10,15 @@ import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 const _fetchInterval = Duration(minutes: 1);
 
 class AssetNotifier {
-  final String address;
-  final List<ERC20Entity> tokens;
+  final ValueNotifier<String?> addressNotifier;
+
+  String? get address => addressNotifier.value;
+  final ValueNotifier<Set<ERC20Entity>> tokenNotifier;
+
+  Set<ERC20Entity> get tokens => tokenNotifier.value;
+
+  Set<ERC20Entity> lastTokens = {};
+
   final EvmRpcInterface rpc = EvmRpcInterface(
     type: ZeniqSmartNetwork,
     clients: [
@@ -20,7 +26,7 @@ class AssetNotifier {
     ],
   );
 
-  final ValueNotifier<Currency> currencyNotifier = ValueNotifier(Currency.usd);
+  final ValueNotifier<Currency> currencyNotifier;
 
   Currency get currency => currencyNotifier.value;
 
@@ -28,84 +34,73 @@ class AssetNotifier {
 
   final Map<ERC20Entity, ValueNotifier<AsyncValue<Amount>>> _balances = {};
   final Map<ERC20Entity, ValueNotifier<AsyncValue<PriceState>>> _prices = {};
-  final Map<ERC20Entity, ValueNotifier<AsyncValue<ImageEntity>>> _images = {};
-
-  void addPreviewToken(ERC20Entity token) {
-    _balances[token] = ValueNotifier(AsyncValue.loading());
-    _prices[token] = ValueNotifier(AsyncValue.loading());
-    _images[token] = ValueNotifier(AsyncValue.loading());
-
-    fetchBalanceForToken(token);
-    fetchImageForToken(token);
-  }
 
   void addToken(ERC20Entity token) {
-    tokens.add(token);
-
-    fetchBalanceForToken(token);
-    fetchImageForToken(token);
-    fetchPriceForToken(token);
+    tokenNotifier.value = {...tokens, token};
   }
 
-  AssetNotifier(this.address, this.tokens) {
-    for (final token in tokens) {
-      _balances[token] = ValueNotifier(AsyncValue.loading());
-      _prices[token] = ValueNotifier(AsyncValue.loading());
-      _images[token] = ValueNotifier(AsyncValue.loading());
-    }
+  void refresh() {
+    fetchAllBalances(tokens);
+    fetchAllPrices(tokens);
+  }
+
+  void tokensChanged() {
+    final diff = tokens.difference(lastTokens);
+
+    fetchAllBalances(diff);
+    fetchAllPrices(diff);
+
+    lastTokens = tokens;
+  }
+
+  AssetNotifier(
+    this.addressNotifier,
+    this.tokenNotifier,
+    this.currencyNotifier,
+  ) {
+    tokensChanged();
+    tokenNotifier.addListener(tokensChanged);
+
+    addressNotifier.addListener(
+      () {
+        for (final token in tokens) {
+          _balances[token]!.value = AsyncLoading();
+        }
+        fetchAllBalances(tokens);
+      },
+    );
 
     currencyNotifier.addListener(() {
-      fetchAllPrices();
+      fetchAllPrices(tokens);
     });
-
-    fetchAllBalances();
-    fetchAllPrices();
-    fetchAllImages();
 
     Timer.periodic(_fetchInterval, (_) {
-      fetchAllBalances();
-      fetchAllPrices();
-      fetchAllImages();
+      fetchAllBalances(tokens);
+      fetchAllPrices(tokens);
     });
   }
 
-  Future<void> fetchAllImages() async =>
-      await Future.wait(tokens.map(fetchImageForToken));
-
-  Future<void> fetchImageForToken(CoinEntity token) async {
-    final currentImage = _images[token]!.value;
-
-    if (currentImage.hasValue) return;
-
-    try {
-      final image = await ImageRepository.getImage(
-        switch (token) {
-          zeniqTokenWrapper => zeniqSmart,
-          _ => token,
-        },
-      );
-      _images[token]!.value = AsyncValue.value(image);
-    } catch (e) {
-      _images[token]!.value = AsyncValue.error(e);
-    }
-  }
-
-  Future<void> fetchAllBalances() async =>
+  Future<void> fetchAllBalances(Iterable<ERC20Entity> tokens) async =>
       await Future.wait(tokens.map(fetchBalanceForToken));
 
-  Future<void> fetchBalanceForToken(CoinEntity token) async {
-    try {
-      final balance = await (token.isERC20
-          ? rpc.fetchTokenBalance(address, token.asEthBased!)
-          : rpc.fetchBalance(address: address));
+  Future<void> fetchBalanceForToken(ERC20Entity token) async {
+    if (address == null) return;
 
-      _balances[token]!.value = AsyncValue.value(balance);
+    final notifier = _balances.putIfAbsent(
+      token,
+      () => ValueNotifier(AsyncLoading()),
+    );
+
+    try {
+      final balance = await rpc.fetchTokenBalance(address!, token);
+
+      notifier.value = AsyncValue.value(balance);
     } catch (e) {
-      _balances[token]!.value = AsyncValue.error(e);
+      notifier.value = AsyncValue.error(e);
     }
   }
 
-  Future<void> fetchAllPrices() async {
+  Future<void> fetchAllPrices(Set<ERC20Entity> tokens) async {
     final results =
         await PriceRepository.fetchAll(currency: currency, tokens: tokens);
 
@@ -114,25 +109,30 @@ class AssetNotifier {
       return priceEntity == null;
     }).toSet();
 
-    final priceTokens = tokens.toSet().difference(noPriceTokens);
+    final priceTokens = tokens.difference(noPriceTokens);
 
     calculatePricesForTokens(noPriceTokens.toList());
 
     for (final token in priceTokens) {
       var priceEntity = results.singleWhereOrNull((pe) => pe.token == token);
 
+      final notifier = _prices.putIfAbsent(
+        token,
+        () => ValueNotifier(AsyncLoading()),
+      );
+
       if (priceEntity == null || priceEntity.isPending) {
-        _prices[token]!.value = AsyncValue.error("Price not available");
+        notifier.value = AsyncValue.error("Price not available");
         continue;
       }
 
-      _prices[token]!.value = AsyncValue.value(
+      notifier.value = AsyncValue.value(
         PriceState(currency: currency, price: priceEntity.price),
       );
     }
   }
 
-  Future<void> calculatePricesForTokens(List<CoinEntity> tokens) async {
+  Future<void> calculatePricesForTokens(List<ERC20Entity> tokens) async {
     final zeniqPrice = await PriceRepository.fetchSingle(
       zeniqSmart,
       currency,
@@ -140,7 +140,7 @@ class AssetNotifier {
     final futures = [
       for (final token in tokens)
         fetchPriceForTokenPair(
-          token as ERC20Entity,
+          token,
           zeniqPrice,
         ),
     ];
@@ -148,12 +148,17 @@ class AssetNotifier {
     final result = await Future.wait(futures);
 
     for (final (price, token) in result) {
+      final notifier = _prices.putIfAbsent(
+        token,
+        () => ValueNotifier(AsyncLoading()),
+      );
+
       if (price == null) {
-        _prices[token]!.value = AsyncValue.error("Price not available");
+        notifier.value = AsyncValue.error("Price not available");
         continue;
       }
 
-      _prices[token]!.value = AsyncValue.value(price);
+      notifier.value = AsyncValue.value(price);
     }
   }
 
@@ -186,27 +191,38 @@ class AssetNotifier {
     }
   }
 
-  Future<void> fetchPriceForToken(CoinEntity token) async {
+  Future<void> fetchPriceForToken(ERC20Entity token) async {
+    final notifier = _prices.putIfAbsent(
+      token,
+      () => ValueNotifier(AsyncLoading()),
+    );
     try {
       final result = await PriceRepository.fetchSingle(token, currency);
-      _prices[token]!.value = AsyncValue.value(
+      notifier.value = AsyncValue.value(
         PriceState(currency: currency, price: result),
       );
     } catch (e) {
-      _prices[token]!.value = AsyncValue.error(e);
+      notifier.value = AsyncValue.error(e);
     }
   }
 
-  ValueNotifier<AsyncValue<Amount>>? notifierForToken(CoinEntity token) =>
-      _balances[token];
+  ValueNotifier<AsyncValue<Amount>> balanceNotifierForToken(
+    ERC20Entity token,
+  ) {
+    return _balances.putIfAbsent(
+      token,
+      () => ValueNotifier(AsyncLoading()),
+    );
+  }
 
-  ValueNotifier<AsyncValue<PriceState>>? priceNotifierForToken(
-          CoinEntity token) =>
-      _prices[token];
-
-  ValueNotifier<AsyncValue<ImageEntity>>? imageNotifierForToken(
-          CoinEntity token) =>
-      _images[token];
+  ValueNotifier<AsyncValue<PriceState>> priceNotifierForToken(
+    ERC20Entity token,
+  ) {
+    return _prices.putIfAbsent(
+      token,
+      () => ValueNotifier(AsyncLoading()),
+    );
+  }
 }
 
 class InheritedAssetProvider extends InheritedWidget {
@@ -224,12 +240,13 @@ class InheritedAssetProvider extends InheritedWidget {
     if (provider == null) {
       throw FlutterError('InheritedBalanceProvider not found in context');
     }
+
     return provider.notifier;
   }
 
   @override
   bool updateShouldNotify(InheritedAssetProvider oldWidget) {
-    return notifier.tokens != oldWidget.notifier.tokens;
+    return false;
   }
 }
 

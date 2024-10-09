@@ -16,7 +16,7 @@ dependencies:
 
   flutter_web_plugins:
     sdk: flutter
-  nomo_ui_kit: 0.0.26
+  nomo_ui_kit: 0.0.32
   nomo_router: 0.0.3
   route_gen: 0.0.2
   webon_kit_dart:
@@ -43,3 +43,16 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+  fonts:
+    - family: DancingScript
+      fonts:
+        - asset: assets/fonts/DancingScript-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/DancingScript-Bold.ttf
+          weight: 700
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700

@@ -26,7 +26,7 @@
     <!-- iOS meta tags & icons -->
     <meta name="apple-mobile-web-app-title" content="Zeniq Dex" />
     <!-- Sets the status bar style to transparent -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="apple-touch-icon" href="icons/192x192_App_Icon.png" />
     <meta name="theme-color" content="#ffffff" />
@@ -39,18 +39,19 @@
     <meta property="og:title" content="Zeniq Dex" />
     <meta
       property="og:description"
-      content="Decentralized Exchange of the ZeniqSmartChain" />
+      content="Decentralized Exchange of the ZeniqSmartChain"
+    />
     <meta property="og:image" content="https://dex.zeniqswap.com/card.svg" />
     <meta property="og:image:width" content="320" />
     <meta property="og:image:height" content="196" />
     <meta property="og:url" content="https://dex.zeniqswap.com" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Zeniq Dex" />
-    <meta name="twitter:description" content="Decentralized Exchange of the ZeniqSmartChain" />
     <meta
-      name="twitter:image"
-      content="https://dex.zeniqswap.com/card.svg"
+      name="twitter:description"
+      content="Decentralized Exchange of the ZeniqSmartChain"
     />
+    <meta name="twitter:image" content="https://dex.zeniqswap.com/card.svg" />
 
     <link rel="manifest" href="manifest.json" />
     <script type="module" src="nomo-webon-kit/dart_interface.js" defer></script>
@@ -64,6 +65,54 @@
     <script type="module" src="nomo-webon-kit/nomo_platform.js" defer></script>
     <script type="module" src="nomo-webon-kit/nomo_theming.js" defer></script>
     <script type="module" src="nomo-webon-kit/nomo_web3.js" defer></script>
+
+    <!-- Custom CSS styling for the loading spinner -->
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f0f0f0;
+      }
+
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #f0f0f0;
+        transition: opacity 0.5s ease-out;
+      }
+
+      .loader {
+        width: 100px;
+        height: 100px;
+        animation: breathe 3s ease-in-out infinite;
+      }
+
+      .loader img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+      }
+    </style>
   </head>
 
   <body>

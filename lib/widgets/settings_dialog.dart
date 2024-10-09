@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nomo_ui_kit/components/app/bottom_bar/nomo_bottom_bar.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/dialog/nomo_dialog.dart';
 import 'package:nomo_ui_kit/components/divider/nomo_divider.dart';
@@ -7,11 +8,15 @@ import 'package:nomo_ui_kit/components/dropdownmenu/drop_down_item.dart';
 import 'package:nomo_ui_kit/components/dropdownmenu/dropdownmenu.dart';
 import 'package:nomo_ui_kit/components/input/textInput/nomo_input.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
+import 'package:nomo_ui_kit/entities/menu_item.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
+import 'package:nomo_ui_kit/theme/theme_provider.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
+import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/common/price_repository.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
+import 'package:zeniq_swap_frontend/theme.dart';
 
 class SettingsDialog extends StatelessWidget {
   const SettingsDialog({super.key});
@@ -32,7 +37,6 @@ class SettingsDialog extends StatelessWidget {
           NomoText(
             "Adjust to your personal preference",
             style: context.typography.b1,
-            color: Colors.white54,
           ),
         ],
       ),
@@ -41,7 +45,43 @@ class SettingsDialog extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       content: Column(
         children: [
-          const NomoDivider(),
+          NomoDivider(
+            color: context.colors.disabled,
+          ),
+          16.vSpacing,
+          Row(
+            children: [
+              NomoText("Theme", style: context.typography.b2),
+              const Spacer(),
+              NomoBottomBar(
+                items: const [
+                  NomoMenuIconItem(
+                    title: "Dark",
+                    key: ColorMode.DARK,
+                    icon: Icons.dark_mode,
+                  ),
+                  NomoMenuIconItem(
+                    title: "Light",
+                    key: ColorMode.LIGHT,
+                    icon: Icons.light_mode,
+                  ),
+                ],
+                elevation: 0,
+                selected: context.getColorMode(),
+                onTap: (item) {
+                  ThemeProvider.of(context).changeColorTheme(item.key);
+                  WebLocalStorage.setItem(
+                      "theme", item.key == ColorMode.LIGHT ? "light" : "dark");
+                },
+                borderRadius: BorderRadius.circular(16),
+                background: context.colors.background1,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                itemWidth: 64,
+                itemPadding: EdgeInsets.zero,
+              ),
+            ],
+          ),
           16.vSpacing,
           Row(
             children: [
@@ -103,10 +143,11 @@ class SettingsDialog extends StatelessWidget {
                       PrimaryNomoButton(
                         text: "$slippage%",
                         padding: EdgeInsets.zero,
-                        backgroundColor: const Color.fromARGB(0, 212, 102, 102),
+                        backgroundColor: context.colors.background3,
                         width: 48,
                         height: 32,
                         textStyle: context.typography.b1,
+                        foregroundColor: context.colors.foreground3,
                         margin: const EdgeInsets.only(right: 8),
                         onPressed: () {
                           swapProcider.slippageString.value =

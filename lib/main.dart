@@ -1,28 +1,46 @@
-import 'package:barcode_widget/barcode_widget.dart';
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_router/router/entities/transitions.dart';
 import 'package:nomo_ui_kit/app/nomo_app.dart';
-import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
-import 'package:nomo_ui_kit/components/card/nomo_card.dart';
-import 'package:nomo_ui_kit/components/text/nomo_text.dart';
-import 'package:nomo_ui_kit/theme/nomo_theme.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
+import 'package:zeniq_swap_frontend/common/price_repository.dart';
 import 'package:zeniq_swap_frontend/common/token_repository.dart';
-import 'package:zeniq_swap_frontend/pages/background.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/image_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/theme.dart';
 
 final appRouter = AppRouter();
 
-final assetsNotifier = ValueNotifier(<ERC20Entity>[]);
+final $tokenNotifier = ValueNotifier(<ERC20Entity>{});
+final $addressNotifier = ValueNotifier<String?>(null);
+final $currencyNotifier = ValueNotifier(Currency.usd);
+
+const ChainInfo zeniqSmartChainInfo = (
+  chainId: 383414847825,
+  chainName: 'Zeniq',
+  blockExplorerUrls: [
+    "https://zeniqscan.com/",
+  ],
+  nativeCurrency: (
+    decimals: 18,
+    name: 'Zeniq',
+    symbol: 'ZENIQ',
+  ),
+  rpcUrls: [
+    "https://smart.zeniq.network:9545",
+  ],
+  iconUrls: [],
+);
+
+late final MetamaskConnection? $metamask;
+late final bool $inNomo;
+late final bool $inMetamask;
 
 const deeplink = 'https://nomo.app/webon/dex.zeniqswap.com';
 
@@ -30,249 +48,154 @@ void main() async {
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
 
-  final String address;
+  $inNomo = WebonKitDart.isFallBackMode() == false;
+  $inMetamask = !$inNomo;
 
-  try {
-    if (WebonKitDart.isFallBackMode() && kDebugMode == false) {
-      throw Exception('Fallback mode is active');
-    }
+  $currencyNotifier.value = WebLocalStorage.getItem('currency') == 'usd'
+      ? Currency.usd
+      : Currency.eur;
 
-    address = await WebonKitDart.getEvmAddress();
-  } catch (e) {
-    print(e);
+  $currencyNotifier.addListener(() {
+    WebLocalStorage.setItem('currency', $currencyNotifier.value.toString());
+  });
 
-    final textStyle = GoogleFonts.roboto(
-      color: Colors.white,
-      fontSize: 16,
+  final savedTokensJson =
+      jsonDecode(WebLocalStorage.getItem('tokens') ?? '[]') as List<dynamic>;
+
+  final savedTokens = [
+    for (final tokenJson in savedTokensJson)
+      ERC20Entity.fromJson(
+        tokenJson,
+        allowDeletion: true,
+        chainID: tokenJson['chainID'] as int,
+      ),
+  ];
+
+  $tokenNotifier.value = savedTokens.toSet();
+
+  if ($inNomo) {
+    $addressNotifier.value = await WebonKitDart.getEvmAddress();
+    initNomo();
+  } else {
+    $metamask = MetamaskConnection(
+      accoutNotifier: $addressNotifier,
+      defaultChain: zeniqSmartChainInfo,
     );
+    await $metamask!.initFuture;
+    initMetamask();
+  }
 
-    runApp(
-      MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: NomoDefaultTextStyle(
-          style: const TextStyle(color: Colors.white, fontSize: 32),
-          child: Builder(builder: (context) {
-            return Scaffold(
-//backgroundColor: Colors.black.withOpacity(0.95),
-              extendBodyBehindAppBar: true,
-              body: Stack(
-                children: [
-                  AppBackground(),
-                  Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 32,
-                        ),
-                        child: NomoCard(
-                          backgroundColor: Color(0xff1e2428).withOpacity(0.5),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 8,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                'assets/logo.png',
-                                width: 28,
-                                height: 28,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Dex',
-                                style: GoogleFonts.dancingScript(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Spacer(),
-                      Center(
-                        child: NomoCard(
-                          backgroundColor: Color(0xff1e2428).withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(12),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 48),
-                          child: SizedBox(
-                            width: 380,
-                            child: Column(
-                              children: [
-                                Text(
-                                  "Coming Soon",
-                                  style: GoogleFonts.roboto().copyWith(
-                                    fontSize: 36,
-                                    // fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 32.0),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4),
-                                    color: Colors.white,
-                                  ),
-                                  padding: EdgeInsets.all(16),
-                                  width: 200,
-                                  height: 200,
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      await launchUrlString(
-                                        'https://nomo.app/webon/dex.zeniqswap.com',
-                                      );
-                                    },
-                                    child: BarcodeWidget(
-                                      data: deeplink,
-                                      color: Colors.black,
-                                      barcode: Barcode.fromType(
-                                        BarcodeType.QrCode,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 32.0),
-                                Text(
-                                  'Not inside the NomoApp. Please use zeniqswap.com for Swapping in the browser.',
-                                  textAlign: TextAlign.center,
-                                  style: textStyle,
-                                ),
-                                const SizedBox(height: 16.0),
-                                Text(
-                                  'Or download the Nomo App from the App Store or Google Play Store.',
-                                  textAlign: TextAlign.center,
-                                  style: textStyle,
-                                ),
-                                const SizedBox(height: 32.0),
-                                PrimaryNomoButton(
-                                  text: "Download Nomo App",
-                                  textStyle: GoogleFonts.roboto(
-                                    color: Colors.white,
-                                    fontSize: 22,
-                                  ),
-                                  elevation: 0,
-                                  height: 64,
-                                  backgroundColor: primaryColor,
-                                  borderRadius: BorderRadius.circular(4),
-                                  padding: EdgeInsets.zero,
-                                  width: 320,
-                                  onPressed: () async {
-                                    await launchUrlString(deeplink);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Spacer(),
-                    ],
-                  ),
-                ],
-              ),
+  runApp(MyApp());
+}
+
+Future<void> initNomo() async {
+  final allAppAssets = await WebonKitDart.getAllAssets().then(
+    (assets) => assets
+        .where((asset) {
+          return asset.chainId == ZeniqSmartNetwork.chainId;
+        })
+        .map((asset) {
+          if (asset.contractAddress != null) {
+            return ERC20Entity(
+              name: asset.name,
+              symbol: asset.symbol,
+              decimals: asset.decimals,
+              contractAddress: asset.contractAddress!,
+              chainID: asset.chainId!,
             );
-          }),
-        ),
-      ),
-    );
-    return;
-  }
+          }
 
-  fetchTokens();
-
-  runApp(
-    InheritedSwapProvider(
-      swapProvider: SwapProvider(
-        address,
-        WebonKitDart.signTransaction,
-      ),
-      child: const MyApp(),
-    ),
+          return null;
+        })
+        .whereType<ERC20Entity>()
+        .toList(),
   );
+
+  final assetsWithLiquidity = await TokenRepository.fetchTokensWhereLiquidty(
+    allTokens: allAppAssets,
+    minZeniqInPool: 1,
+  );
+
+  $tokenNotifier.value = {
+    zeniqTokenWrapper,
+    ...assetsWithLiquidity,
+    ...$tokenNotifier.value
+  };
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return NomoNavigator(
-      delegate: appRouter.delegate,
-      defaultTransistion: PageFadeTransition(),
-      child: NomoApp(
-        color: const Color(0xFF1A1A1A),
-        routerConfig: appRouter.config,
-        supportedLocales: const [Locale('en', 'US')],
-        themeDelegate: AppThemeDelegate(),
-        appWrapper: (context, app) {
-          return ValueListenableBuilder(
-            valueListenable: assetsNotifier,
-            builder: (context, assets, snapshot) {
-              return InheritedAssetProvider(
-                notifier: AssetNotifier(
-                  InheritedSwapProvider.of(context).ownAddress,
-                  assets,
-                ),
-                child: app,
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-Future<void> fetchTokens() async {
-  final Set<ERC20Entity> assets = {zeniqTokenWrapper};
+Future<void> initMetamask() async {
   try {
-    final allAppAssets = await WebonKitDart.getAllAssets().then(
-      (assets) => assets
-          .where((asset) {
-            return asset.chainId == ZeniqSmartNetwork.chainId;
-          })
-          .map((asset) {
-            if (asset.contractAddress != null) {
-              return ERC20Entity(
-                name: asset.name,
-                symbol: asset.symbol,
-                decimals: asset.decimals,
-                contractAddress: asset.contractAddress!,
-                chainID: asset.chainId!,
-              );
-            }
-
-            return null;
-          })
-          .whereType<ERC20Entity>()
-          .toList(),
-    );
-
-    final assetsWithLiquidity = await TokenRepository.fetchTokensWhereLiquidty(
-      allTokens: allAppAssets,
+    final fixedTokens = await TokenRepository.fetchFixedTokens();
+    final tokens = await TokenRepository.fetchTokensWhereLiquidty(
+      allTokens: fixedTokens,
       minZeniqInPool: 1,
     );
 
-    assets.addAll(assetsWithLiquidity);
+    $tokenNotifier.value = {
+      zeniqTokenWrapper,
+      ...tokens,
+      ...$tokenNotifier.value
+    };
   } catch (e) {
-    try {
-      final fixedTokens = await TokenRepository.fetchFixedTokens();
-      final tokens = await TokenRepository.fetchTokensWhereLiquidty(
-        allTokens: fixedTokens,
-        minZeniqInPool: 1,
-      );
-
-      assets.addAll(tokens);
-    } catch (e) {
-      assets.addAll([tupanToken, iLoveSafirToken, avinocZSC]);
-    }
+    $tokenNotifier.value = {
+      zeniqTokenWrapper,
+      tupanToken,
+      iLoveSafirToken,
+      avinocZSC,
+      ...$tokenNotifier.value
+    };
   }
+}
 
-  assetsNotifier.value = assets.toList();
+class MyApp extends StatelessWidget {
+  const MyApp({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InheritedImageProvider(
+      provider: TokenImageProvider($tokenNotifier),
+      child: InheritedSwapProvider(
+        swapProvider: SwapProvider(
+          $addressNotifier,
+          $inNomo
+              ? WebonKitDart.signTransaction
+              : (rawTxSerialized) async {
+                  final rawTx =
+                      RawEVMTransactionType0.fromUnsignedHex(rawTxSerialized);
+
+                  return MetamaskConnection.ethereumSendTransaction(
+                    {
+                      "from": $addressNotifier.value!,
+                      "to": rawTx.to,
+                      "value": rawTx.value.toHexWithPrefix,
+                      "data": rawTx.data.toHex,
+                      "gas": rawTx.gasLimit.toHexWithPrefix,
+                      "gasPrice": rawTx.gasPrice.toHexWithPrefix,
+                    },
+                  );
+                },
+          needToBroadcast: $inNomo,
+        ),
+        child: InheritedAssetProvider(
+          notifier: AssetNotifier(
+            $addressNotifier,
+            $tokenNotifier,
+            $currencyNotifier,
+          ),
+          child: NomoNavigator(
+            delegate: appRouter.delegate,
+            defaultTransistion: PageFadeTransition(),
+            child: NomoApp(
+              color: const Color(0xFF1A1A1A),
+              routerConfig: appRouter.config,
+              supportedLocales: const [Locale('en', 'US')],
+              themeDelegate: AppThemeDelegate(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
