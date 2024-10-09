@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:nomo_router/nomo_router.dart';
@@ -5,6 +7,7 @@ import 'package:nomo_router/router/entities/transitions.dart';
 import 'package:nomo_ui_kit/app/nomo_app.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
+import 'package:zeniq_swap_frontend/common/price_repository.dart';
 import 'package:zeniq_swap_frontend/common/token_repository.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/image_provider.dart';
@@ -16,6 +19,7 @@ final appRouter = AppRouter();
 
 final $tokenNotifier = ValueNotifier(<ERC20Entity>{});
 final $addressNotifier = ValueNotifier<String?>(null);
+final $currencyNotifier = ValueNotifier(Currency.usd);
 
 const ChainInfo zeniqSmartChainInfo = (
   chainId: 383414847825,
@@ -46,6 +50,28 @@ void main() async {
 
   $inNomo = WebonKitDart.isFallBackMode() == false;
   $inMetamask = !$inNomo;
+
+  $currencyNotifier.value = WebLocalStorage.getItem('currency') == 'usd'
+      ? Currency.usd
+      : Currency.eur;
+
+  $currencyNotifier.addListener(() {
+    WebLocalStorage.setItem('currency', $currencyNotifier.value.toString());
+  });
+
+  final savedTokensJson =
+      jsonDecode(WebLocalStorage.getItem('tokens') ?? '[]') as List<dynamic>;
+
+  final savedTokens = [
+    for (final tokenJson in savedTokensJson)
+      ERC20Entity.fromJson(
+        tokenJson,
+        allowDeletion: true,
+        chainID: tokenJson['chainID'] as int,
+      ),
+  ];
+
+  $tokenNotifier.value = savedTokens.toSet();
 
   if ($inNomo) {
     $addressNotifier.value = await WebonKitDart.getEvmAddress();
@@ -90,7 +116,11 @@ Future<void> initNomo() async {
     minZeniqInPool: 1,
   );
 
-  $tokenNotifier.value = {zeniqTokenWrapper, ...assetsWithLiquidity};
+  $tokenNotifier.value = {
+    zeniqTokenWrapper,
+    ...assetsWithLiquidity,
+    ...$tokenNotifier.value
+  };
 }
 
 Future<void> initMetamask() async {
@@ -101,13 +131,18 @@ Future<void> initMetamask() async {
       minZeniqInPool: 1,
     );
 
-    $tokenNotifier.value = {zeniqTokenWrapper, ...tokens};
+    $tokenNotifier.value = {
+      zeniqTokenWrapper,
+      ...tokens,
+      ...$tokenNotifier.value
+    };
   } catch (e) {
     $tokenNotifier.value = {
       zeniqTokenWrapper,
       tupanToken,
       iLoveSafirToken,
-      avinocZSC
+      avinocZSC,
+      ...$tokenNotifier.value
     };
   }
 }
@@ -144,7 +179,11 @@ class MyApp extends StatelessWidget {
           needToBroadcast: $inNomo,
         ),
         child: InheritedAssetProvider(
-          notifier: AssetNotifier($addressNotifier, $tokenNotifier),
+          notifier: AssetNotifier(
+            $addressNotifier,
+            $tokenNotifier,
+            $currencyNotifier,
+          ),
           child: NomoNavigator(
             delegate: appRouter.delegate,
             defaultTransistion: PageFadeTransition(),

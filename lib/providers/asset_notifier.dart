@@ -26,7 +26,7 @@ class AssetNotifier {
     ],
   );
 
-  final ValueNotifier<Currency> currencyNotifier = ValueNotifier(Currency.usd);
+  final ValueNotifier<Currency> currencyNotifier;
 
   Currency get currency => currencyNotifier.value;
 
@@ -53,7 +53,11 @@ class AssetNotifier {
     lastTokens = tokens;
   }
 
-  AssetNotifier(this.addressNotifier, this.tokenNotifier) {
+  AssetNotifier(
+    this.addressNotifier,
+    this.tokenNotifier,
+    this.currencyNotifier,
+  ) {
     tokensChanged();
     tokenNotifier.addListener(tokensChanged);
 

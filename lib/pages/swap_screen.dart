@@ -359,7 +359,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
                             margin: const EdgeInsets.symmetric(vertical: 8),
                             placeHolderStyle: context.typography.b3,
                             borderRadius: BorderRadius.circular(16),
-                            style: context.typography.b3,
+                            style: context.typography.b3.copyWith(
+                              color: context.colors.foreground1,
+                            ),
                             border: const Border.fromBorderSide(
                               BorderSide(color: Colors.white10),
                             ),
@@ -506,7 +508,9 @@ class _SwappingScreenState extends State<SwappingScreen> {
                             enabled: enabled,
                             maxLines: 1,
                             scrollable: true,
-                            style: context.typography.b3,
+                            style: context.typography.b3.copyWith(
+                              color: context.colors.foreground1,
+                            ),
                             placeHolderStyle: context.typography.b3,
                             background:
                                 context.colors.background2.withOpacity(0.5),
@@ -593,7 +597,8 @@ class _SwappingScreenState extends State<SwappingScreen> {
                                           data: NomoInfoItemThemeDataNullable(
                                             titleStyle: context.typography.b1
                                                 .copyWith(
-                                                    color: Colors.white60),
+                                                    color: context
+                                                        .colors.foreground3),
                                             valueStyle: context.typography.b1,
                                           ),
                                           child: NomoCard(
@@ -1066,7 +1071,7 @@ class SwapInputTrailling extends StatelessWidget {
               ),
             )
           : SecondaryNomoButton(
-              backgroundColor: context.colors.background1,
+              backgroundColor: context.colors.background2,
               height: 42,
               onPressed: () => onPressed(context),
               padding: const EdgeInsets.symmetric(horizontal: 8),

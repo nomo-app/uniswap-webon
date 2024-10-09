@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.dart';
@@ -10,6 +12,7 @@ import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
+import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/pages/swap_screen.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/image_provider.dart';
@@ -29,10 +32,12 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
 
   late ValueNotifier<List<ERC20Entity>> filteredAssetsNotifer;
   late AssetNotifier assetNotifier;
+  late TokenImageProvider imageProvider;
 
   @override
   void didChangeDependencies() {
     assetNotifier = InheritedAssetProvider.of(context);
+    imageProvider = InheritedImageProvider.of(context);
     assetNotifier.tokenNotifier.addListener(
       () {
         filteredAssetsNotifer.value = assetNotifier.tokens.toList();
@@ -47,6 +52,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
   void initState() {
     searchNotifier.addListener(onSearchInputChanged);
     searchNotifier.addListener(checkForCustomToken);
+
     super.initState();
   }
 
@@ -101,6 +107,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
     );
 
     assetNotifier.fetchBalanceForToken(customToken);
+    imageProvider.fetchImageForToken(customToken);
     customTokenNotifier.value = customToken;
   }
 
@@ -124,6 +131,19 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
     ).toList();
 
     filteredAssetsNotifer.value = filteredAssets;
+  }
+
+  void addToken(ERC20Entity customToken) {
+    final savedTokensJson =
+        jsonDecode(WebLocalStorage.getItem('tokens') ?? '[]') as List<dynamic>;
+
+    savedTokensJson.add(customToken.toJson());
+
+    WebLocalStorage.setItem('tokens', jsonEncode(savedTokensJson));
+
+    assetNotifier.addToken(customToken);
+    customTokenNotifier.value = null;
+    searchNotifier.value = '';
   }
 
   @override
@@ -189,6 +209,8 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                   primary: false,
                   itemBuilder: (context, index) {
                     if (customToken != null) {
+                      final balanceListenable =
+                          balanceNotifer.balanceNotifierForToken(customToken);
                       return Material(
                         color: Colors.transparent,
                         child: InkWell(
@@ -216,17 +238,54 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                                   ),
                                 ),
                                 12.hSpacing,
+                                ListenableBuilder(
+                                  listenable: Listenable.merge([
+                                    balanceListenable,
+                                    assetNotifier.addressNotifier,
+                                  ]),
+                                  builder: (context, child) {
+                                    final value = balanceListenable.value;
+                                    final hasAddress =
+                                        assetNotifier.addressNotifier.value !=
+                                            null;
+                                    if (!hasAddress) {
+                                      return SizedBox.shrink();
+                                    }
+                                    return value.when(
+                                      data: (value) {
+                                        return NomoText(
+                                          value.displayDouble
+                                              .toStringAsPrecision(5),
+                                          style: context.typography.b1,
+                                        );
+                                      },
+                                      error: (error) => NomoText(
+                                        "Error",
+                                        style: context.typography.h1,
+                                      ),
+                                      loading: () => ShimmerLoading(
+                                        isLoading: true,
+                                        child: Container(
+                                          width: 64,
+                                          height: 24,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            color: context.colors.background2,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                12.hSpacing,
                                 PrimaryNomoButton(
                                   height: 42,
                                   width: 42,
                                   padding: EdgeInsets.zero,
                                   icon: Icons.add,
                                   shape: BoxShape.circle,
-                                  onPressed: () {
-                                    assetNotifier.addToken(customToken);
-                                    customTokenNotifier.value = null;
-                                    searchNotifier.value = '';
-                                  },
+                                  onPressed: () => addToken(customToken),
                                 ),
                                 12.hSpacing,
                               ],
@@ -265,37 +324,46 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                                 ),
                               ),
                               12.hSpacing,
-                              if (balanceListenable != null)
-                                ValueListenableBuilder(
-                                  valueListenable: balanceListenable,
-                                  builder: (context, value, child) {
-                                    return value.when(
-                                      data: (value) {
-                                        return NomoText(
-                                          value.displayDouble
-                                              .toStringAsPrecision(5),
-                                          style: context.typography.b1,
-                                        );
-                                      },
-                                      error: (error) => NomoText(
-                                        "Error",
-                                        style: context.typography.h1,
-                                      ),
-                                      loading: () => ShimmerLoading(
-                                        isLoading: true,
-                                        child: Container(
-                                          width: 64,
-                                          height: 24,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                            color: context.colors.background2,
-                                          ),
+                              ListenableBuilder(
+                                listenable: Listenable.merge([
+                                  balanceListenable,
+                                  assetNotifier.addressNotifier,
+                                ]),
+                                builder: (context, child) {
+                                  final value = balanceListenable.value;
+                                  final hasAddress =
+                                      assetNotifier.addressNotifier.value !=
+                                          null;
+                                  if (!hasAddress) {
+                                    return SizedBox.shrink();
+                                  }
+                                  return value.when(
+                                    data: (value) {
+                                      return NomoText(
+                                        value.displayDouble
+                                            .toStringAsPrecision(5),
+                                        style: context.typography.b1,
+                                      );
+                                    },
+                                    error: (error) => NomoText(
+                                      "Error",
+                                      style: context.typography.h1,
+                                    ),
+                                    loading: () => ShimmerLoading(
+                                      isLoading: true,
+                                      child: Container(
+                                        width: 64,
+                                        height: 24,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          color: context.colors.background2,
                                         ),
                                       ),
-                                    );
-                                  },
-                                ),
+                                    ),
+                                  );
+                                },
+                              ),
                               12.hSpacing,
                             ],
                           ),
