@@ -10,7 +10,9 @@ import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 const _fetchInterval = Duration(minutes: 1);
 
 class AssetNotifier {
-  final String? address;
+  final ValueNotifier<String?> addressNotifier;
+
+  String? get address => addressNotifier.value;
   final ValueNotifier<Set<ERC20Entity>> tokenNotifier;
 
   Set<ERC20Entity> get tokens => tokenNotifier.value;
@@ -51,9 +53,18 @@ class AssetNotifier {
     lastTokens = tokens;
   }
 
-  AssetNotifier(this.address, this.tokenNotifier) {
+  AssetNotifier(this.addressNotifier, this.tokenNotifier) {
     tokensChanged();
     tokenNotifier.addListener(tokensChanged);
+
+    addressNotifier.addListener(
+      () {
+        for (final token in tokens) {
+          _balances[token]!.value = AsyncLoading();
+        }
+        fetchAllBalances(tokens);
+      },
+    );
 
     currencyNotifier.addListener(() {
       fetchAllPrices(tokens);
@@ -191,7 +202,7 @@ class AssetNotifier {
     }
   }
 
-  ValueNotifier<AsyncValue<Amount>>? balanceNotifierForToken(
+  ValueNotifier<AsyncValue<Amount>> balanceNotifierForToken(
     ERC20Entity token,
   ) {
     return _balances.putIfAbsent(
@@ -231,7 +242,7 @@ class InheritedAssetProvider extends InheritedWidget {
 
   @override
   bool updateShouldNotify(InheritedAssetProvider oldWidget) {
-    return oldWidget.notifier.address != notifier.address;
+    return false;
   }
 }
 

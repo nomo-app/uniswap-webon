@@ -51,7 +51,8 @@ enum SwapState {
   Swapped,
   Error,
   InsufficientLiquidity,
-  Preview;
+  Preview,
+  InsufficientBalance;
 
   bool get inputEnabled => switch (this) {
         SwapState.None ||
@@ -60,7 +61,8 @@ enum SwapState {
         SwapState.TokenApprovalError ||
         SwapState.NeedsTokenApproval ||
         SwapState.InsufficientLiquidity ||
-        SwapState.Preview =>
+        SwapState.Preview ||
+        SwapState.InsufficientBalance =>
           true,
         _ => false,
       };
@@ -221,9 +223,13 @@ BigInt? parseFromString(String value, int decimals) {
 }
 
 class SwapProvider {
-  final String? ownAddress;
+  final ValueNotifier<String?> addressNotifier;
+
+  String? get ownAddress => addressNotifier.value;
 
   final Future<String> Function(String tx) signer;
+
+  final bool needToBroadcast;
 
   final ValueNotifier<ERC20Entity?> fromToken =
       ValueNotifier(zeniqTokenWrapper);
@@ -232,18 +238,22 @@ class SwapProvider {
   final ValueNotifier<Amount?> toAmount = ValueNotifier(null);
   final ValueNotifier<String> fromAmountString = ValueNotifier('');
   final ValueNotifier<String> toAmountString = ValueNotifier('');
+  late ValueNotifier<String?> fromErrorNotifier = ValueNotifier(null);
+  late ValueNotifier<String?> toErrorNotifier = ValueNotifier(null);
 
-  SwapProvider(this.ownAddress, this.signer) {
+  SwapProvider(
+    this.addressNotifier,
+    this.signer, {
+    required this.needToBroadcast,
+  }) {
     fromToken.addListener(() => checkSwapInfo());
     toToken.addListener(() => checkSwapInfo());
     fromAmount.addListener(() => checkSwapInfo());
     toAmount.addListener(() => checkSwapInfo());
-
+    addressNotifier.addListener(() => checkSwapInfo());
     fromAmountString.addListener(fromAmountStringChanged);
     toAmountString.addListener(toAmountStringChanged);
-
     slippageString.addListener(slippageChanged);
-
     Timer.periodic(_refreshInterval, (_) {
       checkSwapInfo();
     });
@@ -255,9 +265,6 @@ class SwapProvider {
 
   final ValueNotifier<SwapState> swapState = ValueNotifier(SwapState.None);
   final ValueNotifier<SwapInfo?> swapInfo = ValueNotifier(null);
-
-  // // Rethink this since its only used for tests
-  // Completer<SwapInfo>? swapInfoCompleter;
 
   double slippage = 0.5;
 
@@ -394,10 +401,12 @@ class SwapProvider {
   }
 
   void calculateSwapInfo() async {
-    if (this.ownAddress == null) {
-      swapState.value = SwapState.Preview;
-    }
-    // swapInfoCompleter = Completer();
+    swapState.value = switch ((this.ownAddress, swapState.value)) {
+      (null, _) => SwapState.Preview,
+      (_, SwapState.Preview) => SwapState.None,
+      _ => swapState.value,
+    };
+
     final ownAddress = this.ownAddress ?? arbitrumTestWallet;
     final fromToken = this.fromToken.value!;
     final toToken = this.toToken.value!;
@@ -426,7 +435,8 @@ class SwapProvider {
         ),
     };
 
-    if (swapState.value != SwapState.Preview) {
+    if (swapState.value != SwapState.Preview &&
+        swapState.value != SwapState.InsufficientBalance) {
       swapState.value = swapInfo.value == null
           ? SwapState.InsufficientLiquidity
           : swapInfo.value!.needsApproval
@@ -453,8 +463,6 @@ class SwapProvider {
     }
 
     shouldRecalculateSwapType = true;
-
-    // swapInfoCompleter!.complete(swapInfo.value);
   }
 
   Future<String> swap() async {
@@ -471,7 +479,7 @@ class SwapProvider {
               swapInfo.value!.fromToken.asEthBased!.contractAddress,
         );
 
-        final tx = await erc20.approveTx(
+        final unsignedTX = await erc20.approveTx(
           sender: ownAddress,
           spender: zeniqSwapRouter.contractAddress,
           value: BigInt.tryParse(
@@ -481,13 +489,23 @@ class SwapProvider {
 
         swapState.value = SwapState.WaitingForUserApproval;
 
-        final signed = await signer(
-          tx.serializedUnsigned(rpc.type.chainId).toHex,
-        );
+        final String hash;
+        if (needToBroadcast) {
+          final signedTX = await signer(
+            unsignedTX.serializedUnsigned(rpc.type.chainId).toHex,
+          );
 
-        swapState.value = SwapState.ApprovingToken;
+          swapState.value = SwapState.ApprovingToken;
 
-        final hash = await rpc.sendRawTransaction(signed);
+          hash = await rpc.sendRawTransaction(
+            signedTX.startsWith("0x") ? signedTX : "0x$signedTX",
+          );
+        } else {
+          swapState.value = SwapState.ApprovingToken;
+          hash = await signer(
+            unsignedTX.serializedUnsigned(rpc.type.chainId).toHex,
+          );
+        }
 
         final successfull = await rpc.waitForTxConfirmation(hash);
 
@@ -536,15 +554,22 @@ class SwapProvider {
     swapState.value = SwapState.WaitingForUserApproval;
 
     try {
-      final signedTX = await signer(
-        unsignedTX.serializedUnsigned(rpc.type.chainId).toHex,
-      );
+      final String hash;
+      if (needToBroadcast) {
+        final signedTX = await signer(
+          unsignedTX.serializedUnsigned(rpc.type.chainId).toHex,
+        );
 
-      swapState.value = SwapState.Broadcasting;
+        swapState.value = SwapState.Broadcasting;
 
-      final hash = await rpc.sendRawTransaction(
-        signedTX.startsWith("0x") ? signedTX : "0x$signedTX",
-      );
+        hash = await rpc.sendRawTransaction(
+          signedTX.startsWith("0x") ? signedTX : "0x$signedTX",
+        );
+      } else {
+        hash = await signer(
+          unsignedTX.serializedUnsigned(rpc.type.chainId).toHex,
+        );
+      }
 
       swapState.value = SwapState.Confirming;
 
@@ -717,7 +742,7 @@ class InheritedSwapProvider extends InheritedWidget {
 
   @override
   bool updateShouldNotify(InheritedSwapProvider oldWidget) {
-    return oldWidget.swapProvider.ownAddress != swapProvider.ownAddress;
+    return false;
   }
 }
 
