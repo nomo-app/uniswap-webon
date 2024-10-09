@@ -621,10 +621,10 @@ packages:
     dependency: "direct main"
     description:
       name: nomo_ui_kit
-      sha256: a791ed0a896c6b5df13b50f9180dcefc4154a89d583cf318511c1fe3983b9b38
+      sha256: "54e16bab5121db83d0a4b77ca7a1028b124d5d4714da0a612ecdbb5ead2b5ab4"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.29"
+    version: "0.0.32"
   package_config:
     dependency: transitive
     description:

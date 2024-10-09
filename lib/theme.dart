@@ -49,12 +49,12 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
 
   @override
   NomoTypographyTheme get typography => NomoTypographyTheme(
-        b1: GoogleFonts.roboto(),
-        b2: GoogleFonts.roboto(),
-        b3: GoogleFonts.roboto(),
-        h1: GoogleFonts.dancingScript(),
-        h2: GoogleFonts.dancingScript(),
-        h3: GoogleFonts.dancingScript(),
+        b1: TextStyle(fontFamily: "Roboto"),
+        b2: TextStyle(fontFamily: "Roboto"),
+        b3: TextStyle(fontFamily: "Roboto"),
+        h1: TextStyle(fontFamily: "DancingScript"),
+        h2: TextStyle(fontFamily: "DancingScript"),
+        h3: TextStyle(fontFamily: "DancingScript"),
       );
 
   @override
