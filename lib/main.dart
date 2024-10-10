@@ -15,8 +15,6 @@ import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/theme.dart';
 
-final appRouter = AppRouter();
-
 final $tokenNotifier = ValueNotifier(<ERC20Entity>{});
 final $addressNotifier = ValueNotifier<String?>(null);
 final $currencyNotifier = ValueNotifier(Currency.usd);
@@ -84,6 +82,8 @@ void main() async {
     await $metamask!.initFuture;
     initMetamask();
   }
+
+  //$addressNotifier.value = arbitrumTestWallet;
 
   runApp(MyApp());
 }

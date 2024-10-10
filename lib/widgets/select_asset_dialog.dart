@@ -17,6 +17,8 @@ import 'package:zeniq_swap_frontend/pages/swap_screen.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/image_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
+import 'package:zeniq_swap_frontend/theme.dart';
+import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 
 class SelectAssetDialog extends StatefulWidget {
   const SelectAssetDialog({super.key});
@@ -156,6 +158,12 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
         maxWidth: 480,
         widthRatio: 0.9,
         borderRadius: BorderRadius.circular(16),
+        elevation: 0.0.ifElse(context.isDark, other: 1),
+        border: Border.all(
+          color: Colors.white24,
+          strokeAlign: BorderSide.strokeAlignInside,
+          width: 1,
+        ).ifElseNull(context.isDark),
         titleStyle: context.typography.h2,
         leading: NomoText(
           "Select Asset",

@@ -15,6 +15,8 @@ class AppRouter extends NomoAppRouter {
       : super(
           {
             SwappingScreenRoute.path: ([a]) => SwappingScreenRoute(),
+            PoolsPageRoute.path: ([a]) => PoolsPageRoute(),
+            ProfilePageRoute.path: ([a]) => ProfilePageRoute(),
             SettingsDialogRoute.path: ([a]) => SettingsDialogRoute(),
             SelectAssetDialogRoute.path: ([a]) => SelectAssetDialogRoute(),
           },
@@ -47,6 +49,32 @@ class SwappingScreenRoute extends AppRoute implements SwappingScreenArguments {
           page: SwappingScreen(),
         );
   static String path = '/';
+}
+
+class PoolsPageArguments {
+  const PoolsPageArguments();
+}
+
+class PoolsPageRoute extends AppRoute implements PoolsPageArguments {
+  PoolsPageRoute()
+      : super(
+          name: '/pools',
+          page: PoolsPage(),
+        );
+  static String path = '/pools';
+}
+
+class ProfilePageArguments {
+  const ProfilePageArguments();
+}
+
+class ProfilePageRoute extends AppRoute implements ProfilePageArguments {
+  ProfilePageRoute()
+      : super(
+          name: '/profile',
+          page: ProfilePage(),
+        );
+  static String path = '/profile';
 }
 
 class SettingsDialogArguments {

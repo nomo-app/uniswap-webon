@@ -15,6 +15,8 @@ enum ColorMode { LIGHT, DARK }
 
 enum SizingMode {
   SMALL,
+  MEDIUM,
+  LARGE,
 }
 
 class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
@@ -43,7 +45,11 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
 
   @override
   SizingMode sizingThemeBuilder(double width) {
-    return SizingMode.SMALL;
+    return switch (width) {
+      > 1080 => SizingMode.LARGE,
+      > 580 => SizingMode.MEDIUM,
+      _ => SizingMode.SMALL,
+    };
   }
 
   @override
@@ -61,6 +67,48 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
     return {
       SizingMode.SMALL: NomoSizingThemeDataNullable(
         key: const ValueKey('small'),
+        sizes: const NomoSizes(
+          fontSizeB1: 14,
+          fontSizeB2: 18,
+          fontSizeB3: 28,
+          fontSizeH1: 36,
+          fontSizeH2: 48,
+          fontSizeH3: 64,
+          spacing1: 4,
+          spacing2: 6,
+          spacing3: 8,
+        ),
+        buildComponents: (core) {
+          return const NomoComponentSizesNullable(
+            scaffoldSizing: NomoScaffoldSizingDataNullable(
+              showSider: false,
+            ),
+          );
+        },
+      ),
+      SizingMode.MEDIUM: NomoSizingThemeDataNullable(
+        key: const ValueKey('medium'),
+        sizes: const NomoSizes(
+          fontSizeB1: 14,
+          fontSizeB2: 18,
+          fontSizeB3: 28,
+          fontSizeH1: 36,
+          fontSizeH2: 48,
+          fontSizeH3: 64,
+          spacing1: 4,
+          spacing2: 6,
+          spacing3: 8,
+        ),
+        buildComponents: (core) {
+          return const NomoComponentSizesNullable(
+            scaffoldSizing: NomoScaffoldSizingDataNullable(
+              showSider: false,
+            ),
+          );
+        },
+      ),
+      SizingMode.LARGE: NomoSizingThemeDataNullable(
+        key: const ValueKey('large'),
         sizes: const NomoSizes(
           fontSizeB1: 14,
           fontSizeB2: 18,
@@ -175,4 +223,24 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
 
 extension ThemeExtension on BuildContext {
   bool get isDark => colorTheme.key.value == "dark";
+}
+
+extension ThemeContextExtension on BuildContext {
+  SizingMode get sizingMode => themeProvider.sizingMode as SizingMode;
+
+  bool get isSmall => sizingMode == SizingMode.SMALL;
+  bool get isMedium => sizingMode == SizingMode.MEDIUM;
+  bool get isLarge => sizingMode == SizingMode.LARGE;
+
+  T responsiveValue<T>({
+    required T small,
+    required T medium,
+    required T large,
+  }) {
+    return switch (sizingMode) {
+      SizingMode.SMALL => small,
+      SizingMode.MEDIUM => medium,
+      SizingMode.LARGE => large,
+    };
+  }
 }
