@@ -77,6 +77,11 @@ class _PoolsPageState extends State<PoolsPage>
                         showMyPoolsNotifier.value = false;
                       },
                     ),
+                    Spacer(),
+                    PrimaryNomoButton(
+                      text: "Create Pool",
+                      height: 48,
+                    ),
                   ],
                 ),
               );
