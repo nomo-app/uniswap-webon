@@ -1,5 +1,10 @@
 include: package:flutter_lints/flutter.yaml
 
+exclude:
+  # - packages/walletkit-dart
+  - packages/webon-kit-dart
+  - packages/nomo-ui-kit
+
 linter:
   rules:
     avoid_print: false

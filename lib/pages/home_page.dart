@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_ui_kit/components/app/app_bar/nomo_app_bar.dart';
 import 'package:nomo_ui_kit/components/app/bottom_bar/nomo_bottom_bar.dart';
 import 'package:nomo_ui_kit/components/app/bottom_bar/nomo_horizontal_tile.dart';
 import 'package:nomo_ui_kit/components/app/routebody/nomo_route_body.dart';
-import 'package:nomo_ui_kit/components/app/scaffold/nomo_scaffold.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.dart';
-import 'package:nomo_ui_kit/components/outline_container/nomo_outline_container.dart';
-import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
-import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/pages/background.dart';
-import 'package:zeniq_swap_frontend/pages/swap_screen.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/theme.dart';
 
@@ -28,7 +22,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NomoRouteBody(
-      maxContentWidth: 1920,
+      maxContentWidth: 1200,
       background: AppBackground(),
       padding: EdgeInsets.zero,
       child: Column(

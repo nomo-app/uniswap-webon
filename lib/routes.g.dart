@@ -17,6 +17,12 @@ class AppRouter extends NomoAppRouter {
             SwappingScreenRoute.path: ([a]) => SwappingScreenRoute(),
             PoolsPageRoute.path: ([a]) => PoolsPageRoute(),
             ProfilePageRoute.path: ([a]) => ProfilePageRoute(),
+            PoolDetailPageRoute.path: ([a]) {
+              final typedArgs = a as PoolDetailPageArguments?;
+              return PoolDetailPageRoute(
+                address: typedArgs?.address,
+              );
+            },
             SettingsDialogRoute.path: ([a]) => SettingsDialogRoute(),
             SelectAssetDialogRoute.path: ([a]) => SelectAssetDialogRoute(),
           },
@@ -75,6 +81,27 @@ class ProfilePageRoute extends AppRoute implements ProfilePageArguments {
           page: ProfilePage(),
         );
   static String path = '/profile';
+}
+
+class PoolDetailPageArguments {
+  final String? address;
+  const PoolDetailPageArguments({
+    this.address,
+  });
+}
+
+class PoolDetailPageRoute extends AppRoute implements PoolDetailPageArguments {
+  @override
+  final String? address;
+  PoolDetailPageRoute({
+    this.address,
+  }) : super(
+          name: '/pool',
+          page: PoolDetailPage(
+            address: address,
+          ),
+        );
+  static String path = '/pool';
 }
 
 class SettingsDialogArguments {

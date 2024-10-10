@@ -6,6 +6,7 @@ import 'package:nomo_router/router/entities/route.dart';
 import 'package:nomo_ui_kit/entities/menu_item.dart';
 import 'package:route_gen/anotations.dart';
 import 'package:zeniq_swap_frontend/pages/home_page.dart';
+import 'package:zeniq_swap_frontend/pages/pool_detail_page.dart';
 import 'package:zeniq_swap_frontend/pages/pools_page.dart';
 import 'package:zeniq_swap_frontend/pages/profile_page.dart';
 import 'package:zeniq_swap_frontend/pages/swap_screen.dart';
@@ -35,6 +36,10 @@ const _routes = [
       PageRouteInfo(
         path: "/profile",
         page: ProfilePage,
+      ),
+      PageRouteInfo(
+        path: "/pool",
+        page: PoolDetailPage,
       ),
     ],
   ),
