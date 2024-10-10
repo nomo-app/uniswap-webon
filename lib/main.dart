@@ -11,15 +11,15 @@ import 'package:zeniq_swap_frontend/common/price_repository.dart';
 import 'package:zeniq_swap_frontend/common/token_repository.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/image_provider.dart';
+import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/theme.dart';
 
-final appRouter = AppRouter();
-
 final $tokenNotifier = ValueNotifier(<ERC20Entity>{});
 final $addressNotifier = ValueNotifier<String?>(null);
 final $currencyNotifier = ValueNotifier(Currency.usd);
+final $slippageNotifier = ValueNotifier(0.005);
 
 const ChainInfo zeniqSmartChainInfo = (
   chainId: 383414847825,
@@ -85,6 +85,8 @@ void main() async {
     initMetamask();
   }
 
+  //$addressNotifier.value = arbitrumTestWallet;
+
   runApp(MyApp());
 }
 
@@ -147,6 +149,21 @@ Future<void> initMetamask() async {
   }
 }
 
+Future<String> metamaskSigner(String rawTxSerialized) async {
+  final rawTx = RawEVMTransactionType0.fromUnsignedHex(rawTxSerialized);
+
+  return MetamaskConnection.ethereumSendTransaction(
+    {
+      "from": $addressNotifier.value!,
+      "to": rawTx.to,
+      "value": rawTx.value.toHexWithPrefix,
+      "data": rawTx.data.toHex,
+      "gas": rawTx.gasLimit.toHexWithPrefix,
+      "gasPrice": rawTx.gasPrice.toHexWithPrefix,
+    },
+  );
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({
     super.key,
@@ -154,44 +171,32 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InheritedImageProvider(
-      provider: TokenImageProvider($tokenNotifier),
-      child: InheritedSwapProvider(
-        swapProvider: SwapProvider(
-          $addressNotifier,
-          $inNomo
-              ? WebonKitDart.signTransaction
-              : (rawTxSerialized) async {
-                  final rawTx =
-                      RawEVMTransactionType0.fromUnsignedHex(rawTxSerialized);
-
-                  return MetamaskConnection.ethereumSendTransaction(
-                    {
-                      "from": $addressNotifier.value!,
-                      "to": rawTx.to,
-                      "value": rawTx.value.toHexWithPrefix,
-                      "data": rawTx.data.toHex,
-                      "gas": rawTx.gasLimit.toHexWithPrefix,
-                      "gasPrice": rawTx.gasPrice.toHexWithPrefix,
-                    },
-                  );
-                },
-          needToBroadcast: $inNomo,
-        ),
-        child: InheritedAssetProvider(
-          notifier: AssetNotifier(
+    return InheritedPoolProvider(
+      poolProvider: PoolProvider(),
+      child: InheritedImageProvider(
+        provider: TokenImageProvider($tokenNotifier),
+        child: InheritedSwapProvider(
+          swapProvider: SwapProvider(
             $addressNotifier,
-            $tokenNotifier,
-            $currencyNotifier,
+            slippageNotifier: $slippageNotifier,
+            $inNomo ? WebonKitDart.signTransaction : metamaskSigner,
+            needToBroadcast: $inNomo,
           ),
-          child: NomoNavigator(
-            delegate: appRouter.delegate,
-            defaultTransistion: PageFadeTransition(),
-            child: NomoApp(
-              color: const Color(0xFF1A1A1A),
-              routerConfig: appRouter.config,
-              supportedLocales: const [Locale('en', 'US')],
-              themeDelegate: AppThemeDelegate(),
+          child: InheritedAssetProvider(
+            notifier: AssetNotifier(
+              $addressNotifier,
+              $tokenNotifier,
+              $currencyNotifier,
+            ),
+            child: NomoNavigator(
+              delegate: appRouter.delegate,
+              defaultTransistion: PageFadeTransition(),
+              child: NomoApp(
+                color: const Color(0xFF1A1A1A),
+                routerConfig: appRouter.config,
+                supportedLocales: const [Locale('en', 'US')],
+                themeDelegate: AppThemeDelegate(),
+              ),
             ),
           ),
         ),

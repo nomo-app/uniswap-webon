@@ -30,7 +30,7 @@ class AssetNotifier {
 
   Currency get currency => currencyNotifier.value;
 
-  List<PairInfo> tokenPairs = [];
+  List<PairInfo2> tokenPairs = [];
 
   final Map<ERC20Entity, ValueNotifier<AsyncValue<Amount>>> _balances = {};
   final Map<ERC20Entity, ValueNotifier<AsyncValue<PriceState>>> _prices = {};
@@ -175,7 +175,7 @@ class AssetNotifier {
             tokenB: token.contractAddress,
           )
           .then(
-            (value) => PairInfo(
+            (value) => PairInfo2(
               token: token,
               pair: UniswapV2Pair(contractAddress: value, rpc: rpc),
             ),
@@ -197,7 +197,11 @@ class AssetNotifier {
       () => ValueNotifier(AsyncLoading()),
     );
     try {
-      final result = await PriceRepository.fetchSingle(token, currency);
+      final replacedToken = switch (token) {
+        wrappedZeniqSmart => zeniqTokenWrapper,
+        _ => token,
+      };
+      final result = await PriceRepository.fetchSingle(replacedToken, currency);
       notifier.value = AsyncValue.value(
         PriceState(currency: currency, price: result),
       );
@@ -211,7 +215,10 @@ class AssetNotifier {
   ) {
     return _balances.putIfAbsent(
       token,
-      () => ValueNotifier(AsyncLoading()),
+      () {
+        addToken(token);
+        return ValueNotifier(AsyncLoading());
+      },
     );
   }
 
@@ -220,7 +227,10 @@ class AssetNotifier {
   ) {
     return _prices.putIfAbsent(
       token,
-      () => ValueNotifier(AsyncLoading()),
+      () {
+        addToken(token);
+        return ValueNotifier(AsyncLoading());
+      },
     );
   }
 }
@@ -250,10 +260,10 @@ class InheritedAssetProvider extends InheritedWidget {
   }
 }
 
-class PairInfo extends UniswapV2Pair {
+class PairInfo2 extends UniswapV2Pair {
   final CoinEntity token;
 
-  PairInfo({
+  PairInfo2({
     required this.token,
     required UniswapV2Pair pair,
   }) : super(

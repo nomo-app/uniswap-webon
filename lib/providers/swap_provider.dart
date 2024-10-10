@@ -245,6 +245,7 @@ class SwapProvider {
     this.addressNotifier,
     this.signer, {
     required this.needToBroadcast,
+    required this.slippageNotifier,
   }) {
     fromToken.addListener(() => checkSwapInfo());
     toToken.addListener(() => checkSwapInfo());
@@ -253,7 +254,7 @@ class SwapProvider {
     addressNotifier.addListener(() => checkSwapInfo());
     fromAmountString.addListener(fromAmountStringChanged);
     toAmountString.addListener(toAmountStringChanged);
-    slippageString.addListener(slippageChanged);
+    slippageNotifier.addListener(checkSwapInfo);
     Timer.periodic(_refreshInterval, (_) {
       checkSwapInfo();
     });
@@ -266,22 +267,9 @@ class SwapProvider {
   final ValueNotifier<SwapState> swapState = ValueNotifier(SwapState.None);
   final ValueNotifier<SwapInfo?> swapInfo = ValueNotifier(null);
 
-  double slippage = 0.5;
+  double get slippage => slippageNotifier.value;
 
-  late final ValueNotifier<String> slippageString =
-      ValueNotifier(slippage.toString());
-
-  void slippageChanged() {
-    final slippage_s = slippageString.value;
-
-    final slippage_d = double.tryParse(slippage_s);
-
-    if (slippage_d == null) return;
-
-    slippage = slippage_d;
-
-    checkSwapInfo(); // Recalculate the swap info
-  }
+  final ValueNotifier<double> slippageNotifier;
 
   void fromAmountStringChanged() {
     final value = fromAmountString.value;
@@ -611,11 +599,11 @@ Future<FromSwapInfo?> fromSwapInfo({
     return null;
   }
 
-  final _s = 1000.toBigInt - Amount.convert(value: slippage, decimals: 1).value;
+  final slippageMultiplier = 1 - slippage;
 
   final outputValue = outputs.last;
 
-  final minOutputValue = (outputValue * _s) ~/ 1000.toBigInt;
+  final minOutputValue = outputValue.multiply(slippageMultiplier);
 
   final bool needsApproval;
 
@@ -678,10 +666,10 @@ Future<ToSwapInfo?> toSwapInfo({
     return null;
   }
 
-  final _s = 1000.toBigInt + Amount.convert(value: slippage, decimals: 1).value;
+  final slippageMultiplier = 1 + slippage;
 
   final inputValue = inputs.first;
-  final maxInputValue = (inputValue * _s) ~/ 1000.toBigInt;
+  final maxInputValue = inputValue.multiply(slippageMultiplier);
 
   final bool needsApproval;
 
