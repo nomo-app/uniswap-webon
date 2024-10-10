@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:nomo_ui_kit/components/app/bottom_bar/nomo_bottom_bar.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/dialog/nomo_dialog.dart';
-import 'package:nomo_ui_kit/components/divider/nomo_divider.dart';
 import 'package:nomo_ui_kit/components/dropdownmenu/drop_down_item.dart';
 import 'package:nomo_ui_kit/components/dropdownmenu/dropdownmenu.dart';
 import 'package:nomo_ui_kit/components/input/textInput/nomo_input.dart';
@@ -14,17 +13,49 @@ import 'package:nomo_ui_kit/theme/theme_provider.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/common/price_repository.dart';
+import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
-import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/theme.dart';
 
-class SettingsDialog extends StatelessWidget {
+class SettingsDialog extends StatefulWidget {
   const SettingsDialog({super.key});
+
+  @override
+  State<SettingsDialog> createState() => _SettingsDialogState();
+}
+
+class _SettingsDialogState extends State<SettingsDialog> {
+  late final ValueNotifier<String> slippageStringNotifier = ValueNotifier(
+    ($slippageNotifier.value * 100).toString(),
+  );
+
+  @override
+  void initState() {
+    slippageStringNotifier.addListener(slippageChanged);
+    super.initState();
+  }
+
+  void slippageChanged() {
+    final slippage_s = slippageStringNotifier.value;
+
+    final slippage_d = double.tryParse(slippage_s);
+
+    if (slippage_d == null) return;
+
+    $slippageNotifier.value = slippage_d / 100;
+  }
+
+  @override
+  void dispose() {
+    slippageStringNotifier.removeListener(slippageChanged);
+    slippageStringNotifier.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final assetNotifer = InheritedAssetProvider.of(context);
-    final swapProcider = InheritedSwapProvider.of(context);
+
     return NomoDialog(
       maxWidth: 420,
       widthRatio: 0.9,
@@ -124,7 +155,7 @@ class SettingsDialog extends StatelessWidget {
                   "%",
                   style: context.typography.b1,
                 ),
-                valueNotifier: swapProcider.slippageString,
+                valueNotifier: slippageStringNotifier,
                 style: context.typography.b1,
                 textAlign: TextAlign.end,
                 maxLines: 1,
@@ -151,8 +182,7 @@ class SettingsDialog extends StatelessWidget {
                         foregroundColor: context.colors.foreground3,
                         margin: const EdgeInsets.only(right: 8),
                         onPressed: () {
-                          swapProcider.slippageString.value =
-                              slippage.toString();
+                          slippageStringNotifier.value = slippage.toString();
                         },
                       )
                   ],

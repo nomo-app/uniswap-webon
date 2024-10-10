@@ -19,6 +19,7 @@ import 'package:zeniq_swap_frontend/theme.dart';
 final $tokenNotifier = ValueNotifier(<ERC20Entity>{});
 final $addressNotifier = ValueNotifier<String?>(null);
 final $currencyNotifier = ValueNotifier(Currency.usd);
+final $slippageNotifier = ValueNotifier(0.005);
 
 const ChainInfo zeniqSmartChainInfo = (
   chainId: 383414847825,
@@ -148,6 +149,21 @@ Future<void> initMetamask() async {
   }
 }
 
+Future<String> metamaskSigner(String rawTxSerialized) async {
+  final rawTx = RawEVMTransactionType0.fromUnsignedHex(rawTxSerialized);
+
+  return MetamaskConnection.ethereumSendTransaction(
+    {
+      "from": $addressNotifier.value!,
+      "to": rawTx.to,
+      "value": rawTx.value.toHexWithPrefix,
+      "data": rawTx.data.toHex,
+      "gas": rawTx.gasLimit.toHexWithPrefix,
+      "gasPrice": rawTx.gasPrice.toHexWithPrefix,
+    },
+  );
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({
     super.key,
@@ -162,23 +178,8 @@ class MyApp extends StatelessWidget {
         child: InheritedSwapProvider(
           swapProvider: SwapProvider(
             $addressNotifier,
-            $inNomo
-                ? WebonKitDart.signTransaction
-                : (rawTxSerialized) async {
-                    final rawTx =
-                        RawEVMTransactionType0.fromUnsignedHex(rawTxSerialized);
-
-                    return MetamaskConnection.ethereumSendTransaction(
-                      {
-                        "from": $addressNotifier.value!,
-                        "to": rawTx.to,
-                        "value": rawTx.value.toHexWithPrefix,
-                        "data": rawTx.data.toHex,
-                        "gas": rawTx.gasLimit.toHexWithPrefix,
-                        "gasPrice": rawTx.gasPrice.toHexWithPrefix,
-                      },
-                    );
-                  },
+            slippageNotifier: $slippageNotifier,
+            $inNomo ? WebonKitDart.signTransaction : metamaskSigner,
             needToBroadcast: $inNomo,
           ),
           child: InheritedAssetProvider(

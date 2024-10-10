@@ -186,6 +186,7 @@ class _SwapWidgetState extends State<SwapWidget> {
       InAppNotification.show(
         right: 16,
         top: 16,
+        useRootNavigator: true,
         child: NomoNotification(
           title: "Swap Completed",
           subtitle: swapInfo.toString(),
@@ -210,6 +211,7 @@ class _SwapWidgetState extends State<SwapWidget> {
       InAppNotification.show(
         right: 16,
         top: 16,
+        useRootNavigator: true,
         child: NomoNotification(
           title: "Transaction Pending",
           subtitle: "Waiting for transaction confirmation",
@@ -231,6 +233,7 @@ class _SwapWidgetState extends State<SwapWidget> {
       InAppNotification.show(
         right: 16,
         top: 16,
+        useRootNavigator: true,
         child: NomoNotification(
           title: "Swap Error",
           subtitle: "An error occurred while swapping",
@@ -254,6 +257,7 @@ class _SwapWidgetState extends State<SwapWidget> {
       InAppNotification.show(
         right: 16,
         top: 16,
+        useRootNavigator: true,
         child: NomoNotification(
           title: "Token Approval Error",
           subtitle: "An error occurred while approving the token",

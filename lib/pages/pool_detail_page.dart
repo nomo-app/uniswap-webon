@@ -51,7 +51,7 @@ class _PoolDetailPageState extends State<PoolDetailPage> {
       return const SizedBox();
     }
     return NomoRouteBody(
-      maxContentWidth: 1000,
+      maxContentWidth: 720,
       child: ValueListenableBuilder(
         valueListenable: pairInfoNotifier,
         builder: (context, pairInfoAsync, child) {
@@ -130,6 +130,7 @@ class _PoolWrapperState extends State<PoolWrapper> {
                   ),
                 PoolDetailLocation.addLiquidity => PoolAddLiquidity(
                     pairInfo: widget.pairInfo,
+                    assetNotifier: InheritedAssetProvider.of(context),
                   ),
                 PoolDetailLocation.removeLiquidity => PoolRemoveLiquidity(
                     pairInfo: widget.pairInfo,
