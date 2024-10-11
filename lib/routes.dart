@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_router/router/entities/route.dart';
@@ -15,7 +17,37 @@ import 'package:zeniq_swap_frontend/widgets/settings_dialog.dart';
 
 part 'routes.g.dart';
 
-final appRouter = AppRouter();
+final appRouter = AppRouter(
+  nestedNavigatorObservers: {
+    ValueKey("/"): [nestedNavObserver]
+  },
+);
+
+final nestedNavObserver = AppNavObserver();
+
+class AppNavObserver extends NavigatorObserver {
+  RouteInfo? currentNested;
+
+  @override
+  void didPush(Route route, Route? previousRoute) {
+    final routeInfo = appRouter.routeInfos.singleWhereOrNull(
+      (element) => element.path == route.settings.name,
+    );
+    if (routeInfo is! ModalRouteInfo) {
+      currentNested = routeInfo;
+    }
+  }
+
+  @override
+  void didReplace({Route? newRoute, Route? oldRoute}) {
+    final routeInfo = appRouter.routeInfos.singleWhereOrNull(
+      (element) => element.path == newRoute?.settings.name,
+    );
+    if (routeInfo is! ModalRouteInfo) {
+      currentNested = routeInfo;
+    }
+  }
+}
 
 @AppRoutes()
 const _routes = [

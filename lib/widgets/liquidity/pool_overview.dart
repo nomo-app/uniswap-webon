@@ -76,7 +76,7 @@ class _PoolOverviewState extends State<PoolOverview> {
           backgroundColor: context.colors.background2.withOpacity(0.5),
           borderRadius: BorderRadius.circular(16),
           padding: EdgeInsets.all(24),
-          child: PairRatioDisplay(pairInfo: pairInfo),
+          child: PairRatioDisplay.fromPairInfo(pairInfo),
         ),
         24.vSpacing,
         ListenableBuilder(

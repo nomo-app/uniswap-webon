@@ -11,7 +11,7 @@ class SwappingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Shimmer(
       child: NomoRouteBody(
-        maxContentWidth: 480,
+        maxContentWidth: 528,
         padding: EdgeInsets.zero,
         child: TapIgnoreDragDetector(
           onTap: () {
@@ -20,10 +20,10 @@ class SwappingScreen extends StatelessWidget {
           child: TextFieldTapRegion(
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(12),
               child: Column(
                 children: [
-                  32.vSpacing,
+                  48.vSpacing,
                   SwapWidget(),
                   MediaQuery.of(context).viewInsets.bottom.vSpacing,
                 ],

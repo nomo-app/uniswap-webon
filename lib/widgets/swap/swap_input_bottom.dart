@@ -76,8 +76,9 @@ class SwapInputBottom extends StatelessWidget {
                   : swapProvider.swapInfo.value?.fromAmount ??
                       swapProvider.fromAmount.value;
 
-              return Padding(
-                padding: const EdgeInsets.only(top: 12),
+              return Container(
+                margin: EdgeInsets.only(top: 20),
+                alignment: Alignment.center,
                 child: Row(
                   children: [
                     priceAsync.when(
@@ -234,7 +235,9 @@ class SwapInputBottom extends StatelessWidget {
               );
             },
           ),
-        _ => const SizedBox.shrink(),
+        _ => const SizedBox(
+            height: 12,
+          ),
       },
     );
   }

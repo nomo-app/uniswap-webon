@@ -251,7 +251,7 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
                             style: context.typography.b2,
                           ),
                           Spacer(),
-                          PairRatioDisplay(pairInfo: widget.pairInfo),
+                          PairRatioDisplay.fromPairInfo(widget.pairInfo),
                         ],
                       ),
                       NomoDivider(),

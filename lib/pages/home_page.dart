@@ -85,8 +85,9 @@ class SettingsAction extends StatelessWidget {
       backgroundColor: context.colors.background3,
       foregroundColor: context.colors.foreground1,
       height: 42,
-      width: 48,
+      width: 42,
       iconSize: 18,
+      elevation: 1,
       borderRadius: BorderRadius.circular(16),
       icon: Icons.more_horiz,
       padding: EdgeInsets.zero,
@@ -154,7 +155,7 @@ class AccountAction extends StatelessWidget {
         child: SecondaryNomoButton(
           padding: EdgeInsets.symmetric(horizontal: 16),
           height: 42,
-          backgroundColor: context.colors.primary.withOpacity(0.3),
+          backgroundColor: context.colors.primary.withOpacity(0.2),
           foregroundColor: context.colors.primary,
           selectionColor: context.colors.primary.darken(),
           border: Border.fromBorderSide(BorderSide.none),
@@ -180,21 +181,22 @@ class Menu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selected = NomoNavigatorInformationProvider.of(context).current.path;
+    NomoNavigatorInformationProvider.of(context);
+    final selected = nestedNavObserver.currentNested?.path;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         for (final item in menuItems)
           NomoHorizontalListTile(
             itemWidth:
-                context.responsiveValue(small: 64, medium: 96, large: 128),
+                context.responsiveValue(small: 80, medium: 96, large: 128),
             item: item,
-            height: 48,
+            height: 42,
             style: context.typography.h1
-                .copyWith(fontSize: 24, fontWeight: FontWeight.bold),
+                .copyWith(fontSize: 28, fontWeight: FontWeight.w800),
             theme: NomoBottomBarThemeData(
               selectedForeground: context.colors.primary,
-              foreground: context.colors.foreground1,
+              foreground: context.colors.foreground2,
               borderRadius: BorderRadius.circular(24),
             ),
             selected: item.key == selected,

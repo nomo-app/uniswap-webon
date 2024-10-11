@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_ui_kit/app/notifications/app_notification.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
+import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.dart';
 import 'package:nomo_ui_kit/components/card/nomo_card.dart';
 import 'package:nomo_ui_kit/components/divider/nomo_divider.dart';
+import 'package:nomo_ui_kit/components/expandable/expandable.dart';
 import 'package:nomo_ui_kit/components/info_item/nomo_info_item.dart';
 import 'package:nomo_ui_kit/components/input/textInput/nomo_input.dart';
 import 'package:nomo_ui_kit/components/loading/loading.dart';
@@ -20,6 +22,7 @@ import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
+import 'package:zeniq_swap_frontend/widgets/liquidity/pair_ratio_display.dart';
 import 'package:zeniq_swap_frontend/widgets/swap/swap_input_bottom.dart';
 import 'package:zeniq_swap_frontend/widgets/swap/swap_input_trailling.dart';
 import 'package:zeniq_swap_frontend/widgets/swap/token_price_display.dart';
@@ -285,10 +288,14 @@ class _SwapWidgetState extends State<SwapWidget> {
           children: [
             const Spacer(),
             PrimaryNomoButton(
-              backgroundColor: context.colors.background2,
+              backgroundColor: context.colors.background2.withOpacity(0.5),
               foregroundColor: context.colors.foreground1,
-              height: 32,
-              width: 48,
+              border: const Border.fromBorderSide(
+                BorderSide(color: Colors.white10),
+              ),
+              elevation: 0,
+              height: 42,
+              width: 42,
               iconSize: 18,
               borderRadius: BorderRadius.circular(16),
               icon: Icons.refresh_rounded,
@@ -301,217 +308,250 @@ class _SwapWidgetState extends State<SwapWidget> {
           ],
         ),
         16.vSpacing,
-        Column(
+        Stack(
           children: [
-            ListenableBuilder(
-              listenable: Listenable.merge([
-                swapProvider.fromToken,
-                swapProvider.swapState,
-              ]),
-              builder: (context, child) {
-                final token = swapProvider.fromToken.value;
-                final enabled = swapProvider.swapState.value.inputEnabled;
-                return NomoInput(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  placeHolderStyle: context.typography.b3,
-                  borderRadius: BorderRadius.circular(16),
-                  style: context.typography.b3.copyWith(
-                    color: context.colors.foreground1,
-                  ),
-                  border: const Border.fromBorderSide(
-                    BorderSide(color: Colors.white10),
-                  ),
-                  hitTestBehavior: HitTestBehavior.deferToChild,
-                  top: Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        NomoText(
-                          "From",
-                          style: context.typography.b2,
-                        ),
-                        ValueListenableBuilder(
-                          valueListenable: swapProvider.swapInfo,
-                          builder: (context, swapInfo, child) {
-                            final fromEstimated = swapInfo is ToSwapInfo;
-                            if (fromEstimated) {
-                              return NomoText(
-                                " (estimated)",
-                                style: context.typography.b1,
-                                opacity: 0.8,
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                        ),
-                        Spacer(),
-                        if (token != null) TokenPriceDisplay(token: token),
-                      ],
-                    ),
-                  ),
-                  focusNode: fromFocusNode,
-                  onTap: () {
-                    if (fromFocusNode.hasFocus && !keyboardShown) {
-                      fromFocusNode.unfocus();
-                      Future.microtask(() => fromFocusNode.requestFocus());
-                    }
-                  },
-                  background: context.colors.background2.withOpacity(0.5),
-                  enabled: enabled,
-                  errorNotifier: fromErrorNotifier,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  placeHolder: '0',
-                  valueNotifier: swapProvider.fromAmountString,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(
-                        r'^\d+([.,]?\d{0,' +
-                            (token?.decimals ?? 18).toString() +
-                            r'})',
+            Column(
+              children: [
+                ListenableBuilder(
+                  listenable: Listenable.merge([
+                    swapProvider.fromToken,
+                    swapProvider.swapState,
+                  ]),
+                  builder: (context, child) {
+                    final token = swapProvider.fromToken.value;
+                    final enabled = swapProvider.swapState.value.inputEnabled;
+                    return NomoInput(
+                      placeHolderStyle: context.typography.b3.copyWith(
+                          color: context.colors.foreground3.withOpacity(0.6)),
+                      borderRadius: BorderRadius.circular(16),
+                      style: context.typography.b3.copyWith(
+                        color: context.colors.foreground1,
                       ),
-                    ),
-                  ],
-                  scrollable: true,
-                  maxLines: 1,
-                  bottom: SwapInputBottom(
-                    token: token,
-                    isFrom: true,
-                  ),
-                  trailling: SwapInputTrailling(
-                    token: token,
-                    onTokenSelected: (token) {
-                      if (swapProvider.toAmount.value == null) {
-                        fromFocusNode.requestFocus();
-                      }
-                      swapProvider.setFromToken(token);
-                    },
-                  ),
-                );
-              },
-            ),
-            16.vSpacing,
-            Center(
-              child: PrimaryNomoButton(
-                icon: Icons.swap_vert,
-                height: 48,
-                width: 48,
-                shape: BoxShape.circle,
-                padding: EdgeInsets.zero,
-                foregroundColor: Colors.white,
-                backgroundColor: context.colors.background2.withOpacity(0.5),
-                onPressed: () {
-                  swapProvider.changePosition();
-                },
-              ),
-            ),
-            16.vSpacing,
-            ListenableBuilder(
-              listenable: Listenable.merge([
-                swapProvider.toToken,
-                swapProvider.swapState,
-              ]),
-              builder: (context, child) {
-                final token = swapProvider.toToken.value;
-                final enabled = swapProvider.swapState.value.inputEnabled;
-                return NomoInput(
-                  top: Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        NomoText(
-                          "To",
-                          style: context.typography.b2,
+                      border: const Border.fromBorderSide(
+                        BorderSide(color: Colors.white10),
+                      ),
+                      hitTestBehavior: HitTestBehavior.deferToChild,
+                      top: Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Row(
+                          children: [
+                            NomoText(
+                              "From",
+                              style: context.typography.b2,
+                            ),
+                            ValueListenableBuilder(
+                              valueListenable: swapProvider.swapInfo,
+                              builder: (context, swapInfo, child) {
+                                final fromEstimated = swapInfo is ToSwapInfo;
+                                if (fromEstimated) {
+                                  return NomoText(
+                                    " (estimated)",
+                                    style: context.typography.b1,
+                                    opacity: 0.8,
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+                            Spacer(),
+                            if (token != null) TokenPriceDisplay(token: token),
+                          ],
                         ),
-                        ValueListenableBuilder(
-                          valueListenable: swapProvider.swapInfo,
-                          builder: (context, swapInfo, child) {
-                            final toEstimated = swapInfo is FromSwapInfo;
-                            if (toEstimated) {
-                              return NomoText(
-                                " (estimated)",
-                                style: context.typography.b1,
-                                opacity: 0.8,
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
+                      ),
+                      focusNode: fromFocusNode,
+                      onTap: () {
+                        if (fromFocusNode.hasFocus && !keyboardShown) {
+                          fromFocusNode.unfocus();
+                          Future.microtask(() => fromFocusNode.requestFocus());
+                        }
+                      },
+                      background: context.colors.background2.withOpacity(0.5),
+                      enabled: enabled,
+                      errorNotifier: fromErrorNotifier,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      placeHolder: '0',
+                      valueNotifier: swapProvider.fromAmountString,
+                      padding: const EdgeInsets.all(24),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(
+                            r'^\d+([.,]?\d{0,' +
+                                (token?.decimals ?? 18).toString() +
+                                r'})',
+                          ),
                         ),
-                        Spacer(),
-                        if (token != null) TokenPriceDisplay(token: token),
                       ],
-                    ),
-                  ),
-                  hitTestBehavior: HitTestBehavior.deferToChild,
-                  focusNode: toFocusNode,
-                  onTap: () {
-                    if (toFocusNode.hasFocus && !keyboardShown) {
-                      toFocusNode.unfocus();
-                      Future.microtask(() => toFocusNode.requestFocus());
-                    }
-                  },
-                  enabled: enabled,
-                  maxLines: 1,
-                  scrollable: true,
-                  style: context.typography.b3.copyWith(
-                    color: context.colors.foreground1,
-                  ),
-                  placeHolderStyle: context.typography.b3,
-                  background: context.colors.background2.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(16),
-                  errorNotifier: toErrorNotifier,
-                  placeHolder: '0',
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  bottom: ValueListenableBuilder(
-                    valueListenable: swapProvider.fromToken,
-                    builder: (context, fromToken, _) {
-                      return SwapInputBottom(
+                      scrollable: true,
+                      maxLines: 1,
+                      bottom: SwapInputBottom(
                         token: token,
-                        showMax: false,
-                        isFrom: false,
-                        otherToken: fromToken,
-                      );
-                    },
-                  ),
-                  border: const Border.fromBorderSide(
-                    BorderSide(color: Colors.white10),
-                  ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(
-                        r'^\d+([.,]?\d{0,' +
-                            (token?.decimals ?? 18).toString() +
-                            r'})',
+                        isFrom: true,
+                      ),
+                      trailling: SwapInputTrailling(
+                        token: token,
+                        onTokenSelected: (token) {
+                          if (swapProvider.toAmount.value == null) {
+                            fromFocusNode.requestFocus();
+                          }
+                          swapProvider.setFromToken(token);
+                        },
+                      ),
+                    );
+                  },
+                ),
+                12.vSpacing,
+                ListenableBuilder(
+                  listenable: Listenable.merge([
+                    swapProvider.toToken,
+                    swapProvider.swapState,
+                  ]),
+                  builder: (context, child) {
+                    final token = swapProvider.toToken.value;
+                    final enabled = swapProvider.swapState.value.inputEnabled;
+                    return NomoInput(
+                      top: Padding(
+                        padding: const EdgeInsets.only(bottom: 24),
+                        child: Row(
+                          children: [
+                            NomoText(
+                              "To",
+                              style: context.typography.b2,
+                            ),
+                            ValueListenableBuilder(
+                              valueListenable: swapProvider.swapInfo,
+                              builder: (context, swapInfo, child) {
+                                final toEstimated = swapInfo is FromSwapInfo;
+                                if (toEstimated) {
+                                  return NomoText(
+                                    " (estimated)",
+                                    style: context.typography.b1,
+                                    opacity: 0.8,
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+                            Spacer(),
+                            if (token != null) TokenPriceDisplay(token: token),
+                          ],
+                        ),
+                      ),
+                      hitTestBehavior: HitTestBehavior.deferToChild,
+                      focusNode: toFocusNode,
+                      onTap: () {
+                        if (toFocusNode.hasFocus && !keyboardShown) {
+                          toFocusNode.unfocus();
+                          Future.microtask(() => toFocusNode.requestFocus());
+                        }
+                      },
+                      enabled: enabled,
+                      maxLines: 1,
+                      scrollable: true,
+                      style: context.typography.b3.copyWith(
+                        color: context.colors.foreground1,
+                      ),
+                      placeHolderStyle: context.typography.b3.copyWith(
+                          color: context.colors.foreground3.withOpacity(0.6)),
+                      background: context.colors.background2.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(16),
+                      errorNotifier: toErrorNotifier,
+                      placeHolder: '0',
+                      padding: const EdgeInsets.all(24),
+                      bottom: ValueListenableBuilder(
+                        valueListenable: swapProvider.fromToken,
+                        builder: (context, fromToken, _) {
+                          return SwapInputBottom(
+                            token: token,
+                            showMax: false,
+                            isFrom: false,
+                            otherToken: fromToken,
+                          );
+                        },
+                      ),
+                      border: const Border.fromBorderSide(
+                        BorderSide(color: Colors.white10),
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(
+                            r'^\d+([.,]?\d{0,' +
+                                (token?.decimals ?? 18).toString() +
+                                r'})',
+                          ),
+                        ),
+                      ],
+                      valueNotifier: swapProvider.toAmountString,
+                      trailling: ValueListenableBuilder(
+                        valueListenable: swapProvider.toToken,
+                        builder: (context, value, child) {
+                          return SwapInputTrailling(
+                            token: value,
+                            onTokenSelected: (token) {
+                              if (swapProvider.fromAmount.value == null) {
+                                toFocusNode.requestFocus();
+                              }
+                              swapProvider.setToToken(token);
+                            },
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            ListenableBuilder(
+              listenable: Listenable.merge(
+                [swapProvider.fromToken, swapProvider.toToken],
+              ),
+              builder: (context, child) {
+                final fromTokenVisible = swapProvider.fromToken.value != null;
+                final toTokenVisible = swapProvider.toToken.value != null;
+                return AnimatedPositioned(
+                  top: switch (fromTokenVisible) {
+                    true when toTokenVisible => 0,
+                    true => 48 - 24,
+                    _ => -48 + 24,
+                  },
+                  right: 0,
+                  curve: Curves.easeInOut,
+                  duration: const Duration(milliseconds: 200),
+                  left: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: context.colors.background1,
+                      ),
+                      padding: EdgeInsets.all(2),
+                      child: PrimaryNomoButton(
+                        icon: Icons.swap_vert,
+                        height: 42,
+                        width: 42,
+                        iconSize: 22,
+                        shape: BoxShape.circle,
+                        padding: EdgeInsets.zero,
+                        elevation: 0,
+
+                        //border: Border.fromBorderSide(BorderSide.none),
+                        foregroundColor: context.colors.foreground3,
+                        backgroundColor: context.colors.background3,
+                        onPressed: () {
+                          swapProvider.changePosition();
+                        },
                       ),
                     ),
-                  ],
-                  valueNotifier: swapProvider.toAmountString,
-                  trailling: ValueListenableBuilder(
-                    valueListenable: swapProvider.toToken,
-                    builder: (context, value, child) {
-                      return SwapInputTrailling(
-                        token: value,
-                        onTokenSelected: (token) {
-                          if (swapProvider.fromAmount.value == null) {
-                            toFocusNode.requestFocus();
-                          }
-                          swapProvider.setToToken(token);
-                        },
-                      );
-                    },
                   ),
                 );
               },
             ),
           ],
         ),
-        32.vSpacing,
+        24.vSpacing,
         ValueListenableBuilder(
           valueListenable: swapProvider.swapInfo,
           builder: (context, swapInfo, child) {
@@ -531,6 +571,52 @@ class _SwapWidgetState extends State<SwapWidget> {
                           color: priceImpactInfo.$2,
                         );
 
+                        final additionalInfo = swapInfo.path.length > 2
+                            ? [
+                                const NomoDivider(),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 8, horizontal: 4),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      AssetPicture(
+                                        token: swapInfo.fromToken,
+                                      ),
+                                      8.hSpacing,
+                                      NomoText(swapInfo.fromToken.symbol),
+                                      const Spacer(),
+                                      Icon(
+                                        Icons.arrow_forward,
+                                        color: context.colors.foreground3,
+                                      ),
+                                      const Spacer(),
+                                      const AssetPicture(
+                                        token: zeniqTokenWrapper,
+                                      ),
+                                      8.hSpacing,
+                                      NomoText(
+                                        zeniqTokenWrapper.name,
+                                      ),
+                                      const Spacer(),
+                                      Icon(
+                                        Icons.arrow_forward,
+                                        color: context.colors.foreground3,
+                                      ),
+                                      const Spacer(),
+                                      AssetPicture(
+                                        token: swapInfo.toToken,
+                                      ),
+                                      8.hSpacing,
+                                      NomoText(
+                                        swapInfo.toToken.symbol,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ]
+                            : null;
+
                         return Column(
                           children: [
                             NomoDividerThemeOverride(
@@ -544,56 +630,53 @@ class _SwapWidgetState extends State<SwapWidget> {
                                       color: context.colors.foreground3),
                                   valueStyle: context.typography.b1,
                                 ),
-                                child: NomoCard(
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 24),
-                                  backgroundColor: context.colors.background2
-                                      .withOpacity(0.5),
-                                  border: const Border.fromBorderSide(
-                                    BorderSide(color: Colors.white10),
+                                child: ExpandableThemeOverride(
+                                  data: ExpandableThemeDataNullable(
+                                    iconSize: 22,
+                                    iconColor: context.colors.foreground3,
+                                    childrenPadding: EdgeInsets.only(
+                                      left: 20,
+                                      right: 20,
+                                      bottom: 20,
+                                      top: 0,
+                                    ),
+                                    titlePadding: EdgeInsets.only(
+                                      left: 20,
+                                      right: 20,
+                                      top: 12,
+                                      bottom: 12,
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      ...switch (swapInfo) {
-                                        FromSwapInfo info => [
-                                            ValueListenableBuilder(
-                                              valueListenable:
-                                                  inversePriceRateNotifer,
-                                              builder: (context, inverse, _) {
-                                                return Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: NomoInfoItem(
-                                                        title: "Price",
-                                                        value: info
-                                                            .getPrice(inverse),
-                                                      ),
-                                                    ),
-                                                    8.hSpacing,
-                                                    PrimaryNomoButton(
-                                                      icon: Icons.swap_horiz,
-                                                      backgroundColor: context
-                                                          .colors.background2
-                                                          .withOpacity(0.5),
-                                                      padding:
-                                                          EdgeInsets.all(8),
-                                                      iconSize: 20,
-                                                      shape: BoxShape.circle,
-                                                      onPressed: () =>
-                                                          inversePriceRateNotifer
-                                                                  .value =
-                                                              !inversePriceRateNotifer
-                                                                  .value,
-                                                    ),
-                                                  ],
-                                                );
-                                              },
+                                  child: NomoCard(
+                                    elevation: 0,
+                                    // padding: const EdgeInsets.symmetric(
+                                    //     horizontal: 20, vertical: 20),
+                                    backgroundColor: context.colors.background2
+                                        .withOpacity(0.5),
+                                    border: const Border.fromBorderSide(
+                                      BorderSide(color: Colors.white10),
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: switch (swapInfo) {
+                                      FromSwapInfo info => Expandable(
+                                          title: ValueListenableBuilder(
+                                            valueListenable:
+                                                inversePriceRateNotifer,
+                                            builder: (context, inverse, _) {
+                                              return PairRatioDisplay(
+                                                token0: info.toToken,
+                                                token1: info.fromToken,
+                                                ratio0: info.rate,
+                                                ratio1: 1 / info.rate,
+                                              );
+                                            },
+                                          ),
+                                          children: [
+                                            NomoDivider(
+                                              crossAxisSpacing: 1,
                                             ),
-                                            const NomoDivider(),
+                                            11.vSpacing,
                                             NomoInfoItem(
                                               title: "Slippage Tolerance",
                                               value: "${info.slippage}%",
@@ -616,42 +699,27 @@ class _SwapWidgetState extends State<SwapWidget> {
                                               value:
                                                   "${info.amountOutMin.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.toToken.symbol}",
                                             ),
+                                            ...?additionalInfo,
                                           ],
-                                        ToSwapInfo info => [
-                                            ValueListenableBuilder(
-                                              valueListenable:
-                                                  inversePriceRateNotifer,
-                                              builder: (context, inverse, _) {
-                                                return Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: NomoInfoItem(
-                                                        title: "Price",
-                                                        value: info
-                                                            .getPrice(inverse),
-                                                      ),
-                                                    ),
-                                                    8.hSpacing,
-                                                    PrimaryNomoButton(
-                                                      icon: Icons.swap_horiz,
-                                                      iconSize: 20,
-                                                      backgroundColor: context
-                                                          .colors.background2
-                                                          .withOpacity(0.5),
-                                                      padding:
-                                                          EdgeInsets.all(8),
-                                                      shape: BoxShape.circle,
-                                                      onPressed: () =>
-                                                          inversePriceRateNotifer
-                                                                  .value =
-                                                              !inversePriceRateNotifer
-                                                                  .value,
-                                                    ),
-                                                  ],
-                                                );
-                                              },
+                                        ),
+                                      ToSwapInfo info => Expandable(
+                                          title: ValueListenableBuilder(
+                                            valueListenable:
+                                                inversePriceRateNotifer,
+                                            builder: (context, inverse, _) {
+                                              return PairRatioDisplay(
+                                                token0: info.fromToken,
+                                                token1: info.toToken,
+                                                ratio0: info.rate,
+                                                ratio1: 1 / info.rate,
+                                              );
+                                            },
+                                          ),
+                                          children: [
+                                            NomoDivider(
+                                              crossAxisSpacing: 1,
                                             ),
-                                            const NomoDivider(),
+                                            11.vSpacing,
                                             NomoInfoItem(
                                               title: "Slippage Tolerance",
                                               value: "${info.slippage}%",
@@ -674,60 +742,10 @@ class _SwapWidgetState extends State<SwapWidget> {
                                               value:
                                                   "${info.amountInMax.displayDouble.toMaxPrecisionWithoutScientificNotation(5)} ${info.fromToken.symbol}",
                                             ),
-                                          ]
-                                      },
-                                      if (swapInfo.path.length > 2) ...[
-                                        const NomoDivider(),
-                                        4.vSpacing,
-                                        NomoText(
-                                          "Route",
-                                          style: context.typography.b1
-                                              .copyWith(color: Colors.white60),
-                                        ),
-                                        12.vSpacing,
-                                        Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              AssetPicture(
-                                                token: swapInfo.fromToken,
-                                              ),
-                                              8.hSpacing,
-                                              NomoText(
-                                                  swapInfo.fromToken.symbol),
-                                              const Spacer(),
-                                              const Icon(
-                                                Icons.arrow_forward,
-                                                color: Colors.white60,
-                                              ),
-                                              const Spacer(),
-                                              const AssetPicture(
-                                                token: zeniqTokenWrapper,
-                                              ),
-                                              8.hSpacing,
-                                              NomoText(
-                                                zeniqTokenWrapper.name,
-                                              ),
-                                              const Spacer(),
-                                              const Icon(
-                                                Icons.arrow_forward,
-                                                color: Colors.white60,
-                                              ),
-                                              const Spacer(),
-                                              AssetPicture(
-                                                token: swapInfo.toToken,
-                                              ),
-                                              8.hSpacing,
-                                              NomoText(
-                                                swapInfo.toToken.symbol,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ],
+                                            ...?additionalInfo,
+                                          ],
+                                        )
+                                    },
                                   ),
                                 ),
                               ),
@@ -817,6 +835,7 @@ class _SwapWidgetState extends State<SwapWidget> {
                       height: 64,
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       borderRadius: BorderRadius.circular(16),
+                      elevation: 0,
                       textStyle: context.typography.h1,
                       onPressed: () {
                         if (state == SwapState.ReadyForSwap ||
