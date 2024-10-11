@@ -10,6 +10,7 @@ import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/pages/home_page.dart';
 import 'package:zeniq_swap_frontend/pages/pool_detail_page.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 import 'package:zeniq_swap_frontend/widgets/liquidity/pair_ratio_display.dart';
@@ -95,8 +96,10 @@ class _PoolOverviewState extends State<PoolOverview> {
               return NomoText("Error");
             }
 
-            final price0 = price0Async.valueOrNull!.price;
-            final price1 = price1Async.valueOrNull!.price;
+            final price0 =
+                price0Async.valueOrNull!.getPriceForType(widget.pairInfo.type);
+            final price1 =
+                price1Async.valueOrNull!.getPriceForType(widget.pairInfo.type);
             final currency = assetNotifier.currency;
 
             return Column(

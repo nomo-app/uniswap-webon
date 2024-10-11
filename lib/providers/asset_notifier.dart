@@ -1,10 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
+import 'package:zeniq_swap_frontend/common/http_client.dart';
 import 'package:zeniq_swap_frontend/common/logger.dart';
-import 'package:zeniq_swap_frontend/common/price_repository.dart';
+import 'package:zeniq_swap_frontend/providers/models/currency.dart';
+import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
+import 'package:zeniq_swap_frontend/providers/models/price_state.dart';
+import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
 const _fetchInterval = Duration(minutes: 1);
@@ -30,9 +36,8 @@ class AssetNotifier {
 
   Currency get currency => currencyNotifier.value;
 
-  List<PairInfo2> tokenPairs = [];
-
   final Map<ERC20Entity, ValueNotifier<AsyncValue<Amount>>> _balances = {};
+
   final Map<ERC20Entity, ValueNotifier<AsyncValue<PriceState>>> _prices = {};
 
   void addToken(ERC20Entity token) {
@@ -48,7 +53,7 @@ class AssetNotifier {
     final diff = tokens.difference(lastTokens);
 
     fetchAllBalances(diff);
-    fetchAllPrices(diff);
+    // fetchAllPrices(diff);
 
     lastTokens = tokens;
   }
@@ -101,112 +106,71 @@ class AssetNotifier {
   }
 
   Future<void> fetchAllPrices(Set<ERC20Entity> tokens) async {
-    final results =
-        await PriceRepository.fetchAll(currency: currency, tokens: tokens);
-
-    final noPriceTokens = tokens.where((token) {
-      final priceEntity = results.singleWhereOrNull((pe) => pe.token == token);
-      return priceEntity == null;
-    }).toSet();
-
-    final priceTokens = tokens.difference(noPriceTokens);
-
-    calculatePricesForTokens(noPriceTokens.toList());
-
-    for (final token in priceTokens) {
-      var priceEntity = results.singleWhereOrNull((pe) => pe.token == token);
-
-      final notifier = _prices.putIfAbsent(
-        token,
-        () => ValueNotifier(AsyncLoading()),
-      );
-
-      if (priceEntity == null || priceEntity.isPending) {
-        notifier.value = AsyncValue.error("Price not available");
-        continue;
-      }
-
-      notifier.value = AsyncValue.value(
-        PriceState(currency: currency, price: priceEntity.price),
-      );
-    }
-  }
-
-  Future<void> calculatePricesForTokens(List<ERC20Entity> tokens) async {
-    final zeniqPrice = await PriceRepository.fetchSingle(
-      zeniqSmart,
-      currency,
-    );
-    final futures = [
-      for (final token in tokens)
-        fetchPriceForTokenPair(
-          token,
-          zeniqPrice,
+    try {
+      final response = await HTTPService.client.get(
+        Uri.parse(
+          "$backendUrl/prices/$currency",
         ),
-    ];
-
-    final result = await Future.wait(futures);
-
-    for (final (price, token) in result) {
-      final notifier = _prices.putIfAbsent(
-        token,
-        () => ValueNotifier(AsyncLoading()),
+        headers: {
+          "Content-Type": "application/json",
+        },
       );
 
-      if (price == null) {
-        notifier.value = AsyncValue.error("Price not available");
-        continue;
+      if (response.statusCode != 200) {
+        throw Exception("Failed to fetch prices");
       }
 
-      notifier.value = AsyncValue.value(price);
-    }
-  }
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
 
-  Future<(PriceState?, ERC20Entity)> fetchPriceForTokenPair(
-    ERC20Entity token,
-    double zeniqPrice,
-  ) async {
-    var pair =
-        tokenPairs.singleWhereOrNull((element) => element.token == token);
-    if (pair == null) {
-      pair = await zfactory
-          .getPair(
-            tokenA: zeniqTokenWrapper.contractAddress,
-            tokenB: token.contractAddress,
-          )
-          .then(
-            (value) => PairInfo2(
-              token: token,
-              pair: UniswapV2Pair(contractAddress: value, rpc: rpc),
+      final zeniqPrice = json["zeniqPrice"];
+
+      final results = [
+        for (final Map<String, dynamic> priceJson in json["tokenPrices"])
+          (
+            priceJson["token"] as String,
+            PriceState(
+              price: priceJson['prices'][PairType.v2.name] as double?,
+              priceLegacy: priceJson['prices'][PairType.legacy.name] as double?,
+              currency: currency,
             ),
-          );
+          )
+      ];
 
-      tokenPairs.add(pair!);
-    }
-    try {
-      final price = await pair.fetchPrice(currency, zeniqPrice);
-      return (price, token);
-    } catch (e) {
-      return (null, token);
-    }
-  }
+      for (final token in tokens) {
+        final notifier = _prices.putIfAbsent(
+          token,
+          () => ValueNotifier(AsyncLoading()),
+        );
+        if (token == zeniqTokenWrapper) {
+          notifier.value = AsyncValue.value(PriceState(
+            currency: currency,
+            price: zeniqPrice,
+            priceLegacy: null,
+          ));
+          continue;
+        }
+        if (token == wrappedZeniqSmart) {
+          notifier.value = AsyncValue.value(PriceState(
+            currency: currency,
+            price: null,
+            priceLegacy: zeniqPrice,
+          ));
+          continue;
+        }
 
-  Future<void> fetchPriceForToken(ERC20Entity token) async {
-    final notifier = _prices.putIfAbsent(
-      token,
-      () => ValueNotifier(AsyncLoading()),
-    );
-    try {
-      final replacedToken = switch (token) {
-        wrappedZeniqSmart => zeniqTokenWrapper,
-        _ => token,
-      };
-      final result = await PriceRepository.fetchSingle(replacedToken, currency);
-      notifier.value = AsyncValue.value(
-        PriceState(currency: currency, price: result),
-      );
-    } catch (e) {
-      notifier.value = AsyncValue.error(e);
+        final priceState = results
+            .singleWhereOrNull((r) => r.$1 == token.lowerCaseAddress)
+            ?.$2;
+
+        if (priceState == null) {
+          notifier.value = AsyncValue.error("Price not available");
+          continue;
+        }
+
+        notifier.value = AsyncValue.value(priceState);
+      }
+    } catch (e, s) {
+      Logger.logError(e, s: s);
     }
   }
 
@@ -257,52 +221,5 @@ class InheritedAssetProvider extends InheritedWidget {
   @override
   bool updateShouldNotify(InheritedAssetProvider oldWidget) {
     return false;
-  }
-}
-
-class PairInfo2 extends UniswapV2Pair {
-  final CoinEntity token;
-
-  PairInfo2({
-    required this.token,
-    required UniswapV2Pair pair,
-  }) : super(
-          contractAddress: pair.contractAddress,
-          rpc: pair.rpc,
-        );
-
-  Future<PriceState> fetchPrice(Currency currency, double? zeniqPrice) async {
-    zeniqPrice ??= await PriceRepository.fetchSingle(
-      zeniqSmart,
-      currency,
-    );
-    final reserves = await getReserves();
-    final token0Contract = await token0();
-
-    final token0IsZeniq = token0Contract == zeniqTokenWrapper.lowerCaseAddress;
-
-    var (zeniqReserves, tokenReserves) =
-        token0IsZeniq ? (reserves.$1, reserves.$2) : (reserves.$2, reserves.$1);
-
-    final decimalDiff = 18 - token.decimals;
-    if (decimalDiff > 0) {
-      tokenReserves = tokenReserves * BigInt.from(10).pow(decimalDiff);
-    }
-
-    final zeniqRatio = zeniqReserves / tokenReserves;
-
-    Logger.log(
-      "Ratio for ${token.name} is $zeniqRatio",
-    );
-    final price = zeniqPrice * zeniqRatio.toDouble();
-
-    Logger.log(
-      "Price for ${token.name} is $price",
-    );
-
-    return PriceState(
-      currency: currency,
-      price: price,
-    );
   }
 }

@@ -16,6 +16,7 @@ import 'package:zeniq_swap_frontend/common/logger.dart';
 import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/add_liquidity_provider.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 import 'package:zeniq_swap_frontend/widgets/liquidity/add/add_liquidity_input_bottom.dart';

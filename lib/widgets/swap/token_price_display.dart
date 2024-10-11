@@ -4,6 +4,7 @@ import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 
 class TokenPriceDisplay extends StatelessWidget {
   final ERC20Entity token;
@@ -45,7 +46,7 @@ class TokenPriceDisplay extends StatelessWidget {
                     opacity: 0.6,
                   ),
                   NomoText(
-                    "${pricestate.currency.symbol}${pricestate.price.toStringAsFixed(5)}",
+                    "${pricestate.currency.symbol}${pricestate.getPriceForType(PairType.v2).toStringAsFixed(5)}",
                     style: context.typography.b1,
                     color: context.colors.foreground1,
                     opacity: 0.8,

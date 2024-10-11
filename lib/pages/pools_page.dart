@@ -9,6 +9,7 @@ import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
@@ -217,7 +218,7 @@ class PairItem extends StatelessWidget {
               ),
             ),
             Spacer(),
-            NomoText(pair.allowEntering ? "Open" : "Closed"),
+            //  NomoText(pair.type ? "Open" : "Closed"),
             64.hSpacing,
             SizedBox(
               width: 128,
@@ -244,8 +245,10 @@ class PairItem extends StatelessWidget {
                     return Loading();
                   }
 
-                  final token0Price = token0PriceAsync.valueOrNull!.price;
-                  final token1Price = token1PriceAsync.valueOrNull!.price;
+                  final token0Price =
+                      token0PriceAsync.valueOrNull!.getPriceForType(pair.type);
+                  final token1Price =
+                      token1PriceAsync.valueOrNull!.getPriceForType(pair.type);
                   final currency = assetProvider.currency;
                   final tvl = pair.totalValueLocked(token0Price, token1Price);
                   return NomoText(

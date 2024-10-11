@@ -16,11 +16,11 @@ class TokenImageProvider {
   }
 
   void tokensChanged() {
-    final diff = tokens.difference(lastTokens);
+    // final diff = tokens.difference(lastTokens);
 
-    fetchAllImages(diff);
+    // fetchAllImages(diff);
 
-    lastTokens = tokens;
+    // lastTokens = tokens;
   }
 
   Future<void> fetchAllImages(Iterable<ERC20Entity> tokens) async =>

@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 
 class PoolRemoveLiquidity extends StatelessWidget {

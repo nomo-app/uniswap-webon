@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:nomo_ui_kit/components/buttons/link/nomo_link_button.dart';
 import 'package:nomo_ui_kit/components/loading/shimmer/loading_shimmer.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
@@ -8,9 +7,9 @@ import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/common/extensions.dart';
-import 'package:zeniq_swap_frontend/common/price_repository.dart';
 import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/models/price_state.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
 class SwapInputBottom extends StatelessWidget {
@@ -85,12 +84,12 @@ class SwapInputBottom extends StatelessWidget {
                       data: (price) {
                         final priceAmount = switch (amount) {
                           Amount amount when amount.value > BigInt.zero =>
-                            price.price * amount.displayDouble,
+                            price.price! * amount.displayDouble,
                           _ => null,
                         };
                         final priceAmountString = switch (amount) {
                           Amount amount when amount.value > BigInt.zero =>
-                            "${price.currency.symbol}${(price.price * amount.displayDouble).toStringAsFixed(5)}",
+                            "${price.currency.symbol}${(price.price! * amount.displayDouble).toStringAsFixed(5)}",
                           _ => "${price.currency.symbol}0.00",
                         };
                         return Row(
@@ -112,7 +111,8 @@ class SwapInputBottom extends StatelessWidget {
                                       switch (otherAmount) {
                                     Amount amount
                                         when amount.value > BigInt.zero =>
-                                      (otherPrice.price * amount.displayDouble),
+                                      (otherPrice.price! *
+                                          amount.displayDouble),
                                     _ => null,
                                   };
 

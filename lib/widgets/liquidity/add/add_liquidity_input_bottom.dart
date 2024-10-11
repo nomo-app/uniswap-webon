@@ -44,7 +44,7 @@ class AddLiqudityInputBottom extends StatelessWidget {
                     error: (error) => NomoText(error.toString()),
                     data: (priceState) {
                       final value =
-                          (amount?.displayDouble ?? 0) * priceState.price;
+                          (amount?.displayDouble ?? 0) * priceState.price!;
 
                       return NomoText(
                         "${priceState.currency.symbol}${value.toStringAsFixed(2)}",
@@ -72,8 +72,8 @@ class AddLiqudityInputBottom extends StatelessWidget {
                             loading: () => const SizedBox.shrink(),
                             error: (error) => NomoText(error.toString()),
                             data: (priceState) {
-                              final value =
-                                  balanceState.displayDouble * priceState.price;
+                              final value = balanceState.displayDouble *
+                                  priceState.price!;
 
                               return NomoText(
                                 "${priceState.currency.symbol}${value.toStringAsFixed(2)}",
