@@ -190,7 +190,11 @@ class MyApp extends StatelessWidget {
             tokenProvider: context.read<TokenProvider>(),
           ),
         ),
-        Provider(create: (context) => PoolProvider()),
+        Provider(
+          create: (context) => PoolProvider(
+            addressNotifier: $addressNotifier,
+          ),
+        ),
         Provider(
           create: (context) => SwapProvider(
             addressNotifier: $addressNotifier,

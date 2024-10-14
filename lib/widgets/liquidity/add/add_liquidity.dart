@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:nomo_ui_kit/app/notifications/app_notification.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/card/nomo_card.dart';
@@ -12,19 +11,17 @@ import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
-import 'package:zeniq_swap_frontend/common/logger.dart';
 import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/add_liquidity_provider.dart';
 import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
-import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 import 'package:zeniq_swap_frontend/widgets/liquidity/add/add_liquidity_input_bottom.dart';
 import 'package:zeniq_swap_frontend/widgets/liquidity/pair_ratio_display.dart';
 import 'package:zeniq_swap_frontend/common/extensions.dart';
 
 class PoolAddLiquidity extends StatefulWidget {
-  final PairInfo pairInfo;
+  final PairInfoEntity pairInfo;
   final BalanceProvider assetNotifier;
 
   const PoolAddLiquidity(

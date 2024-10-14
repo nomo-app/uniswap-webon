@@ -4,13 +4,13 @@ import 'package:nomo_ui_kit/components/app/routebody/nomo_route_body.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.dart';
 import 'package:nomo_ui_kit/components/card/nomo_card.dart';
+import 'package:nomo_ui_kit/components/input/textInput/nomo_input.dart';
 import 'package:nomo_ui_kit/components/loading/loading.dart';
+import 'package:nomo_ui_kit/components/outline_container/nomo_outline_container.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:provider/provider.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
-import 'package:zeniq_swap_frontend/main.dart';
-import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/providers/price_provider.dart';
@@ -32,7 +32,7 @@ class _PoolsPageState extends State<PoolsPage>
 
   @override
   void initState() {
-    showMyPoolsNotifier = ValueNotifier(false);
+    showMyPoolsNotifier = ValueNotifier(true);
 
     super.initState();
   }
@@ -60,10 +60,10 @@ class _PoolsPageState extends State<PoolsPage>
                       height: 48,
                       width: 128,
                       text: "My Pools",
-                      type: switch (showMyPools) {
-                        true => ActionType.def,
-                        false => ActionType.disabled,
-                      },
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: showMyPools
+                          ? context.colors.primary
+                          : context.colors.disabled,
                       onPressed: () {
                         showMyPoolsNotifier.value = true;
                       },
@@ -73,10 +73,10 @@ class _PoolsPageState extends State<PoolsPage>
                       height: 48,
                       width: 128,
                       text: "All Pools",
-                      type: switch (showMyPools) {
-                        false => ActionType.def,
-                        true => ActionType.disabled,
-                      },
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: showMyPools
+                          ? context.colors.disabled
+                          : context.colors.primary,
                       onPressed: () {
                         showMyPoolsNotifier.value = false;
                       },
@@ -85,12 +85,18 @@ class _PoolsPageState extends State<PoolsPage>
                     PrimaryNomoButton(
                       text: "Create Pool",
                       height: 48,
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ],
                 ),
               );
             },
           ),
+          32.vSpacing,
+          NomoInput(
+            placeHolder: "Search",
+          ),
+          32.vSpacing,
           SizedBox(
             height: 48,
             child: Row(
@@ -125,24 +131,33 @@ class _PoolsPageState extends State<PoolsPage>
     return NomoRouteBody(
       maxContentWidth: 1000,
       child: ValueListenableBuilder(
-        valueListenable: poolProvider.allPairsNotifier,
-        builder: (context, allPairsAsync, child) {
-          return allPairsAsync.when(
-            loading: () => Center(child: Loading()),
-            data: (allPairs) {
-              return ListView.separated(
-                itemBuilder: (context, index) => switch (index) {
-                  0 => header,
-                  _ => PairItem(
-                      pair: allPairs[index - 1],
-                    ),
+        valueListenable: showMyPoolsNotifier,
+        builder: (context, showMyPools, child) {
+          return ValueListenableBuilder(
+            valueListenable: poolProvider.allPairsNotifier,
+            builder: (context, pairsAsync, child) {
+              return pairsAsync.when(
+                loading: () => Center(child: Loading()),
+                data: (allPairs) {
+                  final pairs = switch (showMyPools) {
+                    true => allPairs.whereType<OwnedPairInfo>().toList(),
+                    _ => allPairs,
+                  };
+                  return ListView.separated(
+                    itemBuilder: (context, index) => switch (index) {
+                      0 => header,
+                      _ => PairItem(
+                          pair: pairs[index - 1],
+                        ),
+                    },
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 16),
+                    itemCount: pairs.length + 1,
+                  );
                 },
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 16),
-                itemCount: allPairs.length + 1,
+                error: (error) => NomoText(error.toString()),
               );
             },
-            error: (error) => NomoText(error.toString()),
           );
         },
       ),
@@ -151,7 +166,7 @@ class _PoolsPageState extends State<PoolsPage>
 }
 
 class PairItem extends StatelessWidget {
-  final PairInfo pair;
+  final PairInfoEntity pair;
 
   const PairItem({
     super.key,
@@ -220,11 +235,20 @@ class PairItem extends StatelessWidget {
                 ],
               ),
             ),
+            if (pair.type == PairType.legacy)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: NomoOutlineContainer(
+                  padding: EdgeInsets.all(8),
+                  background: context.colors.error,
+                  radius: 16,
+                  child: NomoText("Legacy"),
+                ),
+              ),
             Spacer(),
             //  NomoText(pair.type ? "Open" : "Closed"),
             64.hSpacing,
             SizedBox(
-              width: 128,
               child: ListenableBuilder(
                 listenable: Listenable.merge([
                   token0PriceNotifier,
@@ -254,9 +278,20 @@ class PairItem extends StatelessWidget {
                       token1PriceAsync.valueOrNull!.getPriceForType(pair.type);
                   final currency = token1PriceAsync.valueOrNull!.currency;
                   final tvl = pair.totalValueLocked(token0Price, token1Price);
-                  return NomoText(
-                    "${currency.symbol}${tvl.toStringAsFixed(2)}",
-                    style: context.typography.b1,
+
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      NomoText(
+                        "${currency.symbol}${tvl.toStringAsFixed(2)}",
+                        style: context.typography.b1,
+                      ),
+                      if (pair is OwnedPairInfo)
+                        NomoText(
+                          "Your Liquidity: ${currency.symbol}${(pair as OwnedPairInfo).myTotalValueLocked(token0Price, token1Price).toStringAsFixed(2)}",
+                          style: context.typography.b1,
+                        ),
+                    ],
                   );
                 },
               ),

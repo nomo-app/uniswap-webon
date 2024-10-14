@@ -36,6 +36,10 @@ class PriceProvider {
 
   final Map<ERC20Entity, AsyncNotifier<PriceState>> _prices = {};
 
+  void refreshToken(ERC20Entity token) {
+    // TODO: Refresh token price
+  }
+
   ValueNotifier<AsyncValue<PriceState>> priceNotifierForToken(
     ERC20Entity token,
   ) {

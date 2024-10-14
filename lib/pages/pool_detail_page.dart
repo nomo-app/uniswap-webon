@@ -6,14 +6,14 @@ import 'package:nomo_ui_kit/components/loading/loading.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:provider/provider.dart';
-import 'package:zeniq_swap_frontend/common/async_value.dart';
+import 'package:zeniq_swap_frontend/common/notifier.dart';
 import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/widgets/liquidity/add/add_liquidity.dart';
-import 'package:zeniq_swap_frontend/widgets/liquidity/overview/remove_liquidity.dart';
-import 'package:zeniq_swap_frontend/widgets/liquidity/pool_overview.dart';
+import 'package:zeniq_swap_frontend/widgets/liquidity/overview/pool_overview.dart';
+import 'package:zeniq_swap_frontend/widgets/liquidity/remove/remove_liquidity.dart';
 
 class PoolDetailPage extends StatefulWidget {
   final String? address;
@@ -25,7 +25,7 @@ class PoolDetailPage extends StatefulWidget {
 }
 
 class _PoolDetailPageState extends State<PoolDetailPage> {
-  late final ValueNotifier<AsyncValue<PairInfo>> pairInfoNotifier;
+  late final AsyncNotifier<PairInfoEntity> pairInfoNotifier;
 
   @override
   void didChangeDependencies() {
@@ -79,7 +79,7 @@ enum PoolDetailLocation {
 }
 
 class PoolWrapper extends StatefulWidget {
-  final PairInfo pairInfo;
+  final PairInfoEntity pairInfo;
 
   const PoolWrapper({
     super.key,
@@ -92,7 +92,25 @@ class PoolWrapper extends StatefulWidget {
 
 class _PoolWrapperState extends State<PoolWrapper> {
   late final ValueNotifier<PoolDetailLocation> locationNotifier =
-      ValueNotifier(PoolDetailLocation.addLiquidity);
+      ValueNotifier(PoolDetailLocation.removeLiquidity);
+
+  List<PoolDetailLocation> get locations => switch (widget.pairInfo) {
+        OwnedPairInfo pairInfo => [
+            PoolDetailLocation.overview,
+            if (pairInfo.type != PairType.legacy)
+              PoolDetailLocation.addLiquidity,
+            PoolDetailLocation.removeLiquidity,
+          ],
+        PairInfo pairInfo => [
+            PoolDetailLocation.overview,
+            if (pairInfo.type != PairType.legacy)
+              PoolDetailLocation.addLiquidity,
+          ],
+      };
+
+  OwnedPairInfo? get ownedPairInfo => widget.pairInfo is OwnedPairInfo
+      ? widget.pairInfo as OwnedPairInfo
+      : null;
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +122,7 @@ class _PoolWrapperState extends State<PoolWrapper> {
           children: [
             Row(
               children: [
-                for (final location in PoolDetailLocation.values)
+                for (final location in locations)
                   SecondaryNomoButton(
                     height: 48,
                     padding: EdgeInsets.symmetric(horizontal: 24),
@@ -131,7 +149,7 @@ class _PoolWrapperState extends State<PoolWrapper> {
                     assetNotifier: context.watch<BalanceProvider>(),
                   ),
                 PoolDetailLocation.removeLiquidity => PoolRemoveLiquidity(
-                    pairInfo: widget.pairInfo,
+                    pairInfo: ownedPairInfo!,
                   ),
               },
             )

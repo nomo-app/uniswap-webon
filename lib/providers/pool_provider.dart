@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
+import 'package:zeniq_swap_frontend/common/notifier.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:http/http.dart' as http;
@@ -22,28 +24,35 @@ final factoryOld = UniswapV2Factory(
 );
 
 class PoolProvider {
-  final ValueNotifier<AsyncValue<List<PairInfo>>> allPairsNotifier =
-      ValueNotifier(AsyncValue.loading());
+  final ValueNotifier<String?> addressNotifier;
 
-  final Map<String, ValueNotifier<AsyncValue<PairInfo>>> pairNotifiers = {};
+  String? get address => addressNotifier.value;
 
-  ValueNotifier<AsyncValue<PairInfo>> getPairNotifier(String address) {
+  final AsyncNotifier<List<PairInfoEntity>> allPairsNotifier = AsyncNotifier();
+
+  Completer<List<PairInfoEntity>> _allPairsCompleter = Completer();
+
+  Future<List<PairInfoEntity>> get allPairsFuture => _allPairsCompleter.future;
+
+  final Map<String, AsyncNotifier<PairInfoEntity>> pairNotifiers = {};
+
+  AsyncNotifier<PairInfoEntity> getPairNotifier(String address) {
     final notifier = pairNotifiers.putIfAbsent(
       address,
       () {
         return allPairsNotifier.value.when(
-          loading: () => ValueNotifier(AsyncValue.loading()),
-          error: (error) => ValueNotifier(AsyncValue.loading()),
+          loading: () => AsyncNotifier(),
+          error: (error) => AsyncNotifier(),
           data: (allPairs) {
             final pair = allPairs.singleWhereOrNull(
               (pair) => pair.pair.contractAddress == address,
             );
 
             if (pair == null) {
-              return ValueNotifier(AsyncValue.loading());
+              return AsyncNotifier();
             }
 
-            return ValueNotifier(AsyncValue.value(pair));
+            return AsyncNotifier(pair);
           },
         );
       },
@@ -52,11 +61,68 @@ class PoolProvider {
     return notifier;
   }
 
-  PoolProvider() {
-    fetchAllRemote();
+  PoolProvider({
+    required this.addressNotifier,
+  }) {
+    fetchAllRemote().then((_) {
+      fetchMyPairs();
+    });
+
+    addressNotifier.addListener(() {
+      fetchMyPairs();
+    });
   }
 
-  void fetchAllRemote() async {
+  Future<void> fetchMyPairs() async {
+    if (address == null) return;
+
+    final allPairs = await allPairsFuture.then(
+      (value) => value.whereType<PairInfo>(),
+    );
+
+    final ownedPairs = await Future.wait(
+      [
+        for (final pair in allPairs)
+          pair.erc20Contract.getBalance(address!).then(
+            (balance) {
+              if (balance == BigInt.zero) return null;
+              return OwnedPairInfo(
+                pairTokenAmount: balance,
+                pairInfo: pair,
+              );
+            },
+          ).then(
+            (ownedPairInfo) {
+              if (ownedPairInfo == null) return null;
+              getPairNotifier(ownedPairInfo.pair.contractAddress)
+                  .setValue(ownedPairInfo);
+              return ownedPairInfo;
+            },
+          ),
+      ],
+    ).then(
+      (value) => value.whereType<OwnedPairInfo>(),
+    );
+
+    allPairsNotifier.setValue(
+      allPairs.map(
+        (pair) {
+          final ownedPair = ownedPairs.singleWhereOrNull(
+            (ownedPair) =>
+                ownedPair.pair.contractAddress == pair.pair.contractAddress,
+          );
+
+          if (ownedPair != null) {
+            return ownedPair;
+          }
+
+          return pair;
+        },
+      ).toList(),
+    );
+  }
+
+  Future<void> fetchAllRemote() async {
     try {
       final response = await http.get(
         Uri.parse("$backendUrl/pairs"),
@@ -73,10 +139,12 @@ class PoolProvider {
 
       final pairs = [
         for (final pairJson in json["pairs"])
-          PairInfo.fromJson(pairJson as Map<String, dynamic>)
+          PairInfoEntity.fromJson(pairJson as Map<String, dynamic>)
       ];
 
       allPairsNotifier.value = AsyncValue.value(pairs);
+
+      _allPairsCompleter.complete(pairs);
     } catch (e, s) {
       print(e);
       print(s);

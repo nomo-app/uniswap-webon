@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_ui_kit/app/notifications/app_notification.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
-import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.dart';
 import 'package:nomo_ui_kit/components/card/nomo_card.dart';
 import 'package:nomo_ui_kit/components/divider/nomo_divider.dart';
 import 'package:nomo_ui_kit/components/expandable/expandable.dart';
@@ -20,8 +18,8 @@ import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/common/extensions.dart';
 import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
+import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
-import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 import 'package:zeniq_swap_frontend/widgets/liquidity/pair_ratio_display.dart';
 import 'package:zeniq_swap_frontend/widgets/swap/swap_input_bottom.dart';
@@ -38,6 +36,7 @@ class SwapWidget extends StatefulWidget {
 class _SwapWidgetState extends State<SwapWidget> {
   late SwapProvider swapProvider;
   late BalanceProvider balanceProvider;
+  late PriceProvider priceProvider;
 
   late final ValueNotifier<String?> fromErrorNotifier = ValueNotifier(null);
   late final ValueNotifier<String?> toErrorNotifier = ValueNotifier(null);
@@ -53,11 +52,11 @@ class _SwapWidgetState extends State<SwapWidget> {
   void didChangeDependencies() {
     swapProvider = context.read<SwapProvider>();
     balanceProvider = context.read<BalanceProvider>();
+    priceProvider = context.read<PriceProvider>();
 
     swapProvider.swapState.addListener(swapStateChanged);
     swapProvider.fromAmount.addListener(fromAmountChanged);
     swapProvider.toAmount.addListener(toAmountChanged);
-
     swapProvider.addressNotifier.addListener(recheckBalances);
 
     keyboardShown = MediaQuery.of(context).viewInsets.bottom > 0;
@@ -176,6 +175,15 @@ class _SwapWidgetState extends State<SwapWidget> {
     super.dispose();
   }
 
+  void refresh() {
+    final info = swapProvider.swapInfo.value;
+    if (info == null) return;
+    balanceProvider.refreshForToken(info.fromToken);
+    balanceProvider.refreshForToken(info.toToken);
+    priceProvider.refreshToken(info.fromToken);
+    priceProvider.refreshToken(info.toToken);
+  }
+
   void swapStateChanged() {
     if (mounted == false) return;
     print("Swap State: ${swapProvider.swapState.value}");
@@ -185,8 +193,7 @@ class _SwapWidgetState extends State<SwapWidget> {
     /// User just completed the swap
     if (swapState == SwapState.Swapped) {
       final swapInfo = swapProvider.swapInfo.value;
-
-      //  assetProvider.refresh();
+      refresh();
       InAppNotification.show(
         right: 16,
         top: 16,
@@ -211,7 +218,7 @@ class _SwapWidgetState extends State<SwapWidget> {
 
     /// User just completed the swap
     if (swapState == SwapState.Confirming) {
-      //  assetProvider.refresh();
+      refresh();
       InAppNotification.show(
         right: 16,
         top: 16,

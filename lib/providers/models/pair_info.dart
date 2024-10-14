@@ -26,11 +26,17 @@ enum PairType {
       );
 }
 
-class PairInfo {
+sealed class PairInfoEntity {
   final UniswapV2Pair pair;
+
+  ERC20Contract get erc20Contract {
+    return ERC20Contract(contractAddress: pair.contractAddress, rpc: pair.rpc);
+  }
 
   final ERC20Entity token0;
   final ERC20Entity token1;
+
+  final BigInt poolSupply;
 
   final BigInt reserve0;
   final BigInt reserve1;
@@ -114,88 +120,44 @@ class PairInfo {
     return (amount1.displayDouble * price1 / tvl) * 100;
   }
 
-  PairInfo._({
+  PairInfoEntity._({
     required this.pair,
     required this.token0,
     required this.token1,
     required this.reserve0,
     required this.reserve1,
     required this.type,
+    required this.poolSupply,
   });
 
-  static Future<PairInfo?> fromPair(
-    UniswapV2Pair pair, {
-    required PairType type,
-  }) async {
-    final results = await Future.wait([
-      pair.token0().then(
-            (contractAddress) => getTokenInfo(
-              contractAddress: contractAddress,
-              rpc: pair.rpc,
-            ).then(
-              (info) => info?.toEntity(
-                pair.rpc.type.chainId,
-              ),
-            ),
-          ),
-      pair.token1().then(
-            (contractAddress) => getTokenInfo(
-              contractAddress: contractAddress,
-              rpc: pair.rpc,
-            ).then(
-              (info) => info?.toEntity(
-                pair.rpc.type.chainId,
-              ),
-            ),
-          ),
-      pair.getReserves(),
-    ]);
+  // Future<PairInfo> update() async {
+  //   final (reserve0, reserve1) = await pair.getReserves();
 
-    final token0 = results[0] as ERC20Entity?;
-    final token1 = results[1] as ERC20Entity?;
+  //   return copyWith(
+  //     reserve0: reserve0,
+  //     reserve1: reserve1,
+  //   );
+  // }
 
-    if (token1 == null || token0 == null) return null;
-
-    final (reserves0, reserves1) = results[2] as (BigInt, BigInt);
-
-    return PairInfo._(
-      pair: pair,
-      token0: token0,
-      token1: token1,
-      reserve0: reserves0,
-      reserve1: reserves1,
-      type: type,
-    );
-  }
-
-  Future<PairInfo> update() async {
-    final (reserve0, reserve1) = await pair.getReserves();
-
-    return copyWith(
-      reserve0: reserve0,
-      reserve1: reserve1,
-    );
-  }
-
-  PairInfo copyWith({
-    BigInt? reserve0,
-    BigInt? reserve1,
-  }) =>
-      PairInfo._(
-        pair: pair,
-        token0: token0,
-        token1: token1,
-        type: type,
-        reserve0: reserve0 ?? this.reserve0,
-        reserve1: reserve1 ?? this.reserve1,
-      );
+  // PairInfo copyWith({
+  //   BigInt? reserve0,
+  //   BigInt? reserve1,
+  // }) =>
+  //     PairInfo(
+  //       pair: pair,
+  //       token0: token0,
+  //       token1: token1,
+  //       type: type,
+  //       reserve0: reserve0 ?? this.reserve0,
+  //       reserve1: reserve1 ?? this.reserve1,
+  //     );
 
   @override
   String toString() {
     return "(token0: $token0, token1: $token1, reserve0: $reserve0, reserve1: $reserve1)";
   }
 
-  factory PairInfo.fromJson(
+  static PairInfo fromJson(
     Map<String, dynamic> json,
   ) {
     if (json
@@ -205,6 +167,7 @@ class PairInfo {
           'pair': String pairAddress,
           'reserve0': String reserve0S,
           'reserve1': String reserve1S,
+          'poolSupply': String poolSupplyS,
           'type': int type,
         }) {
       final token0 = ERC20Entity.fromJson(
@@ -220,13 +183,15 @@ class PairInfo {
 
       final reserve0 = BigInt.parse(reserve0S);
       final reserve1 = BigInt.parse(reserve1S);
+      final poolSupply = BigInt.parse(poolSupplyS);
 
-      return PairInfo._(
+      return PairInfo(
         pair: UniswapV2Pair(contractAddress: pairAddress, rpc: rpc),
         token0: token0,
         token1: token1,
         reserve0: reserve0,
         reserve1: reserve1,
+        poolSupply: poolSupply,
         type: PairType.fromIndex(type),
       );
     }
@@ -243,4 +208,81 @@ extension on TokenInfo {
         chainID: chainID,
         contractAddress: contractAddress,
       );
+}
+
+final class PairInfo extends PairInfoEntity {
+  PairInfo({
+    required UniswapV2Pair pair,
+    required ERC20Entity token0,
+    required ERC20Entity token1,
+    required BigInt reserve0,
+    required BigInt reserve1,
+    required PairType type,
+    required BigInt poolSupply,
+  }) : super._(
+          pair: pair,
+          token0: token0,
+          token1: token1,
+          reserve0: reserve0,
+          reserve1: reserve1,
+          type: type,
+          poolSupply: poolSupply,
+        );
+
+  PairInfo copyWith({
+    BigInt? reserve0,
+    BigInt? reserve1,
+    BigInt? poolSupply,
+  }) =>
+      PairInfo(
+        pair: pair,
+        token0: token0,
+        token1: token1,
+        type: type,
+        poolSupply: poolSupply ?? this.poolSupply,
+        reserve0: reserve0 ?? this.reserve0,
+        reserve1: reserve1 ?? this.reserve1,
+      );
+}
+
+final class OwnedPairInfo extends PairInfoEntity {
+  final BigInt pairTokenAmount;
+
+  Amount get pairTokenAmountAmount {
+    return Amount(
+      value: pairTokenAmount,
+      decimals: 18,
+    );
+  }
+
+  double get myPoolShare => pairTokenAmount / poolSupply;
+
+  double get myPoolSharePercentage => myPoolShare * 100;
+
+  Amount get myAmount0 {
+    final val = reserve0.multiply(myPoolShare);
+    return Amount(value: val, decimals: token0.decimals);
+  }
+
+  Amount get myAmount1 {
+    final val = reserve1.multiply(myPoolShare);
+    return Amount(value: val, decimals: token1.decimals);
+  }
+
+  double myTotalValueLocked(double price0, double price1) {
+    return myAmount0.displayDouble * price0 + myAmount1.displayDouble * price1;
+  }
+
+  OwnedPairInfo({
+    required this.pairTokenAmount,
+    required PairInfo pairInfo,
+  }) : super._(
+          pair: pairInfo.pair,
+          token0: pairInfo.token0,
+          token1: pairInfo.token1,
+          reserve0: pairInfo.reserve0,
+          reserve1: pairInfo.reserve1,
+          type: pairInfo.type,
+          poolSupply: pairInfo.poolSupply,
+        );
 }

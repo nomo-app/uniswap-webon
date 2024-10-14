@@ -22,7 +22,7 @@ class PairRatioDisplay extends StatefulWidget {
     required this.ratio1,
   });
 
-  PairRatioDisplay.fromPairInfo(PairInfo pairInfo)
+  PairRatioDisplay.fromPairInfo(PairInfoEntity pairInfo)
       : token0 = pairInfo.token0,
         token1 = pairInfo.token1,
         ratio0 = pairInfo.ratio0,

@@ -37,6 +37,10 @@ class BalanceProvider {
     fetchAllBalances(diff);
   }
 
+  void refreshForToken(ERC20Entity token) {
+    fetchBalanceForToken(token);
+  }
+
   Future<void> fetchAllBalances(Iterable<ERC20Entity> tokens) async =>
       await Future.wait(tokens.map(fetchBalanceForToken));
 
