@@ -6,12 +6,12 @@ import 'package:nomo_ui_kit/components/card/nomo_card.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
+import 'package:provider/provider.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
+import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/pages/home_page.dart';
-import 'package:zeniq_swap_frontend/pages/pool_detail_page.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
-import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
+import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 import 'package:zeniq_swap_frontend/widgets/liquidity/pair_ratio_display.dart';
 
@@ -26,11 +26,11 @@ class PoolOverview extends StatefulWidget {
 
 class _PoolOverviewState extends State<PoolOverview> {
   late final ValueNotifier<bool> invertRatioNotifier = ValueNotifier(true);
-  late AssetNotifier assetNotifier;
+  late PriceProvider assetNotifier;
 
   @override
   didChangeDependencies() {
-    assetNotifier = InheritedAssetProvider.of(context);
+    assetNotifier = context.read<PriceProvider>();
     super.didChangeDependencies();
   }
 
@@ -100,7 +100,7 @@ class _PoolOverviewState extends State<PoolOverview> {
                 price0Async.valueOrNull!.getPriceForType(widget.pairInfo.type);
             final price1 =
                 price1Async.valueOrNull!.getPriceForType(widget.pairInfo.type);
-            final currency = assetNotifier.currency;
+            final currency = $currencyNotifier.value;
 
             return Column(
               children: [

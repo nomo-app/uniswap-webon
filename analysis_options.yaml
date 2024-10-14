@@ -1,9 +1,10 @@
-include: package:flutter_lints/flutter.yaml
+# include: package:flutter_lints/flutter.yaml
 
-exclude:
-  # - packages/walletkit-dart
-  - packages/webon-kit-dart
-  - packages/nomo-ui-kit
+analyzer:
+  exclude:
+    - packages/walletkit-dart
+    - packages/nomo-ui-kit
+    - packages/webon-kit-dart
 
 linter:
   rules:
@@ -25,10 +26,3 @@ linter:
     unnecessary_string_escapes: false
     require_trailing_commas: false
     no_leading_underscores_for_local_identifiers: false
-
-analyzer:
-  exclude:
-    - packages/walletkit-dart
-    - packages/webon-kit-dart
-  plugins:
-    - custom_lint

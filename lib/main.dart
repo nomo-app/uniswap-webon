@@ -5,14 +5,16 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_router/router/entities/transitions.dart';
 import 'package:nomo_ui_kit/app/nomo_app.dart';
+import 'package:provider/provider.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/common/token_repository.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
-import 'package:zeniq_swap_frontend/providers/image_provider.dart';
+import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/currency.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
+import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
+import 'package:zeniq_swap_frontend/providers/token_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/theme.dart';
 
@@ -171,34 +173,41 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InheritedPoolProvider(
-      poolProvider: PoolProvider(),
-      child: InheritedImageProvider(
-        provider: TokenImageProvider($tokenNotifier),
-        child: InheritedSwapProvider(
-          swapProvider: SwapProvider(
-            $addressNotifier,
+    return MultiProvider(
+      providers: [
+        Provider<TokenProvider>(
+          create: (context) => TokenProvider(),
+        ),
+        Provider<BalanceProvider>(
+          create: (context) => BalanceProvider(
+            addressNotifier: $addressNotifier,
+            tokenProvider: context.read<TokenProvider>(),
+          ),
+        ),
+        Provider(
+          create: (context) => PriceProvider(
+            currencyNotifier: $currencyNotifier,
+            tokenProvider: context.read<TokenProvider>(),
+          ),
+        ),
+        Provider(create: (context) => PoolProvider()),
+        Provider(
+          create: (context) => SwapProvider(
+            addressNotifier: $addressNotifier,
             slippageNotifier: $slippageNotifier,
-            $inNomo ? WebonKitDart.signTransaction : metamaskSigner,
+            signer: metamaskSigner,
             needToBroadcast: $inNomo,
           ),
-          child: InheritedAssetProvider(
-            notifier: AssetNotifier(
-              $addressNotifier,
-              $tokenNotifier,
-              $currencyNotifier,
-            ),
-            child: NomoNavigator(
-              delegate: appRouter.delegate,
-              defaultTransistion: PageFadeTransition(),
-              child: NomoApp(
-                color: const Color(0xFF1A1A1A),
-                routerConfig: appRouter.config,
-                supportedLocales: const [Locale('en', 'US')],
-                themeDelegate: AppThemeDelegate(),
-              ),
-            ),
-          ),
+        ),
+      ],
+      child: NomoNavigator(
+        delegate: appRouter.delegate,
+        defaultTransistion: PageFadeTransition(),
+        child: NomoApp(
+          color: const Color(0xFF1A1A1A),
+          routerConfig: appRouter.config,
+          supportedLocales: const [Locale('en', 'US')],
+          themeDelegate: AppThemeDelegate(),
         ),
       ),
     );

@@ -11,12 +11,15 @@ import 'package:nomo_ui_kit/components/loading/shimmer/shimmer.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
+import 'package:provider/provider.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
-import 'package:zeniq_swap_frontend/pages/swap_screen.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
-import 'package:zeniq_swap_frontend/providers/image_provider.dart';
+import 'package:zeniq_swap_frontend/main.dart';
+import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
+import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
+import 'package:zeniq_swap_frontend/providers/models/token_entity.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
+import 'package:zeniq_swap_frontend/providers/token_provider.dart';
 import 'package:zeniq_swap_frontend/theme.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 
@@ -33,20 +36,22 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
       ValueNotifier(null);
 
   late ValueNotifier<List<ERC20Entity>> filteredAssetsNotifer;
-  late AssetNotifier assetNotifier;
-  late TokenImageProvider imageProvider;
+  late TokenProvider assetNotifier;
+
+  List<TokenEntity> get tokens =>
+      assetNotifier.getTokensForPairType(PairType.v2).toList();
 
   @override
   void didChangeDependencies() {
-    assetNotifier = InheritedAssetProvider.of(context);
-    imageProvider = InheritedImageProvider.of(context);
-    assetNotifier.tokenNotifier.addListener(
+    assetNotifier = context.read<TokenProvider>();
+
+    assetNotifier.notifier.addListener(
       () {
-        filteredAssetsNotifer.value = assetNotifier.tokens.toList();
+        filteredAssetsNotifer.value = tokens;
         onSearchInputChanged();
       },
     );
-    filteredAssetsNotifer = ValueNotifier(assetNotifier.tokens.toList());
+    filteredAssetsNotifer = ValueNotifier(tokens);
     super.didChangeDependencies();
   }
 
@@ -82,7 +87,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
       return;
     }
 
-    final existsAlready = assetNotifier.tokens.any(
+    final existsAlready = tokens.any(
       (token) {
         return token.contractAddress.toLowerCase() == searchText;
       },
@@ -108,8 +113,8 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
       chainID: rpc.type.chainId,
     );
 
-    assetNotifier.fetchBalanceForToken(customToken);
-    imageProvider.fetchImageForToken(customToken);
+    // assetNotifier.fetchBalanceForToken(customToken);
+    // imageProvider.fetchImageForToken(customToken); TODO: asds
     customTokenNotifier.value = customToken;
   }
 
@@ -117,11 +122,11 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
     final searchText = searchNotifier.value.trim().toLowerCase();
 
     if (searchText.isEmpty) {
-      filteredAssetsNotifer.value = assetNotifier.tokens.toList();
+      filteredAssetsNotifer.value = tokens.toList();
       return;
     }
 
-    final filteredAssets = assetNotifier.tokens.where(
+    final filteredAssets = tokens.where(
       (asset) {
         final name = asset.name.toLowerCase().contains(searchText);
         final symbol = asset.symbol.toLowerCase().contains(searchText);
@@ -143,14 +148,14 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
 
     WebLocalStorage.setItem('tokens', jsonEncode(savedTokensJson));
 
-    assetNotifier.addToken(customToken);
+    //  assetNotifier.addToken(customToken); TODO: asds
     customTokenNotifier.value = null;
     searchNotifier.value = '';
   }
 
   @override
   Widget build(BuildContext context) {
-    final balanceNotifer = InheritedAssetProvider.of(context);
+    final balanceNotifer = context.watch<BalanceProvider>();
     return Shimmer(
       child: NomoDialog(
         scrollabe: true,
@@ -249,13 +254,12 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                                 ListenableBuilder(
                                   listenable: Listenable.merge([
                                     balanceListenable,
-                                    assetNotifier.addressNotifier,
+                                    $addressNotifier,
                                   ]),
                                   builder: (context, child) {
                                     final value = balanceListenable.value;
                                     final hasAddress =
-                                        assetNotifier.addressNotifier.value !=
-                                            null;
+                                        $addressNotifier.value != null;
                                     if (!hasAddress) {
                                       return SizedBox.shrink();
                                     }
@@ -335,13 +339,12 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
                               ListenableBuilder(
                                 listenable: Listenable.merge([
                                   balanceListenable,
-                                  assetNotifier.addressNotifier,
+                                  $addressNotifier,
                                 ]),
                                 builder: (context, child) {
                                   final value = balanceListenable.value;
                                   final hasAddress =
-                                      assetNotifier.addressNotifier.value !=
-                                          null;
+                                      $addressNotifier.value != null;
                                   if (!hasAddress) {
                                     return SizedBox.shrink();
                                   }

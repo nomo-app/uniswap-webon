@@ -15,7 +15,7 @@ import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/common/logger.dart';
 import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/add_liquidity_provider.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
@@ -25,7 +25,7 @@ import 'package:zeniq_swap_frontend/common/extensions.dart';
 
 class PoolAddLiquidity extends StatefulWidget {
   final PairInfo pairInfo;
-  final AssetNotifier assetNotifier;
+  final BalanceProvider assetNotifier;
 
   const PoolAddLiquidity(
       {super.key, required this.pairInfo, required this.assetNotifier});
@@ -60,7 +60,7 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
       final depositInfo = provider.depositInfoNotifier
           .value; // TODO: This needs to be more precise and only refresh the tokens that are affected
 
-      widget.assetNotifier.refresh();
+      //  widget.assetNotifier.refresh();
       InAppNotification.show(
         right: 16,
         top: 16,
@@ -85,8 +85,8 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
 
     /// User just completed the swap
     if (depositState == AddLiquidityState.confirming) {
-      widget.assetNotifier
-          .refresh(); // TODO: This needs to be more precise and only refresh the tokens that are affected
+      // widget.assetNotifier
+      //     .refresh(); // TODO: This needs to be more precise and only refresh the tokens that are affected
       InAppNotification.show(
         right: 16,
         top: 16,

@@ -2,9 +2,10 @@ import 'package:flutter/widgets.dart';
 import 'package:nomo_ui_kit/components/loading/shimmer/loading_shimmer.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
+import 'package:provider/provider.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
+import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 
 class TokenPriceDisplay extends StatelessWidget {
   final ERC20Entity token;
@@ -16,7 +17,7 @@ class TokenPriceDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final priceNotifier =
-        InheritedAssetProvider.of(context).priceNotifierForToken(token);
+        context.watch<PriceProvider>().priceNotifierForToken(token);
 
     return ValueListenableBuilder(
       valueListenable: priceNotifier,

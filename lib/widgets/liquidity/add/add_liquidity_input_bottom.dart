@@ -3,8 +3,10 @@ import 'package:nomo_ui_kit/components/loading/loading.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
+import 'package:provider/provider.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
+import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 
 class AddLiqudityInputBottom extends StatelessWidget {
   final ERC20Entity token;
@@ -19,9 +21,9 @@ class AddLiqudityInputBottom extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final balanceNotifier =
-        InheritedAssetProvider.of(context).balanceNotifierForToken(token);
+        context.watch<BalanceProvider>().balanceNotifierForToken(token);
     final priceNotifier =
-        InheritedAssetProvider.of(context).priceNotifierForToken(token);
+        context.watch<PriceProvider>().priceNotifierForToken(token);
     return ListenableBuilder(
       listenable: Listenable.merge([
         balanceNotifier,

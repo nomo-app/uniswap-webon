@@ -4,12 +4,14 @@ import 'package:nomo_ui_kit/components/loading/shimmer/loading_shimmer.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
+import 'package:provider/provider.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/common/extensions.dart';
 import 'package:zeniq_swap_frontend/main.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/price_state.dart';
+import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
 class SwapInputBottom extends StatelessWidget {
@@ -28,16 +30,17 @@ class SwapInputBottom extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final balanceNotifier = InheritedAssetProvider.of(context);
-    final swapProvider = InheritedSwapProvider.of(context);
+    final balanceNotifier = context.watch<BalanceProvider>();
+    final swapProvider = context.watch<SwapProvider>();
+    final priceNotifier = context.watch<PriceProvider>();
 
     final balanceListenable =
         token != null ? balanceNotifier.balanceNotifierForToken(token!) : null;
     final priceListenable =
-        token != null ? balanceNotifier.priceNotifierForToken(token!) : null;
+        token != null ? priceNotifier.priceNotifierForToken(token!) : null;
 
     final otherPriceListenable = otherToken != null
-        ? balanceNotifier.priceNotifierForToken(otherToken!)
+        ? priceNotifier.priceNotifierForToken(otherToken!)
         : null;
 
     return AnimatedSize(

@@ -13,7 +13,7 @@ import 'package:nomo_ui_kit/theme/theme_provider.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/main.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/currency.dart';
 import 'package:zeniq_swap_frontend/theme.dart';
 
@@ -54,8 +54,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final assetNotifer = InheritedAssetProvider.of(context);
-
     return NomoDialog(
       maxWidth: 420,
       widthRatio: 0.9,
@@ -127,7 +125,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 dropdownColor: context.colors.background1,
                 borderRadius: BorderRadius.circular(16),
                 itemPadding: const EdgeInsets.symmetric(horizontal: 24),
-                valueNotifer: assetNotifer.currencyNotifier,
+                valueNotifer: $currencyNotifier,
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 iconColor: context.colors.foreground1,
                 height: 48,

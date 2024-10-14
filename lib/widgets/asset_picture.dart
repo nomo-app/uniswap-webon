@@ -1,8 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:nomo_ui_kit/components/loading/shimmer/loading_shimmer.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
+import 'package:provider/provider.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
-import 'package:zeniq_swap_frontend/providers/image_provider.dart';
+import 'package:zeniq_swap_frontend/providers/token_provider.dart';
 
 class AssetPicture extends StatelessWidget {
   final ERC20Entity token;
@@ -16,8 +17,7 @@ class AssetPicture extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageProvider = InheritedImageProvider.of(context);
-
+    final imageProvider = context.watch<TokenProvider>();
     final image = imageProvider.imageNotifierForToken(token);
 
     return ValueListenableBuilder(
@@ -27,7 +27,7 @@ class AssetPicture extends StatelessWidget {
           data: (value) {
             return ClipOval(
               child: Image.network(
-                value.small,
+                value,
                 width: size,
                 height: size,
               ),

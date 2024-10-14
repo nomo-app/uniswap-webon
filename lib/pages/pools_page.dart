@@ -7,10 +7,13 @@ import 'package:nomo_ui_kit/components/card/nomo_card.dart';
 import 'package:nomo_ui_kit/components/loading/loading.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
+import 'package:provider/provider.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/main.dart';
+import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
+import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
@@ -36,7 +39,7 @@ class _PoolsPageState extends State<PoolsPage>
 
   @override
   void didChangeDependencies() {
-    poolProvider = InheritedPoolProvider.of(context);
+    poolProvider = context.read<PoolProvider>();
     super.didChangeDependencies();
   }
 
@@ -157,12 +160,12 @@ class PairItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final assetProvider = InheritedAssetProvider.of(context);
+    final priceProvider = context.watch<PriceProvider>();
 
     final token0PriceNotifier =
-        assetProvider.priceNotifierForToken(pair.token0);
+        priceProvider.priceNotifierForToken(pair.token0);
     final token1PriceNotifier =
-        assetProvider.priceNotifierForToken(pair.token1);
+        priceProvider.priceNotifierForToken(pair.token1);
 
     return SizedBox(
       height: 64,
@@ -249,7 +252,7 @@ class PairItem extends StatelessWidget {
                       token0PriceAsync.valueOrNull!.getPriceForType(pair.type);
                   final token1Price =
                       token1PriceAsync.valueOrNull!.getPriceForType(pair.type);
-                  final currency = assetProvider.currency;
+                  final currency = token1PriceAsync.valueOrNull!.currency;
                   final tvl = pair.totalValueLocked(token0Price, token1Price);
                   return NomoText(
                     "${currency.symbol}${tvl.toStringAsFixed(2)}",

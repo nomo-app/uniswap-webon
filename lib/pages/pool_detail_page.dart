@@ -5,8 +5,9 @@ import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.d
 import 'package:nomo_ui_kit/components/loading/loading.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
+import 'package:provider/provider.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
+import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
@@ -38,7 +39,7 @@ class _PoolDetailPageState extends State<PoolDetailPage> {
     }
 
     pairInfoNotifier =
-        InheritedPoolProvider.of(context).getPairNotifier(widget.address!);
+        context.read<PoolProvider>().getPairNotifier(widget.address!);
     super.didChangeDependencies();
   }
 
@@ -127,7 +128,7 @@ class _PoolWrapperState extends State<PoolWrapper> {
                   ),
                 PoolDetailLocation.addLiquidity => PoolAddLiquidity(
                     pairInfo: widget.pairInfo,
-                    assetNotifier: InheritedAssetProvider.of(context),
+                    assetNotifier: context.watch<BalanceProvider>(),
                   ),
                 PoolDetailLocation.removeLiquidity => PoolRemoveLiquidity(
                     pairInfo: widget.pairInfo,

@@ -241,9 +241,9 @@ class SwapProvider {
   late ValueNotifier<String?> fromErrorNotifier = ValueNotifier(null);
   late ValueNotifier<String?> toErrorNotifier = ValueNotifier(null);
 
-  SwapProvider(
-    this.addressNotifier,
-    this.signer, {
+  SwapProvider({
+    required this.addressNotifier,
+    required this.signer,
     required this.needToBroadcast,
     required this.slippageNotifier,
   }) {
@@ -708,30 +708,6 @@ Future<ToSwapInfo?> toSwapInfo({
     needsApproval: needsApproval,
     path: contractPath,
   );
-}
-
-class InheritedSwapProvider extends InheritedWidget {
-  const InheritedSwapProvider({
-    super.key,
-    required this.swapProvider,
-    required super.child,
-  });
-
-  final SwapProvider swapProvider;
-
-  static SwapProvider of(BuildContext context) {
-    final result =
-        context.dependOnInheritedWidgetOfExactType<InheritedSwapProvider>();
-    if (result == null) {
-      throw Exception('InheritedSwapProvider not found in context');
-    }
-    return result.swapProvider;
-  }
-
-  @override
-  bool updateShouldNotify(InheritedSwapProvider oldWidget) {
-    return false;
-  }
 }
 
 Future<double> calculatePriceImpact(
