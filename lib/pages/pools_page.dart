@@ -11,9 +11,11 @@ import 'package:nomo_ui_kit/components/outline_container/nomo_outline_container.
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:provider/provider.dart';
+import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
+import 'package:zeniq_swap_frontend/providers/models/token_entity.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
@@ -78,6 +80,18 @@ class _PoolsPageState extends State<PoolsPage>
   void didChangeDependencies() {
     poolProvider = context.read<PoolProvider>();
     super.didChangeDependencies();
+  }
+
+  void createPool() async {
+    final selectedToken = await NomoNavigator.fromKey.push<TokenEntity?>(
+      SelectAssetDialogRoute(
+        forSwap: false,
+      ),
+    );
+
+    if (selectedToken != null) {
+      NomoNavigator.fromKey.push(CreatePairPageRoute(token: selectedToken));
+    }
   }
 
   List<PairInfoEntity> filterPairs(List<PairInfoEntity> pairs) {
@@ -171,6 +185,7 @@ class _PoolsPageState extends State<PoolsPage>
                       text: "Create Pool",
                       height: 48,
                       borderRadius: BorderRadius.circular(16),
+                      onPressed: createPool,
                     ),
                   ],
                 ),

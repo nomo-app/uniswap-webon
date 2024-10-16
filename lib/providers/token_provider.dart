@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:walletkit_dart/walletkit_dart.dart';
-import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/common/http_client.dart';
 import 'package:zeniq_swap_frontend/common/notifier.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
@@ -15,18 +14,27 @@ class TokenProvider {
 
   Set<TokenEntity> get tokens => notifier.value;
 
+  final Set<TokenEntity> initialTokens;
+
   Set<TokenEntity> getTokensForPairType(PairType pairType) {
     return tokens.where((token) {
       return token.pairTypes.contains(pairType);
     }).toSet();
   }
 
-  TokenProvider() : notifier = ValueDiffNotifier({}) {
+  TokenProvider(this.initialTokens) : notifier = ValueDiffNotifier({}) {
     fetchAllTokens();
   }
 
-  void addToken(TokenEntity token) {
-    // TODO: implement addToken
+  void addToken(ERC20Entity token) {
+    notifier.value = {
+      ...tokens,
+      TokenEntity(
+        token,
+        image: null,
+        pairTypes: [],
+      ),
+    };
   }
 
   AsyncNotifier<String> imageNotifierForToken(
@@ -66,7 +74,10 @@ class TokenProvider {
         tokens.add(tokenEntity);
       }
 
-      notifier.value = tokens;
+      notifier.value = {
+        ...tokens,
+        ...initialTokens,
+      };
     } catch (e, s) {
       print("token_provider: Error fetching tokens: $e");
       print(s);

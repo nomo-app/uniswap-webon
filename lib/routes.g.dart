@@ -62,6 +62,12 @@ class AppRouter extends NomoAppRouter {
             SwappingScreenRoute.path: ([a]) => SwappingScreenRoute(),
             PoolsPageRoute.path: ([a]) => PoolsPageRoute(),
             ProfilePageRoute.path: ([a]) => ProfilePageRoute(),
+            CreatePairPageRoute.path: ([a]) {
+              final typedArgs = a as CreatePairPageArguments?;
+              return CreatePairPageRoute(
+                token: typedArgs?.token,
+              );
+            },
             PoolDetailPageRoute.path: ([a]) {
               final typedArgs = a as PoolDetailPageArguments?;
               return PoolDetailPageRoute(
@@ -69,7 +75,12 @@ class AppRouter extends NomoAppRouter {
               );
             },
             SettingsDialogRoute.path: ([a]) => SettingsDialogRoute(),
-            SelectAssetDialogRoute.path: ([a]) => SelectAssetDialogRoute(),
+            SelectAssetDialogRoute.path: ([a]) {
+              final typedArgs = a as SelectAssetDialogArguments?;
+              return SelectAssetDialogRoute(
+                forSwap: typedArgs?.forSwap ?? true,
+              );
+            },
           },
           _routes.expanded.where((r) => r is! NestedNavigator).toList(),
           _routes.expanded.whereType<NestedNavigator>().toList(),
@@ -128,6 +139,27 @@ class ProfilePageRoute extends AppRoute implements ProfilePageArguments {
   static String path = '/profile';
 }
 
+class CreatePairPageArguments {
+  final TokenEntity? token;
+  const CreatePairPageArguments({
+    this.token,
+  });
+}
+
+class CreatePairPageRoute extends AppRoute implements CreatePairPageArguments {
+  @override
+  final TokenEntity? token;
+  CreatePairPageRoute({
+    this.token,
+  }) : super(
+          name: '/createPool',
+          page: CreatePairPage(
+            token: token,
+          ),
+        );
+  static String path = '/createPool';
+}
+
 class PoolDetailPageArguments {
   final String? address;
   const PoolDetailPageArguments({
@@ -163,15 +195,23 @@ class SettingsDialogRoute extends AppRoute implements SettingsDialogArguments {
 }
 
 class SelectAssetDialogArguments {
-  const SelectAssetDialogArguments();
+  final bool forSwap;
+  const SelectAssetDialogArguments({
+    required this.forSwap,
+  });
 }
 
 class SelectAssetDialogRoute extends AppRoute
     implements SelectAssetDialogArguments {
-  SelectAssetDialogRoute()
-      : super(
+  @override
+  final bool forSwap;
+  SelectAssetDialogRoute({
+    this.forSwap = true,
+  }) : super(
           name: '/selectAsset',
-          page: SelectAssetDialog(),
+          page: SelectAssetDialog(
+            forSwap: forSwap,
+          ),
         );
   static String path = '/selectAsset';
 }

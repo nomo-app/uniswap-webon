@@ -12,6 +12,8 @@ import 'package:zeniq_swap_frontend/pages/pool_detail_page.dart';
 import 'package:zeniq_swap_frontend/pages/pools_page.dart';
 import 'package:zeniq_swap_frontend/pages/profile_page.dart';
 import 'package:zeniq_swap_frontend/pages/swap_screen.dart';
+import 'package:zeniq_swap_frontend/providers/models/token_entity.dart';
+import 'package:zeniq_swap_frontend/widgets/liquidity/create/create_pair.dart';
 import 'package:zeniq_swap_frontend/widgets/select_asset_dialog.dart';
 import 'package:zeniq_swap_frontend/widgets/settings_dialog.dart';
 
@@ -68,6 +70,10 @@ const _routes = [
       PageRouteInfo(
         path: "/profile",
         page: ProfilePage,
+      ),
+      PageRouteInfo(
+        path: "/createPool",
+        page: CreatePairPage,
       ),
       PageRouteInfo(
         path: "/pool",

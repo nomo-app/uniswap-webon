@@ -144,7 +144,7 @@ class AccountAction extends StatelessWidget {
             border: Border.fromBorderSide(BorderSide.none),
             padding: EdgeInsets.symmetric(horizontal: 12),
             onPressed: () {
-              NomoNavigator.fromKey.push(ProfilePageRoute());
+              //   NomoNavigator.fromKey.push(ProfilePageRoute());
             },
             text: shortenAddress(address).ifElseNull(context.isSmall == false),
             iconSize: 18,

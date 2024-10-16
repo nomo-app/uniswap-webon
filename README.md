@@ -18,3 +18,13 @@ flutter run -d chrome
 
 
 https://github.com/Uniswap/sdks/blob/30b98e09d0486cd5cc3e4360e3277eb7cb60d2d5/sdks/sdk-core/src/utils/computePriceImpact.ts#L9
+
+
+TODO:
+Update PairInfo after providing/removing liquidity: Tomorrow
+Remove Liqudity for legacy only allow removing all: Tomorrow
+Fix Routing (Url parameters): Tomorrow
+Update UI Pools Page: Tomorrow
+
+Deploy with env variable 
+QR Code Deeplink on WebStart

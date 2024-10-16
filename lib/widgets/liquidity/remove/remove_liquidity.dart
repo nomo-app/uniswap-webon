@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:nomo_ui_kit/app/notifications/app_notification.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.dart';
-import 'package:nomo_ui_kit/components/card/nomo_card.dart';
 import 'package:nomo_ui_kit/components/input/textInput/nomo_input.dart';
 import 'package:nomo_ui_kit/components/loading/loading.dart';
 import 'package:nomo_ui_kit/components/notification/nomo_notification.dart';
@@ -14,6 +13,7 @@ import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/main.dart';
+import 'package:zeniq_swap_frontend/providers/add_liquidity_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/remove_liqudity_provider.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
@@ -123,6 +123,30 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
         child: NomoNotification(
           title: "Error",
           subtitle: "An error occurred while providing Liquidity",
+          showCloseButton: false,
+          titleStyle: context.typography.b2,
+          subtitleStyle: context.typography.b1,
+          spacing: 16,
+          leading: Icon(
+            Icons.error,
+            color: context.colors.error,
+            size: 36,
+          ),
+        ),
+        context: context,
+      );
+      return;
+    }
+
+    /// Error when approving the token
+    if (removeState == AddLiquidityState.tokenApprovalError) {
+      InAppNotification.show(
+        right: 16,
+        top: 16,
+        useRootNavigator: true,
+        child: NomoNotification(
+          title: "Token Approval Error",
+          subtitle: "An error occurred while approving the token",
           showCloseButton: false,
           titleStyle: context.typography.b2,
           subtitleStyle: context.typography.b1,

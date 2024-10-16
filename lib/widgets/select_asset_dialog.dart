@@ -24,7 +24,9 @@ import 'package:zeniq_swap_frontend/theme.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 
 class SelectAssetDialog extends StatefulWidget {
-  const SelectAssetDialog({super.key});
+  final bool forSwap;
+
+  const SelectAssetDialog({super.key, this.forSwap = true});
 
   @override
   State<SelectAssetDialog> createState() => _SelectAssetDialogState();
@@ -37,13 +39,16 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
 
   late ValueNotifier<List<ERC20Entity>> filteredAssetsNotifer;
   late TokenProvider assetNotifier;
+  late BalanceProvider balanceProvider;
 
-  List<TokenEntity> get tokens =>
-      assetNotifier.getTokensForPairType(PairType.v2).toList();
+  List<TokenEntity> get tokens => widget.forSwap
+      ? assetNotifier.getTokensForPairType(PairType.v2).toList()
+      : balanceProvider.tokenWhereBalanceAndNotInPool;
 
   @override
   void didChangeDependencies() {
     assetNotifier = context.read<TokenProvider>();
+    balanceProvider = context.read<BalanceProvider>();
 
     assetNotifier.notifier.addListener(
       () {
@@ -113,8 +118,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
       chainID: rpc.type.chainId,
     );
 
-    // assetNotifier.fetchBalanceForToken(customToken);
-    // imageProvider.fetchImageForToken(customToken); TODO: asds
+    context.read<BalanceProvider>().refreshForToken(customToken);
     customTokenNotifier.value = customToken;
   }
 
@@ -148,7 +152,7 @@ class _SelectAssetDialogState extends State<SelectAssetDialog> {
 
     WebLocalStorage.setItem('tokens', jsonEncode(savedTokensJson));
 
-    //  assetNotifier.addToken(customToken); TODO: asds
+    assetNotifier.addToken(customToken);
     customTokenNotifier.value = null;
     searchNotifier.value = '';
   }

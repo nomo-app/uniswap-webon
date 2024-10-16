@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/common/notifier.dart';
+import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
+import 'package:zeniq_swap_frontend/providers/models/token_entity.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/providers/token_provider.dart';
 
@@ -14,9 +16,18 @@ class BalanceProvider {
 
   String? get address => addressNotifier.value;
 
-  Set<ERC20Entity> get tokens => tokenProvider.tokens;
+  Set<TokenEntity> get tokens => tokenProvider.tokens;
 
   final Map<ERC20Entity, AsyncNotifier<Amount>> _balances = {};
+
+  List<TokenEntity> get tokenWhereBalanceAndNotInPool => tokens
+      .where(
+        (token) =>
+            (_balances[token]!.value.valueOrNull?.value ?? BigInt.zero) >
+            BigInt.zero,
+      )
+      .where((token) => token.pairTypes.contains(PairType.v2) == false)
+      .toList();
 
   BalanceProvider({
     required this.addressNotifier,
