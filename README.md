@@ -25,6 +25,7 @@ Update PairInfo after providing/removing liquidity: Tomorrow
 Remove Liqudity for legacy only allow removing all: Tomorrow
 Fix Routing (Url parameters): Tomorrow
 Update UI Pools Page: Tomorrow
+Token with 0 Decimals leads to UI Display Bugs
 
 Deploy with env variable 
 QR Code Deeplink on WebStart

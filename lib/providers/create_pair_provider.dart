@@ -102,7 +102,10 @@ class CreateInfo {
   }
 }
 
-final minZeniqForPoolCreation = Amount.convert(value: 1, decimals: 18);
+final minZeniqForPoolCreation = Amount.convert(
+  value: kDebugMode ? 1 : 5000,
+  decimals: 18,
+);
 
 class CreatePairProvider {
   final ERC20Entity token0;
