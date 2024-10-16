@@ -195,14 +195,6 @@ class MyApp extends StatelessWidget {
             addressNotifier: $addressNotifier,
           ),
         ),
-        Provider(
-          create: (context) => SwapProvider(
-            addressNotifier: $addressNotifier,
-            slippageNotifier: $slippageNotifier,
-            signer: metamaskSigner,
-            needToBroadcast: $inNomo,
-          ),
-        ),
       ],
       child: NomoNavigator(
         delegate: appRouter.delegate,

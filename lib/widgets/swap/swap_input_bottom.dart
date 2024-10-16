@@ -19,11 +19,13 @@ class SwapInputBottom extends StatelessWidget {
   final ERC20Entity? otherToken;
   final bool showMax;
   final bool isFrom;
+  final SwapProvider swapProvider;
 
   const SwapInputBottom({
     super.key,
     required this.token,
     required this.isFrom,
+    required this.swapProvider,
     this.otherToken,
     this.showMax = true,
   });
@@ -31,7 +33,6 @@ class SwapInputBottom extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final balanceNotifier = context.watch<BalanceProvider>();
-    final swapProvider = context.watch<SwapProvider>();
     final priceNotifier = context.watch<PriceProvider>();
 
     final balanceListenable =

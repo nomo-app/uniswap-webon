@@ -34,7 +34,7 @@ class SwapWidget extends StatefulWidget {
 }
 
 class _SwapWidgetState extends State<SwapWidget> {
-  late SwapProvider swapProvider;
+  late final SwapProvider swapProvider;
   late BalanceProvider balanceProvider;
   late PriceProvider priceProvider;
 
@@ -49,8 +49,18 @@ class _SwapWidgetState extends State<SwapWidget> {
   bool keyboardShown = false;
 
   @override
+  void initState() {
+    swapProvider = SwapProvider(
+      addressNotifier: $addressNotifier,
+      slippageNotifier: $slippageNotifier,
+      signer: metamaskSigner,
+      needToBroadcast: $inNomo,
+    );
+    super.initState();
+  }
+
+  @override
   void didChangeDependencies() {
-    swapProvider = context.read<SwapProvider>();
     balanceProvider = context.read<BalanceProvider>();
     priceProvider = context.read<PriceProvider>();
 
@@ -393,6 +403,7 @@ class _SwapWidgetState extends State<SwapWidget> {
                       scrollable: true,
                       maxLines: 1,
                       bottom: SwapInputBottom(
+                        swapProvider: swapProvider,
                         token: token,
                         isFrom: true,
                       ),
@@ -470,6 +481,7 @@ class _SwapWidgetState extends State<SwapWidget> {
                         valueListenable: swapProvider.fromToken,
                         builder: (context, fromToken, _) {
                           return SwapInputBottom(
+                            swapProvider: swapProvider,
                             token: token,
                             showMax: false,
                             isFrom: false,
