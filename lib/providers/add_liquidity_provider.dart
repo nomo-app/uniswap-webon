@@ -17,6 +17,7 @@ enum AddLiquidityState {
   none,
   error,
   needTokenApproval,
+  approvingToken,
   waitingForUserApproval,
   tokenApprovalError,
   ready,
@@ -26,6 +27,7 @@ enum AddLiquidityState {
   preview;
 
   String get buttonText => switch (this) {
+        AddLiquidityState.approvingToken => "Approving",
         AddLiquidityState.needTokenApproval => "Approve",
         AddLiquidityState.waitingForUserApproval => "Approving",
         AddLiquidityState.broadcasting => "Depositing",
@@ -34,6 +36,7 @@ enum AddLiquidityState {
       };
 
   bool get buttonEnabled => switch (this) {
+        AddLiquidityState.approvingToken => false,
         AddLiquidityState.broadcasting => false,
         AddLiquidityState.confirming => false,
         AddLiquidityState.waitingForUserApproval => false,
@@ -45,12 +48,14 @@ enum AddLiquidityState {
         AddLiquidityState.needTokenApproval => ActionType.def,
         AddLiquidityState.broadcasting => ActionType.loading,
         AddLiquidityState.confirming => ActionType.loading,
+        AddLiquidityState.approvingToken => ActionType.loading,
         AddLiquidityState.ready => ActionType.def,
         AddLiquidityState.waitingForUserApproval => ActionType.loading,
         _ => ActionType.nonInteractive,
       };
 
   bool get inputsEnabled => switch (this) {
+        AddLiquidityState.approvingToken => false,
         AddLiquidityState.broadcasting => false,
         AddLiquidityState.confirming => false,
         AddLiquidityState.waitingForUserApproval => false,
@@ -68,6 +73,8 @@ class DepositInfo {
   final BigInt deadline;
   final String address;
   final double poolShare;
+  final bool token0NeedsApproval;
+  final bool token1NeedsApproval;
 
   DepositInfo._({
     required this.pairInfo,
@@ -78,6 +85,8 @@ class DepositInfo {
     required this.deadline,
     required this.poolShare,
     required this.address,
+    required this.token0NeedsApproval,
+    required this.token1NeedsApproval,
   });
 
   factory DepositInfo.create({
@@ -86,6 +95,8 @@ class DepositInfo {
     required Amount amount1,
     required double slippage,
     required String address,
+    required bool token0NeedsApproval,
+    required bool token1NeedsApproval,
   }) {
     final deadline = BigInt.from(
       DateTime.now().add(Duration(minutes: 1)).millisecondsSinceEpoch ~/ 1000,
@@ -114,6 +125,8 @@ class DepositInfo {
       deadline: deadline,
       poolShare: poolShare,
       address: address,
+      token0NeedsApproval: token0NeedsApproval,
+      token1NeedsApproval: token1NeedsApproval,
     );
   }
 
@@ -262,18 +275,20 @@ class AddLiquidityProvider {
       return;
     }
 
+    final (token0HasApproval, token1HasApproval) = await checkTokenApprovals(
+      amount0,
+      amount1,
+      address,
+    );
+
     depositInfoNotifier.value = DepositInfo.create(
       pairInfo: pairInfo,
       amount0: amount0,
       amount1: amount1,
       slippage: slippage,
       address: address,
-    );
-
-    final (token0HasApproval, token1HasApproval) = await checkTokenApprovals(
-      amount0,
-      amount1,
-      address,
+      token0NeedsApproval: !token0HasApproval,
+      token1NeedsApproval: !token1HasApproval,
     );
 
     Logger.log("token0HasApproval: $token0HasApproval");
@@ -287,6 +302,47 @@ class AddLiquidityProvider {
     depositState.value = AddLiquidityState.ready;
   }
 
+  Future<bool> approveToken(DepositInfo info, ERC20Entity token) async {
+    try {
+      final unsignedTX = await token.erc20Contract.approveTx(
+        sender: info.address,
+        spender: zeniqSwapRouter.contractAddress,
+        value: BigInt.tryParse(
+          "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        )!,
+      ) as RawEVMTransactionType0;
+
+      depositState.value = AddLiquidityState.waitingForUserApproval;
+
+      final String hash;
+      if (needToBroadcast) {
+        final signedTX = await signer(
+          unsignedTX.serializedUnsigned(rpc.type.chainId).toHex,
+        );
+
+        depositState.value = AddLiquidityState.approvingToken;
+
+        hash = await rpc.sendRawTransaction(
+          signedTX.startsWith("0x") ? signedTX : "0x$signedTX",
+        );
+      } else {
+        depositState.value = AddLiquidityState.approvingToken;
+        hash = await signer(
+          unsignedTX.serializedUnsigned(rpc.type.chainId).toHex,
+        );
+      }
+
+      final successfull = await rpc.waitForTxConfirmation(hash);
+
+      return successfull;
+    } catch (e) {
+      depositState.value = AddLiquidityState.tokenApprovalError;
+      recalculateInputs = true;
+      checkDepositInfo();
+      rethrow;
+    }
+  }
+
   Future<String> deposit() async {
     assert(
       depositState.value == AddLiquidityState.ready ||
@@ -298,10 +354,26 @@ class AddLiquidityProvider {
     assert(depositInfo != null);
 
     if (depositState.value == AddLiquidityState.needTokenApproval) {
-      Logger.log("Approving");
-    }
+      try {
+        final token0NeedsApproval = depositInfo!.token0NeedsApproval;
+        final token1NeedsApproval = depositInfo.token1NeedsApproval;
 
-    Logger.log("Depositing");
+        if (token0NeedsApproval) {
+          await approveToken(depositInfo, token0);
+        }
+
+        if (token1NeedsApproval) {
+          await approveToken(depositInfo, token1);
+        }
+
+        depositState.value = AddLiquidityState.ready;
+      } catch (e) {
+        depositState.value = AddLiquidityState.tokenApprovalError;
+        recalculateInputs = true;
+        checkDepositInfo();
+        rethrow;
+      }
+    }
 
     try {
       final unsignedRawTx = await depositInfo!.createAddLiquidityTransaction();
@@ -448,6 +520,11 @@ class AddLiquidityProvider {
 }
 
 extension on ERC20Entity {
+  ERC20Contract get erc20Contract => ERC20Contract(
+        contractAddress: contractAddress,
+        rpc: rpc,
+      );
+
   Future<bool> isApproved({
     required Amount amount,
     required String spender,
