@@ -199,7 +199,9 @@ class AppThemeDelegate extends NomoThemeDelegate<ColorMode, SizingMode> {
   NomoComponentColorsNullable defaultComponentsColor(NomoColors core) {
     return NomoComponentColorsNullable(
       inputColor: NomoInputColorDataNullable(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        background: core.background2.withOpacity(0.5),
+        border: Border.all(color: Colors.white10),
       ),
       infoItemColor: const NomoInfoItemColorDataNullable(),
       dividerColor: NomoDividerColorDataNullable(

@@ -3,6 +3,7 @@ import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_ui_kit/components/app/routebody/nomo_route_body.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.dart';
+import 'package:nomo_ui_kit/components/buttons/text/nomo_text_button.dart';
 import 'package:nomo_ui_kit/components/card/nomo_card.dart';
 import 'package:nomo_ui_kit/components/input/textInput/nomo_input.dart';
 import 'package:nomo_ui_kit/components/loading/loading.dart';
@@ -11,12 +12,24 @@ import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:provider/provider.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
+import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
+import 'package:zeniq_swap_frontend/theme.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
+
+enum Sorting {
+  ascending(Icons.arrow_upward),
+  descending(Icons.arrow_downward),
+  none(null);
+
+  final IconData? icon;
+
+  const Sorting(this.icon);
+}
 
 class PoolsPage extends StatefulWidget {
   const PoolsPage({super.key});
@@ -29,12 +42,36 @@ class _PoolsPageState extends State<PoolsPage>
     with SingleTickerProviderStateMixin {
   late PoolProvider poolProvider;
   late final ValueNotifier<bool> showMyPoolsNotifier;
+  late final ValueNotifier<String> searchInputNotifier;
+  late final ValueNotifier<Sorting> liquiditySortingNotifier;
+  late final ValueNotifier<PairType?> typeSortingNotifier;
+
+  late final LayerLink _layerLink = LayerLink();
+  late final OverlayPortalController _optionsViewController =
+      OverlayPortalController();
 
   @override
   void initState() {
-    showMyPoolsNotifier = ValueNotifier(true);
-
+    showMyPoolsNotifier = ValueNotifier($addressNotifier.value != null);
+    liquiditySortingNotifier = ValueNotifier(Sorting.none);
+    typeSortingNotifier = ValueNotifier(null);
+    searchInputNotifier = ValueNotifier("");
+    $addressNotifier.addListener(_onAddressChanged);
     super.initState();
+  }
+
+  void _onAddressChanged() {
+    showMyPoolsNotifier.value = $addressNotifier.value != null;
+  }
+
+  @override
+  void dispose() {
+    showMyPoolsNotifier.dispose();
+    typeSortingNotifier.dispose();
+    liquiditySortingNotifier.dispose();
+    searchInputNotifier.dispose();
+    $addressNotifier.removeListener(_onAddressChanged);
+    super.dispose();
   }
 
   @override
@@ -43,10 +80,48 @@ class _PoolsPageState extends State<PoolsPage>
     super.didChangeDependencies();
   }
 
+  List<PairInfoEntity> filterPairs(List<PairInfoEntity> pairs) {
+    final searchInput = searchInputNotifier.value;
+
+    var filteredPairs = switch (searchInput.isEmpty) {
+      true => pairs,
+      _ => pairs.where((pair) {
+          final token0 = pair.token0.symbol.toLowerCase();
+          final token1 = pair.token1.symbol.toLowerCase();
+          final search = searchInput.toLowerCase();
+          return token0.contains(search) || token1.contains(search);
+        }).toList()
+    };
+
+    final typeSorting = typeSortingNotifier.value;
+
+    if (typeSorting != null) {
+      filteredPairs =
+          filteredPairs.where((pair) => pair.type == typeSorting).toList();
+    }
+
+    if (liquiditySortingNotifier.value == Sorting.descending) {
+      filteredPairs
+          .sort((a, b) => a.zeniqAmount.value > b.zeniqAmount.value ? -1 : 1);
+    }
+
+    if (liquiditySortingNotifier.value == Sorting.ascending) {
+      filteredPairs
+          .sort((a, b) => a.zeniqAmount.value > b.zeniqAmount.value ? 1 : -1);
+    }
+
+    return filteredPairs;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final header = Container(
-      padding: EdgeInsets.symmetric(horizontal: 16),
+    return NomoRouteBody(
+      maxContentWidth: 1000,
+      padding: context.responsiveValue(
+        small: EdgeInsets.all(8),
+        medium: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        large: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      ),
       child: Column(
         children: [
           ValueListenableBuilder(
@@ -56,19 +131,29 @@ class _PoolsPageState extends State<PoolsPage>
                 height: 48,
                 child: Row(
                   children: [
-                    SecondaryNomoButton(
-                      height: 48,
-                      width: 128,
-                      text: "My Pools",
-                      backgroundColor: Colors.transparent,
-                      foregroundColor: showMyPools
-                          ? context.colors.primary
-                          : context.colors.disabled,
-                      onPressed: () {
-                        showMyPoolsNotifier.value = true;
+                    ValueListenableBuilder(
+                      valueListenable: $addressNotifier,
+                      builder: (context, address, myPoolsButton) =>
+                          switch (address) {
+                        String _ => myPoolsButton!,
+                        _ => SizedBox.shrink(),
                       },
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: SecondaryNomoButton(
+                          height: 48,
+                          width: 128,
+                          text: "My Pools",
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: showMyPools
+                              ? context.colors.primary
+                              : context.colors.disabled,
+                          onPressed: () {
+                            showMyPoolsNotifier.value = true;
+                          },
+                        ),
+                      ),
                     ),
-                    12.hSpacing,
                     SecondaryNomoButton(
                       height: 48,
                       width: 128,
@@ -92,74 +177,220 @@ class _PoolsPageState extends State<PoolsPage>
               );
             },
           ),
-          32.vSpacing,
+          16.vSpacing,
           NomoInput(
             placeHolder: "Search",
+            height: 48,
+            background: Colors.transparent,
+            valueNotifier: searchInputNotifier,
+            leading: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Icon(
+                Icons.search,
+                color: context.colors.foreground2,
+              ),
+            ),
           ),
-          32.vSpacing,
-          SizedBox(
+          16.vSpacing,
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16),
             height: 48,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 NomoText(
                   "Pool",
-                  style: context.typography.b2,
+                  style: context.typography.b1,
                 ),
                 Spacer(),
-                NomoText(
-                  "Type",
-                  style: context.typography.b2,
-                ),
-                64.hSpacing,
                 SizedBox(
-                  width: 128,
-                  child: NomoText(
-                    "Liquidity",
-                    style: context.typography.b2,
+                  width: 100,
+                  child: OverlayPortal.targetsRootOverlay(
+                    controller: _optionsViewController,
+                    overlayChildBuilder: (context) {
+                      return Stack(
+                        children: [
+                          Positioned.fill(
+                            child: GestureDetector(
+                              onTap: () {
+                                _optionsViewController.hide();
+                              },
+                              child: Container(
+                                color: Colors.transparent,
+                              ),
+                            ),
+                          ),
+                          CompositedTransformFollower(
+                            link: _layerLink,
+                            showWhenUnlinked: false,
+                            targetAnchor: Alignment.bottomLeft,
+                            child: SizedBox(
+                              width: 200,
+                              child: NomoCard(
+                                backgroundColor: context.colors.background3,
+                                borderRadius: BorderRadius.circular(16),
+                                padding: EdgeInsets.all(16),
+                                child: ValueListenableBuilder(
+                                  valueListenable: typeSortingNotifier,
+                                  builder: (context, selType, child) {
+                                    return Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        for (final type in PairType.values)
+                                          Row(
+                                            children: [
+                                              NomoText(type.name),
+                                              Spacer(),
+                                              Material(
+                                                type: MaterialType.transparency,
+                                                child: Switch(
+                                                  activeColor:
+                                                      context.colors.primary,
+                                                  inactiveTrackColor:
+                                                      context.colors.disabled,
+                                                  value: type == selType,
+                                                  onChanged: (value) {
+                                                    typeSortingNotifier.value =
+                                                        value ? type : null;
+                                                  },
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                    child: CompositedTransformTarget(
+                      link: _layerLink,
+                      child: NomoTextButton(
+                        height: 48,
+                        width: 100,
+                        onPressed: () {
+                          _optionsViewController.show();
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            NomoText(
+                              "Type",
+                              style: context.typography.b1,
+                            ),
+                            8.hSpacing,
+                            ValueListenableBuilder(
+                              valueListenable: typeSortingNotifier,
+                              builder: (context, type, child) {
+                                return Icon(
+                                  type == null
+                                      ? Icons.filter_alt_outlined
+                                      : Icons.filter_alt,
+                                  size: 16,
+                                  color: context.colors.foreground2,
+                                );
+                              },
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                64.hSpacing,
-                42.hSpacing,
+                32.hSpacing,
+                NomoTextButton(
+                  height: 48,
+                  width: 100,
+                  onPressed: () {
+                    liquiditySortingNotifier.value =
+                        switch (liquiditySortingNotifier.value) {
+                      Sorting.ascending => Sorting.descending,
+                      Sorting.descending => Sorting.ascending,
+                      _ => Sorting.ascending,
+                    };
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      NomoText(
+                        "Liquidity",
+                        style: context.typography.b1,
+                      ),
+                      ValueListenableBuilder(
+                        valueListenable: liquiditySortingNotifier,
+                        builder: (context, sorting, child) {
+                          return switch (sorting.icon) {
+                            IconData icon => Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: Icon(
+                                  icon,
+                                  size: 16,
+                                  color: context.colors.foreground2,
+                                ),
+                              ),
+                            _ => const SizedBox.shrink(),
+                          };
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                32.hSpacing,
+                SizedBox(
+                  width: 100,
+                  child: NomoText(
+                    "My Liquidity",
+                    style: context.typography.b1,
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                if (context.isLarge) 74.hSpacing,
               ],
             ),
           ),
-        ],
-      ),
-    );
+          16.vSpacing,
+          Expanded(
+            child: ListenableBuilder(
+              listenable: Listenable.merge([
+                showMyPoolsNotifier,
+                searchInputNotifier,
+                liquiditySortingNotifier,
+                typeSortingNotifier,
+                poolProvider.allPairsNotifier,
+              ]),
+              builder: (context, child) {
+                final showMyPools = showMyPoolsNotifier.value;
+                final allPairsAsync = poolProvider.allPairsNotifier.value;
 
-    return NomoRouteBody(
-      maxContentWidth: 1000,
-      child: ValueListenableBuilder(
-        valueListenable: showMyPoolsNotifier,
-        builder: (context, showMyPools, child) {
-          return ValueListenableBuilder(
-            valueListenable: poolProvider.allPairsNotifier,
-            builder: (context, pairsAsync, child) {
-              return pairsAsync.when(
-                loading: () => Center(child: Loading()),
-                data: (allPairs) {
-                  final pairs = switch (showMyPools) {
-                    true => allPairs.whereType<OwnedPairInfo>().toList(),
-                    _ => allPairs,
-                  };
-                  return ListView.separated(
-                    itemBuilder: (context, index) => switch (index) {
-                      0 => header,
-                      _ => PairItem(
-                          pair: pairs[index - 1],
-                        ),
-                    },
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 16),
-                    itemCount: pairs.length + 1,
-                  );
-                },
-                error: (error) => NomoText(error.toString()),
-              );
-            },
-          );
-        },
+                return allPairsAsync.when(
+                  data: (allPairs) {
+                    final pairs = switch (showMyPools) {
+                      true => allPairs.whereType<OwnedPairInfo>().toList(),
+                      _ => allPairs,
+                    };
+
+                    final filteredPairs = filterPairs(pairs);
+
+                    return ListView.separated(
+                      itemBuilder: (context, index) => PairItem(
+                        pair: filteredPairs[index],
+                      ),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 16),
+                      itemCount: filteredPairs.length,
+                    );
+                  },
+                  loading: () => Center(child: Loading()),
+                  error: (error) => NomoText(error.toString()),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -173,6 +404,14 @@ class PairItem extends StatelessWidget {
     required this.pair,
   });
 
+  void onPressed() {
+    NomoNavigator.fromKey.push(
+      PoolDetailPageRoute(
+        address: pair.pair.contractAddress,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final priceProvider = context.watch<PriceProvider>();
@@ -182,134 +421,199 @@ class PairItem extends StatelessWidget {
     final token1PriceNotifier =
         priceProvider.priceNotifierForToken(pair.token1);
 
-    return SizedBox(
-      height: 64,
-      child: NomoCard(
-        backgroundColor: context.colors.background2.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(16),
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            Container(
-              height: 48,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.white54,
-                  width: 1,
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Row(
-                children: [
-                  8.hSpacing,
-                  AssetPicture(
-                    token: pair.token0,
-                    size: 32,
-                  ),
-                  8.hSpacing,
-                  NomoText(pair.token0.symbol),
-                  12.hSpacing,
-                ],
-              ),
-            ),
-            12.hSpacing,
-            Container(
-              height: 48,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.white54,
-                  width: 1,
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Row(
-                children: [
-                  8.hSpacing,
-                  AssetPicture(
-                    token: pair.token1,
-                    size: 32,
-                  ),
-                  8.hSpacing,
-                  NomoText(pair.token1.symbol),
-                  12.hSpacing,
-                ],
-              ),
-            ),
-            if (pair.type == PairType.legacy)
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: NomoOutlineContainer(
-                  padding: EdgeInsets.all(8),
-                  background: context.colors.error,
-                  radius: 16,
-                  child: NomoText("Legacy"),
-                ),
-              ),
-            Spacer(),
-            //  NomoText(pair.type ? "Open" : "Closed"),
-            64.hSpacing,
-            SizedBox(
-              child: ListenableBuilder(
-                listenable: Listenable.merge([
-                  token0PriceNotifier,
-                  token1PriceNotifier,
-                ]),
-                builder: (context, child) {
-                  final token0PriceAsync = token0PriceNotifier.value;
-                  final token1PriceAsync = token1PriceNotifier.value;
-                  final isError = token0PriceAsync is AsyncError ||
-                      token1PriceAsync is AsyncError;
+    final items = [
+      SizedBox(
+        width: 100,
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: NomoOutlineContainer(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            background: switch (pair.type) {
+              PairType.v2 => context.colors.primary.withOpacity(0.1),
+              _ => context.colors.error.withOpacity(0.1),
+            },
+            height: 48,
+            radius: 16,
+            child: Center(child: NomoText(pair.type.name)),
+          ),
+        ),
+      ),
+      32.hSpacing,
+      Container(
+        width: 100,
+        // color: Colors.yellow,
+        child: ListenableBuilder(
+          listenable: Listenable.merge([
+            token0PriceNotifier,
+            token1PriceNotifier,
+          ]),
+          builder: (context, child) {
+            final token0PriceAsync = token0PriceNotifier.value;
+            final token1PriceAsync = token1PriceNotifier.value;
+            final isError = token0PriceAsync is AsyncError ||
+                token1PriceAsync is AsyncError;
 
-                  if (isError) {
-                    // print(token0PriceAsync.errorOrNull);
-                    // print(token1PriceAsync.errorOrNull);
-                    return NomoText('Error');
-                  }
-                  final isLoading = token0PriceAsync is AsyncLoading ||
-                      token1PriceAsync is AsyncLoading;
+            if (isError) {
+              // print(token0PriceAsync.errorOrNull);
+              // print(token1PriceAsync.errorOrNull);
+              return NomoText('Error');
+            }
+            final isLoading = token0PriceAsync is AsyncLoading ||
+                token1PriceAsync is AsyncLoading;
 
-                  if (isLoading) {
-                    return Loading();
-                  }
+            if (isLoading) {
+              return Loading();
+            }
 
-                  final token0Price =
-                      token0PriceAsync.valueOrNull!.getPriceForType(pair.type);
-                  final token1Price =
-                      token1PriceAsync.valueOrNull!.getPriceForType(pair.type);
-                  final currency = token1PriceAsync.valueOrNull!.currency;
-                  final tvl = pair.totalValueLocked(token0Price, token1Price);
+            final token0Price =
+                token0PriceAsync.valueOrNull!.getPriceForType(pair.type);
+            final token1Price =
+                token1PriceAsync.valueOrNull!.getPriceForType(pair.type);
+            final currency = token1PriceAsync.valueOrNull!.currency;
+            final tvl = pair.totalValueLocked(token0Price, token1Price);
 
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      NomoText(
-                        "${currency.symbol}${tvl.toStringAsFixed(2)}",
-                        style: context.typography.b1,
-                      ),
-                      if (pair is OwnedPairInfo)
-                        NomoText(
-                          "Your Liquidity: ${currency.symbol}${(pair as OwnedPairInfo).myTotalValueLocked(token0Price, token1Price).toStringAsFixed(2)}",
-                          style: context.typography.b1,
+            return NomoText(
+              "${currency.symbol}${tvl.toStringAsFixed(2)}",
+              style: context.typography.b1,
+              textAlign: TextAlign.right,
+            );
+          },
+        ),
+      ),
+      32.hSpacing,
+      if (pair is OwnedPairInfo)
+        SizedBox(
+          width: 100,
+          child: ListenableBuilder(
+            listenable: Listenable.merge([
+              token0PriceNotifier,
+              token1PriceNotifier,
+            ]),
+            builder: (context, child) {
+              final token0PriceAsync = token0PriceNotifier.value;
+              final token1PriceAsync = token1PriceNotifier.value;
+              final isError = token0PriceAsync is AsyncError ||
+                  token1PriceAsync is AsyncError;
+
+              if (isError) {
+                // print(token0PriceAsync.errorOrNull);
+                // print(token1PriceAsync.errorOrNull);
+                return NomoText('Error');
+              }
+              final isLoading = token0PriceAsync is AsyncLoading ||
+                  token1PriceAsync is AsyncLoading;
+
+              if (isLoading) {
+                return Loading();
+              }
+
+              final token0Price =
+                  token0PriceAsync.valueOrNull!.getPriceForType(pair.type);
+              final token1Price =
+                  token1PriceAsync.valueOrNull!.getPriceForType(pair.type);
+              final currency = token1PriceAsync.valueOrNull!.currency;
+              final tvl = (pair as OwnedPairInfo)
+                  .myTotalValueLocked(token0Price, token1Price);
+
+              return NomoText(
+                "${currency.symbol}${tvl.toStringAsFixed(2)}",
+                style: context.typography.b1,
+                textAlign: TextAlign.right,
+              );
+            },
+          ),
+        )
+      else
+        SizedBox(
+          width: 100,
+        ),
+    ];
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      child: SizedBox(
+        height: context.isLarge ? 64 : 128,
+        child: PrimaryNomoButton(
+          backgroundColor: context.colors.background2.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(16),
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          onPressed: onPressed,
+          child: Column(
+            children: [
+              SizedBox(
+                height: 64,
+                child: Row(
+                  children: [
+                    Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.white54,
+                          width: 1,
                         ),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Row(
+                        children: [
+                          8.hSpacing,
+                          AssetPicture(
+                            token: pair.token0,
+                            size: 32,
+                          ),
+                          8.hSpacing,
+                          NomoText(pair.token0.symbol),
+                          12.hSpacing,
+                        ],
+                      ),
+                    ),
+                    12.hSpacing,
+                    Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.white54,
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Row(
+                        children: [
+                          8.hSpacing,
+                          AssetPicture(
+                            token: pair.token1,
+                            size: 32,
+                          ),
+                          8.hSpacing,
+                          NomoText(pair.token1.symbol),
+                          12.hSpacing,
+                        ],
+                      ),
+                    ),
+                    Spacer(),
+                    if (context.isLarge) ...[
+                      ...items,
+                      32.hSpacing,
+                      SecondaryNomoButton(
+                        backgroundColor: Colors.transparent,
+                        height: 42,
+                        width: 42,
+                        iconSize: 22,
+                        icon: Icons.arrow_forward_ios,
+                        onPressed: onPressed,
+                      )
                     ],
-                  );
-                },
+                  ],
+                ),
               ),
-            ),
-            64.hSpacing,
-            SecondaryNomoButton(
-              backgroundColor: Colors.transparent,
-              height: 42,
-              width: 42,
-              iconSize: 22,
-              icon: Icons.arrow_forward_ios,
-              onPressed: () {
-                NomoNavigator.fromKey.push(PoolDetailPageRoute(
-                  address: pair.pair.contractAddress,
-                ));
-              },
-            )
-          ],
+              if (context.isLarge == false)
+                SizedBox(
+                  height: 64,
+                  child: Row(
+                    children: items,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

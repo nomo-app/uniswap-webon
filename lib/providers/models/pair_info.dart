@@ -52,6 +52,11 @@ sealed class PairInfoEntity {
   double get ratio0 => reserve0Adjusted / reserve1Adjusted;
   double get ratio1 => reserve1Adjusted / reserve0Adjusted;
 
+  ERC20Entity get token => switch (token0) {
+        zeniqTokenWrapper => token1,
+        _ => token0,
+      };
+
   double get zeniqRatio => switch (token0) {
         zeniqTokenWrapper => ratio0,
         _ => ratio1,
