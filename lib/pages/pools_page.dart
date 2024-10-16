@@ -597,7 +597,8 @@ class PairItem extends StatelessWidget {
                         backgroundColor: Colors.transparent,
                         height: 42,
                         width: 42,
-                        iconSize: 22,
+                        iconSize: 18,
+                        border: Border.fromBorderSide(BorderSide.none),
                         icon: Icons.arrow_forward_ios,
                         onPressed: onPressed,
                       )
