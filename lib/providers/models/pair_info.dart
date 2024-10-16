@@ -33,6 +33,9 @@ sealed class PairInfoEntity {
     return ERC20Contract(contractAddress: pair.contractAddress, rpc: pair.rpc);
   }
 
+  bool get token0IsZeniq =>
+      token0 == zeniqTokenWrapper || token0 == wrappedZeniqSmart;
+
   final ERC20Entity token0;
   final ERC20Entity token1;
 
@@ -53,22 +56,22 @@ sealed class PairInfoEntity {
   double get ratio1 => reserve1Adjusted / reserve0Adjusted;
 
   ERC20Entity get token => switch (token0) {
-        zeniqTokenWrapper => token1,
+        zeniqTokenWrapper || wrappedZeniqSmart => token1,
         _ => token0,
       };
 
   double get zeniqRatio => switch (token0) {
-        zeniqTokenWrapper => ratio0,
+        zeniqTokenWrapper || wrappedZeniqSmart => ratio0,
         _ => ratio1,
       };
 
   Amount get zeniqAmount => switch (token0) {
-        zeniqTokenWrapper => amount0,
+        zeniqTokenWrapper || wrappedZeniqSmart => amount0,
         _ => amount1,
       };
 
   Amount get tokenAmount => switch (token0) {
-        zeniqTokenWrapper => amount1,
+        zeniqTokenWrapper || wrappedZeniqSmart => amount1,
         _ => amount0,
       };
 
@@ -274,8 +277,52 @@ final class OwnedPairInfo extends PairInfoEntity {
     return Amount(value: val, decimals: token1.decimals);
   }
 
+  double calculatePoolShareForPoolTokens(Amount poolTokenAmount) {
+    return poolTokenAmount.value / poolSupply;
+  }
+
   double myTotalValueLocked(double price0, double price1) {
     return myAmount0.displayDouble * price0 + myAmount1.displayDouble * price1;
+  }
+
+  (Amount, Amount) calculateTokeAmountsFromPoolAmount(Amount poolAmount) {
+    final poolShare = calculatePoolShareForPoolTokens(poolAmount);
+
+    final amount0BI = reserve0.multiply(poolShare);
+    final amount1BI = reserve1.multiply(poolShare);
+
+    return (
+      Amount(
+        value: amount0BI,
+        decimals: token0.decimals,
+      ),
+      Amount(
+        value: amount1BI,
+        decimals: token1.decimals,
+      ),
+    );
+  }
+
+  Amount calculatePoolTokenAmountFromAmount0(Amount token0Amount) {
+    final poolShare = token0Amount.value / reserve0;
+
+    final poolAmount = poolSupply.multiply(poolShare);
+
+    return Amount(
+      value: poolAmount,
+      decimals: 18,
+    );
+  }
+
+  Amount calculatePoolTokenAmountFromAmount1(Amount token1Amount) {
+    final poolShare = token1Amount.value / reserve1;
+
+    final poolAmount = poolSupply.multiply(poolShare);
+
+    return Amount(
+      value: poolAmount,
+      decimals: 18,
+    );
   }
 
   OwnedPairInfo({

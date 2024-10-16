@@ -8,11 +8,6 @@ import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
-final zeniqSwapRouterOld = UniswapV2Router(
-  rpc: rpc,
-  contractAddress: "0x7963c1bd24E4511A0b14bf148F93e2556AFe3C2",
-);
-
 enum LastTokenChanged {
   token0,
   token1,

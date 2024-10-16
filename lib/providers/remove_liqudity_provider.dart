@@ -1,94 +1,112 @@
 import 'package:flutter/foundation.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
-import 'package:zeniq_swap_frontend/common/async_value.dart';
-import 'package:zeniq_swap_frontend/common/logger.dart';
-import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
-import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
+final zeniqSwapRouter = UniswapV2Router(
+  rpc: rpc,
+  contractAddress: "0xEBb0C81b3450520f54282A9ca9996A1960Be7c7A",
+);
 final zeniqSwapRouterOld = UniswapV2Router(
   rpc: rpc,
-  contractAddress: "0x7963c1bd24E4511A0b14bf148F93e2556AFe3C2",
+  contractAddress: "0x7963c1bd24E4511A0b14bf148F93e2556AFe3C27",
 );
 
 enum LastTokenChanged {
+  poolToken,
   token0,
   token1,
 }
 
-enum AddLiquidityState {
+enum RemoveLiqudityState {
   none,
   error,
   needTokenApproval,
+  approvingToken,
   waitingForUserApproval,
   tokenApprovalError,
+
   ready,
   broadcasting,
   confirming,
-  deposited,
+  removed,
   preview;
 
   String get buttonText => switch (this) {
-        AddLiquidityState.needTokenApproval => "Approve",
-        AddLiquidityState.waitingForUserApproval => "Approving",
-        AddLiquidityState.broadcasting => "Depositing",
-        AddLiquidityState.confirming => "Confirming",
-        _ => "Deposit",
+        RemoveLiqudityState.approvingToken => "Approving Token",
+        RemoveLiqudityState.needTokenApproval => "Approve",
+        RemoveLiqudityState.waitingForUserApproval => "Approving",
+        RemoveLiqudityState.broadcasting => "Removing",
+        RemoveLiqudityState.confirming => "Confirming",
+        _ => "Remove",
       };
 
   bool get buttonEnabled => switch (this) {
-        AddLiquidityState.broadcasting => false,
-        AddLiquidityState.confirming => false,
-        AddLiquidityState.waitingForUserApproval => false,
-        AddLiquidityState.deposited => false,
+        RemoveLiqudityState.approvingToken => false,
+        RemoveLiqudityState.broadcasting => false,
+        RemoveLiqudityState.confirming => false,
+        RemoveLiqudityState.waitingForUserApproval => false,
+        RemoveLiqudityState.removed => false,
         _ => true,
       };
 
   ActionType get buttonType => switch (this) {
-        AddLiquidityState.needTokenApproval => ActionType.def,
-        AddLiquidityState.broadcasting => ActionType.loading,
-        AddLiquidityState.confirming => ActionType.loading,
-        AddLiquidityState.ready => ActionType.def,
-        AddLiquidityState.waitingForUserApproval => ActionType.loading,
+        RemoveLiqudityState.needTokenApproval => ActionType.def,
+        RemoveLiqudityState.broadcasting => ActionType.loading,
+        RemoveLiqudityState.confirming => ActionType.loading,
+        RemoveLiqudityState.approvingToken => ActionType.loading,
+        RemoveLiqudityState.ready => ActionType.def,
+        RemoveLiqudityState.waitingForUserApproval => ActionType.loading,
         _ => ActionType.nonInteractive,
       };
 
   bool get inputsEnabled => switch (this) {
-        AddLiquidityState.broadcasting => false,
-        AddLiquidityState.confirming => false,
-        AddLiquidityState.waitingForUserApproval => false,
-        AddLiquidityState.deposited => false,
+        RemoveLiqudityState.broadcasting => false,
+        RemoveLiqudityState.confirming => false,
+        RemoveLiqudityState.waitingForUserApproval => false,
+        RemoveLiqudityState.removed => false,
+        RemoveLiqudityState.approvingToken => false,
         _ => true,
       };
 }
 
-class DepositInfo {
+class WithdrawInfo {
   final PairInfoEntity pairInfo;
-  final Amount amount0;
-  final Amount amount1;
-  final Amount amount0Min;
-  final Amount amount1Min;
+  final Amount poolTokenAmount;
+  final Amount amount0Received;
+  final Amount amount1Received;
+  final Amount amount0MinReceived;
+  final Amount amount1MinReceived;
   final BigInt deadline;
   final String address;
-  final double poolShare;
+  final double poolShareDifference;
 
-  DepositInfo._({
+  WithdrawInfo._({
     required this.pairInfo,
-    required this.amount0,
-    required this.amount1,
-    required this.amount0Min,
-    required this.amount1Min,
+    required this.amount0Received,
+    required this.amount1Received,
+    required this.amount0MinReceived,
+    required this.amount1MinReceived,
     required this.deadline,
-    required this.poolShare,
+    required this.poolShareDifference,
     required this.address,
+    required this.poolTokenAmount,
   });
 
-  factory DepositInfo.create({
+  Amount get minTokenAmount {
+    return pairInfo.token0IsZeniq ? amount1MinReceived : amount0MinReceived;
+  }
+
+  Amount get minZeniqAmount {
+    return pairInfo.token0IsZeniq ? amount0MinReceived : amount1MinReceived;
+  }
+
+  factory WithdrawInfo.create({
     required PairInfoEntity pairInfo,
-    required Amount amount0,
-    required Amount amount1,
+    required Amount poolTokenAmount,
+    required Amount amount0Received,
+    required Amount amount1Received,
     required double slippage,
     required String address,
   }) {
@@ -96,41 +114,57 @@ class DepositInfo {
       DateTime.now().add(Duration(minutes: 1)).millisecondsSinceEpoch ~/ 1000,
     );
 
-    final poolShare = pairInfo.calculatePoolShare(amount0, amount1);
+    final poolShare =
+        pairInfo.calculatePoolShare(amount0Received, amount1Received);
 
     final slippageMultiplier = 1 - slippage;
 
-    final amount0Min = Amount(
-      value: amount0.value.multiply(slippageMultiplier),
-      decimals: amount0.decimals,
+    final amount0MinReceived = Amount(
+      value: amount0Received.value.multiply(slippageMultiplier),
+      decimals: amount0Received.decimals,
     );
 
-    final amount1Min = Amount(
-      value: amount1.value.multiply(slippageMultiplier),
-      decimals: amount1.decimals,
+    final amount1MinReceived = Amount(
+      value: amount1Received.value.multiply(slippageMultiplier),
+      decimals: amount1Received.decimals,
     );
 
-    return DepositInfo._(
+    return WithdrawInfo._(
       pairInfo: pairInfo,
-      amount0: amount0,
-      amount1: amount1,
-      amount0Min: amount0Min,
-      amount1Min: amount1Min,
       deadline: deadline,
-      poolShare: poolShare,
+      poolShareDifference: poolShare,
       address: address,
+      poolTokenAmount: poolTokenAmount,
+      amount0Received: amount0Received,
+      amount1Received: amount1Received,
+      amount0MinReceived: amount0MinReceived,
+      amount1MinReceived: amount1MinReceived,
     );
   }
 
-  Future<RawEVMTransactionType0> createAddLiquidityTransaction() {
-    return zeniqSwapRouter
-        .addLiquidityTx(
+  Future<RawEVMTransactionType0> createRemoveLiquidityTransaction(
+      UniswapV2Router router) {
+    if (router.contractAddress == zeniqSwapRouterOld.contractAddress) {
+      return router
+          .removeLiquidityETHTx(
+            token: pairInfo.token.contractAddress,
+            liquidity: poolTokenAmount.value,
+            amountTokenMin: minTokenAmount.value,
+            amountETHMin: minZeniqAmount.value,
+            deadline: deadline,
+            to: address,
+            sender: address,
+          )
+          .then((value) => value as RawEVMTransactionType0);
+    }
+
+    return router
+        .removeLiquidityTx(
           tokenA: pairInfo.token0.contractAddress,
           tokenB: pairInfo.token1.contractAddress,
-          amountADesired: amount0.value,
-          amountBDesired: amount1.value,
-          amountAMin: amount0Min.value,
-          amountBMin: amount1Min.value,
+          liquidity: poolTokenAmount.value,
+          amountAMin: amount0MinReceived.value,
+          amountBMin: amount1MinReceived.value,
           deadline: deadline,
           to: address,
           sender: address,
@@ -140,12 +174,12 @@ class DepositInfo {
 
   @override
   String toString() {
-    return "Provided ${amount0.displayDouble.toStringAsFixed(2)} ${pairInfo.token0.symbol} and ${amount1.displayDouble.toStringAsFixed(2)} ${pairInfo.token1.symbol}";
+    return "Removed ${amount0Received.displayDouble.toStringAsFixed(2)} ${pairInfo.token0.symbol} and ${amount1Received.displayDouble.toStringAsFixed(2)} ${pairInfo.token1.symbol}";
   }
 }
 
-class AddLiquidityProvider {
-  final PairInfoEntity pairInfo;
+class RemoveLiqudityProvider {
+  final OwnedPairInfo pairInfo;
 
   ERC20Entity get token0 => pairInfo.token0;
   ERC20Entity get token1 => pairInfo.token1;
@@ -155,169 +189,172 @@ class AddLiquidityProvider {
 
   final ValueNotifier<double> slippageNotifier;
 
-  final ValueNotifier<String> token0InputNotifier = ValueNotifier("");
-  final ValueNotifier<String> token1InputNotifier = ValueNotifier("");
+  late final ValueNotifier<String> poolTokenInputNotifier = ValueNotifier("")
+    ..addListener(poolTokenStringChanged);
+  late final ValueNotifier<String> token0InputNotifier = ValueNotifier("")
+    ..addListener(token0StringChanged);
 
-  final ValueNotifier<String?> token0ErrorNotifier = ValueNotifier(null);
-  final ValueNotifier<String?> token1ErrorNotifier = ValueNotifier(null);
+  late final ValueNotifier<String> token1InputNotifier = ValueNotifier("")
+    ..addListener(token1StringChanged);
 
-  final ValueNotifier<Amount?> token0AmountNotifier = ValueNotifier(null);
-  final ValueNotifier<Amount?> token1AmountNotifier = ValueNotifier(null);
+  late final ValueNotifier<Amount?> poolTokenAmountNotifier =
+      ValueNotifier(null)
+        ..addListener(updateOtherAmounts)
+        ..addListener(checkRemoveInfo);
+  late final ValueNotifier<Amount?> token0AmountNotifier = ValueNotifier(null)
+    ..addListener(updateOtherAmounts)
+    ..addListener(checkRemoveInfo);
+  late final ValueNotifier<Amount?> token1AmountNotifier = ValueNotifier(null)
+    ..addListener(updateOtherAmounts)
+    ..addListener(checkRemoveInfo);
 
-  late final ValueNotifier<AsyncValue<Amount>> token0BalanceNotifier;
-  late final ValueNotifier<AsyncValue<Amount>> token1BalanceNotifier;
+  late final ValueNotifier<String?> inputErrorNotifer = ValueNotifier(null);
 
-  final ValueNotifier<DepositInfo?> depositInfoNotifier = ValueNotifier(null);
+  final ValueNotifier<WithdrawInfo?> removeInfoNotifier = ValueNotifier(null);
 
-  final ValueNotifier<AddLiquidityState> depositState =
-      ValueNotifier(AddLiquidityState.none);
+  final ValueNotifier<RemoveLiqudityState> removeState =
+      ValueNotifier(RemoveLiqudityState.none);
 
-  LastTokenChanged? lastTokenChanged;
+  UniswapV2Router get router => switch (pairInfo.type) {
+        PairType.legacy => zeniqSwapRouterOld,
+        PairType.v2 => zeniqSwapRouter,
+      };
 
-  bool recalculateInputs = true;
+  LastTokenChanged? lastAmountChanged;
+
+  bool recalculate = true;
 
   double get slippage => slippageNotifier.value;
 
   final bool needToBroadcast;
 
+  bool get balanceError => inputErrorNotifer.value != null;
+
   final Future<String> Function(String tx) signer;
 
-  AddLiquidityProvider({
+  RemoveLiqudityProvider({
     required this.pairInfo,
-    required BalanceProvider assetNotifier,
     required this.addressNotifier,
     required this.slippageNotifier,
     required this.needToBroadcast,
     required this.signer,
-  }) {
-    token0BalanceNotifier = assetNotifier.balanceNotifierForToken(token0)
-      ..addListener(checkToken0Balance);
-    token1BalanceNotifier = assetNotifier.balanceNotifierForToken(token1)
-      ..addListener(checkToken1Balance);
+  });
 
-    token0InputNotifier.addListener(token0InputChanged);
+  void checkRemoveInfo() async {
+    if (recalculate == false) return;
 
-    token1InputNotifier.addListener(token1InputChanged);
-
-    token0AmountNotifier
-      ..addListener(calculateToken1)
-      ..addListener(checkDepositInfo);
-    token1AmountNotifier
-      ..addListener(calculateToken0)
-      ..addListener(checkDepositInfo);
-  }
-
-  bool checkToken0Balance() {
-    final balance = token0BalanceNotifier.value.valueOrNull;
-    if (balance == null) return false;
-    final amount = token0AmountNotifier.value;
-    if (amount == null) return false;
-
-    if (balance < amount) {
-      token0ErrorNotifier.value = "Insufficient balance";
-      return false;
-    } else {
-      token0ErrorNotifier.value = null;
-      return true;
-    }
-  }
-
-  bool checkToken1Balance() {
-    final balance = token1BalanceNotifier.value.valueOrNull;
-    if (balance == null) return false;
-    final amount = token1AmountNotifier.value;
-    if (amount == null) return false;
-
-    if (balance < amount) {
-      token1ErrorNotifier.value = "Insufficient balance";
-      return false;
-    } else {
-      token1ErrorNotifier.value = null;
-      return true;
-    }
-  }
-
-  void checkDepositInfo() async {
-    if (recalculateInputs == false) return;
-
-    depositState.value = switch ((this.address, depositState.value)) {
-      (null, _) => AddLiquidityState.preview,
-      (_, AddLiquidityState.preview) => AddLiquidityState.none,
-      _ => depositState.value,
+    removeState.value = switch ((this.address, removeState.value)) {
+      (null, _) => RemoveLiqudityState.preview,
+      (_, RemoveLiqudityState.preview) => RemoveLiqudityState.none,
+      _ => removeState.value,
     };
+
+    if (balanceError) {
+      removeState.value = RemoveLiqudityState.none;
+      return;
+    }
+
+    final poolTokenAmount = poolTokenAmountNotifier.value;
+    final token0Amount = token0AmountNotifier.value;
+    final token1Amount = token1AmountNotifier.value;
+
+    if (poolTokenAmount == null ||
+        poolTokenAmount.value == BigInt.zero ||
+        token0Amount == null ||
+        token0Amount.value == BigInt.zero ||
+        token1Amount == null ||
+        token1Amount.value == BigInt.zero) {
+      removeState.value = RemoveLiqudityState.none;
+      return;
+    }
 
     final address = this.address ?? arbitrumTestWallet;
 
-    final token0BalanceValid = checkToken0Balance();
-    final token1BalanceValid = checkToken1Balance();
-
-    if (token0BalanceValid == false || token1BalanceValid == false) {
-      depositState.value = AddLiquidityState.none;
-      return;
-    }
-
-    final amount0 = token0AmountNotifier.value;
-    final amount1 = token1AmountNotifier.value;
-
-    if (amount0 == null ||
-        amount0.value == BigInt.zero ||
-        amount1 == null ||
-        amount1.value == BigInt.zero) {
-      depositState.value = AddLiquidityState.none;
-      return;
-    }
-
-    depositInfoNotifier.value = DepositInfo.create(
+    removeInfoNotifier.value = WithdrawInfo.create(
       pairInfo: pairInfo,
-      amount0: amount0,
-      amount1: amount1,
+      amount0Received: token0Amount,
+      amount1Received: token1Amount,
+      poolTokenAmount: poolTokenAmount,
       slippage: slippage,
       address: address,
     );
 
-    final (token0HasApproval, token1HasApproval) = await checkTokenApprovals(
-      amount0,
-      amount1,
+    final hasApproval = await checkTokenApproval(
+      poolTokenAmount,
       address,
     );
 
-    Logger.log("token0HasApproval: $token0HasApproval");
-    Logger.log("token1HasApproval: $token1HasApproval");
-
-    if (token0HasApproval == false || token1HasApproval == false) {
-      depositState.value = AddLiquidityState.needTokenApproval;
+    if (hasApproval == false) {
+      removeState.value = RemoveLiqudityState.needTokenApproval;
       return;
     }
 
-    depositState.value = AddLiquidityState.ready;
+    removeState.value = RemoveLiqudityState.ready;
   }
 
-  Future<String> deposit() async {
-    assert(
-      depositState.value == AddLiquidityState.ready ||
-          depositState.value == AddLiquidityState.needTokenApproval,
-    );
+  Future<String> remove() async {
+    assert(removeState.value == RemoveLiqudityState.ready ||
+        removeState.value == RemoveLiqudityState.needTokenApproval);
 
-    final depositInfo = depositInfoNotifier.value;
+    final removeInfo = removeInfoNotifier.value;
 
-    assert(depositInfo != null);
+    assert(removeInfo != null);
 
-    if (depositState.value == AddLiquidityState.needTokenApproval) {
-      Logger.log("Approving");
+    if (removeState.value == RemoveLiqudityState.needTokenApproval ||
+        removeState.value == RemoveLiqudityState.tokenApprovalError) {
+      try {
+        final unsignedTX = await pairInfo.erc20Contract.approveTx(
+          sender: removeInfo!.address,
+          spender: router.contractAddress,
+          value: BigInt.tryParse(
+            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          )!,
+        ) as RawEVMTransactionType0;
+
+        removeState.value = RemoveLiqudityState.waitingForUserApproval;
+
+        final String hash;
+        if (needToBroadcast) {
+          final signedTX = await signer(
+            unsignedTX.serializedUnsigned(rpc.type.chainId).toHex,
+          );
+
+          removeState.value = RemoveLiqudityState.approvingToken;
+
+          hash = await rpc.sendRawTransaction(
+            signedTX.startsWith("0x") ? signedTX : "0x$signedTX",
+          );
+        } else {
+          removeState.value = RemoveLiqudityState.approvingToken;
+          hash = await signer(
+            unsignedTX.serializedUnsigned(rpc.type.chainId).toHex,
+          );
+        }
+
+        final successfull = await rpc.waitForTxConfirmation(hash);
+
+        removeState.value = successfull
+            ? RemoveLiqudityState.ready
+            : RemoveLiqudityState.tokenApprovalError;
+      } catch (e) {
+        removeState.value = RemoveLiqudityState.tokenApprovalError;
+        recalculate = true;
+        checkRemoveInfo();
+        rethrow;
+      }
     }
 
-    Logger.log("Depositing");
-
     try {
-      final unsignedRawTx = await depositInfo!.createAddLiquidityTransaction();
-      depositState.value = AddLiquidityState.waitingForUserApproval;
+      final unsignedRawTx =
+          await removeInfo!.createRemoveLiquidityTransaction(router);
+      removeState.value = RemoveLiqudityState.waitingForUserApproval;
       final String hash;
       if (needToBroadcast) {
         final signedTX = await signer(
           unsignedRawTx.serializedUnsigned(rpc.type.chainId).toHex,
         );
 
-        depositState.value = AddLiquidityState.broadcasting;
+        removeState.value = RemoveLiqudityState.broadcasting;
 
         hash = await rpc.sendRawTransaction(
           signedTX.startsWith("0x") ? signedTX : "0x$signedTX",
@@ -328,143 +365,143 @@ class AddLiquidityProvider {
         );
       }
 
-      depositState.value = AddLiquidityState.confirming;
+      removeState.value = RemoveLiqudityState.confirming;
 
       final successfull = await rpc.waitForTxConfirmation(hash);
 
-      depositState.value =
-          successfull ? AddLiquidityState.deposited : AddLiquidityState.error;
+      removeState.value =
+          successfull ? RemoveLiqudityState.removed : RemoveLiqudityState.error;
 
       // Cleanup
       token0InputNotifier.value = '';
       token1InputNotifier.value = '';
-      recalculateInputs = true;
-      checkDepositInfo();
+      recalculate = true;
+      checkRemoveInfo();
 
       return hash;
     } catch (e) {
-      depositState.value = AddLiquidityState.error;
-      recalculateInputs = true;
+      removeState.value = RemoveLiqudityState.error;
+      recalculate = true;
+      checkRemoveInfo();
       rethrow;
     }
   }
 
-  Future<(bool, bool)> checkTokenApprovals(
-    Amount amount0,
-    Amount amount1,
-    String address,
-  ) async {
-    final results = await Future.wait([
-      token0.isApproved(
-        amount: amount0,
-        spender: zeniqSwapRouter.contractAddress,
-        owner: address,
-      ),
-      token1.isApproved(
-        amount: amount1,
-        spender: zeniqSwapRouter.contractAddress,
-        owner: address,
-      ),
-    ]);
+  void setPoolTokenPercentage(double percentage) {
+    final newAmount = pairInfo.pairTokenAmountAmount.displayDouble * percentage;
 
-    return (results[0], results[1]);
+    poolTokenInputNotifier.value = newAmount.toString();
   }
 
-  void calculateToken0() {
-    if (lastTokenChanged == LastTokenChanged.token0) {
-      return;
-    }
-    final amount1 = token1AmountNotifier.value;
-    if (amount1 == null) {
-      return;
-    }
-
-    final amount0 = pairInfo.calculateAmount0FromAmount1(amount1);
-
-    recalculateInputs = false;
-
-    token0AmountNotifier.value = amount0;
-    token0InputNotifier.value = amount0.displayDouble.toString();
-
-    recalculateInputs = true;
-  }
-
-  void calculateToken1() {
-    if (lastTokenChanged == LastTokenChanged.token1) {
-      return;
-    }
-    final amount0 = token0AmountNotifier.value;
-    if (amount0 == null) {
-      return;
-    }
-
-    final amount1 = pairInfo.calculateAmount1FromAmount0(amount0);
-
-    recalculateInputs = false;
-
-    token1AmountNotifier.value = amount1;
-    token1InputNotifier.value = amount1.displayDouble.toString();
-
-    recalculateInputs = true;
-  }
-
-  void token0InputChanged() {
+  void token0StringChanged() {
     final value = token0InputNotifier.value;
     final bi = parseFromString(value, token0.decimals);
 
     final amount =
         bi != null ? Amount(value: bi, decimals: token0.decimals) : null;
 
-    if (recalculateInputs) lastTokenChanged = LastTokenChanged.token0;
+    if (recalculate) lastAmountChanged = LastTokenChanged.token0;
+
     token0AmountNotifier.value = amount;
   }
 
-  void token1InputChanged() {
+  void token1StringChanged() {
     final value = token1InputNotifier.value;
     final bi = parseFromString(value, token1.decimals);
 
     final amount =
         bi != null ? Amount(value: bi, decimals: token1.decimals) : null;
 
-    if (recalculateInputs) lastTokenChanged = LastTokenChanged.token1;
+    if (recalculate) lastAmountChanged = LastTokenChanged.token1;
+
     token1AmountNotifier.value = amount;
   }
 
-  void dispose() {
-    token0BalanceNotifier.removeListener(checkToken0Balance);
-    token1BalanceNotifier.removeListener(checkToken1Balance);
+  void poolTokenStringChanged() {
+    final value = poolTokenInputNotifier.value;
+    final bi = parseFromString(value, token0.decimals);
 
+    final amount =
+        bi != null ? Amount(value: bi, decimals: token0.decimals) : null;
+
+    if (recalculate) lastAmountChanged = LastTokenChanged.poolToken;
+
+    poolTokenAmountNotifier.value = amount;
+  }
+
+  void updateOtherAmounts() {
+    if (recalculate == false) return;
+    recalculate = false;
+    if (lastAmountChanged == LastTokenChanged.poolToken) {
+      final poolAmount = poolTokenAmountNotifier.value;
+      if (poolAmount == null) return;
+
+      final (amount0, amount1) =
+          pairInfo.calculateTokeAmountsFromPoolAmount(poolAmount);
+
+      token0AmountNotifier.value = amount0;
+      token0InputNotifier.value = amount0.displayDouble.toString();
+      token1AmountNotifier.value = amount1;
+      token1InputNotifier.value = amount1.displayDouble.toString();
+    } else if (lastAmountChanged == LastTokenChanged.token0) {
+      final amount0 = token0AmountNotifier.value;
+      if (amount0 == null) return;
+
+      final amount1 = pairInfo.calculateAmount1FromAmount0(amount0);
+      final poolAmount = pairInfo.calculatePoolTokenAmountFromAmount0(amount0);
+
+      token1AmountNotifier.value = amount1;
+      token1InputNotifier.value = amount1.displayDouble.toString();
+      poolTokenAmountNotifier.value = poolAmount;
+      poolTokenInputNotifier.value = poolAmount.displayDouble.toString();
+    } else if (lastAmountChanged == LastTokenChanged.token1) {
+      final amount1 = token1AmountNotifier.value;
+      if (amount1 == null) return;
+
+      final amount0 = pairInfo.calculateAmount0FromAmount1(amount1);
+      final poolAmount = pairInfo.calculatePoolTokenAmountFromAmount1(amount1);
+
+      token0AmountNotifier.value = amount0;
+      token0InputNotifier.value = amount0.displayDouble.toString();
+      poolTokenAmountNotifier.value = poolAmount;
+      poolTokenInputNotifier.value = poolAmount.displayDouble.toString();
+    }
+
+    if (poolTokenAmountNotifier.value != null &&
+        poolTokenAmountNotifier.value!.value >
+            pairInfo.pairTokenAmountAmount.value) {
+      inputErrorNotifer.value = "Insufficient Balance";
+    } else {
+      inputErrorNotifer.value = null;
+    }
+
+    recalculate = true;
+  }
+
+  void dispose() {
+    poolTokenInputNotifier
+      ..removeListener(poolTokenStringChanged)
+      ..dispose();
     token0InputNotifier
-      ..removeListener(token0InputChanged)
+      ..removeListener(token0StringChanged)
       ..dispose();
     token1InputNotifier
-      ..removeListener(token1InputChanged)
+      ..removeListener(token1StringChanged)
       ..dispose();
-    token0AmountNotifier
-      ..removeListener(calculateToken1)
-      ..removeListener(checkDepositInfo)
-      ..dispose();
-    token1AmountNotifier
-      ..removeListener(calculateToken0)
-      ..removeListener(checkDepositInfo)
-      ..dispose();
-    depositState.dispose();
   }
-}
 
-extension on ERC20Entity {
-  Future<bool> isApproved({
-    required Amount amount,
-    required String spender,
-    required String owner,
-  }) async {
-    final contract = ERC20Contract(contractAddress: contractAddress, rpc: rpc);
-
-    final allowance = await contract.allowance(
-      owner: owner,
-      spender: spender,
-    );
-
-    return allowance >= amount.value;
+  Future<bool> checkTokenApproval(
+    Amount poolAmount,
+    String address,
+  ) async {
+    try {
+      final allowance = await pairInfo.erc20Contract.allowance(
+        spender: router.contractAddress,
+        owner: address,
+      );
+      return allowance >= poolAmount.value;
+    } catch (e, s) {
+      throw e;
+    }
   }
 }

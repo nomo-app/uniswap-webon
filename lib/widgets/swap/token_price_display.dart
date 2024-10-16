@@ -9,9 +9,13 @@ import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 
 class TokenPriceDisplay extends StatelessWidget {
   final ERC20Entity token;
+
+  final PairType type;
+
   const TokenPriceDisplay({
     super.key,
     required this.token,
+    this.type = PairType.v2,
   });
 
   @override
@@ -47,7 +51,7 @@ class TokenPriceDisplay extends StatelessWidget {
                     opacity: 0.6,
                   ),
                   NomoText(
-                    "${pricestate.currency.symbol}${pricestate.getPriceForType(PairType.v2).toStringAsFixed(5)}",
+                    "${pricestate.currency.symbol}${pricestate.getPriceForType(type).toStringAsFixed(5)}",
                     style: context.typography.b1,
                     color: context.colors.foreground1,
                     opacity: 0.8,
