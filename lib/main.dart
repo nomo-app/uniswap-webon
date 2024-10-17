@@ -5,21 +5,25 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_router/router/entities/transitions.dart';
 import 'package:nomo_ui_kit/app/nomo_app.dart';
+import 'package:provider/provider.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
-import 'package:zeniq_swap_frontend/common/price_repository.dart';
-import 'package:zeniq_swap_frontend/common/token_repository.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
-import 'package:zeniq_swap_frontend/providers/image_provider.dart';
-import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
+import 'package:zeniq_swap_frontend/common/notifier.dart';
+import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
+import 'package:zeniq_swap_frontend/providers/models/currency.dart';
+import 'package:zeniq_swap_frontend/providers/models/token_entity.dart';
+import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
+import 'package:zeniq_swap_frontend/providers/price_provider.dart';
+import 'package:zeniq_swap_frontend/providers/token_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/theme.dart';
 
-final appRouter = AppRouter();
-
-final $tokenNotifier = ValueNotifier(<ERC20Entity>{});
+final $tokenNotifier = ValueDiffNotifier(<TokenEntity>{});
 final $addressNotifier = ValueNotifier<String?>(null);
 final $currencyNotifier = ValueNotifier(Currency.usd);
+final $slippageNotifier = ValueNotifier(0.005);
+
+const isPools = bool.fromEnvironment('isPools');
 
 const ChainInfo zeniqSmartChainInfo = (
   chainId: 383414847825,
@@ -64,10 +68,14 @@ void main() async {
 
   final savedTokens = [
     for (final tokenJson in savedTokensJson)
-      ERC20Entity.fromJson(
-        tokenJson,
-        allowDeletion: true,
-        chainID: tokenJson['chainID'] as int,
+      TokenEntity(
+        ERC20Entity.fromJson(
+          tokenJson,
+          allowDeletion: true,
+          chainID: tokenJson['chainID'] as int,
+        ),
+        image: null,
+        pairTypes: [],
       ),
   ];
 
@@ -75,14 +83,14 @@ void main() async {
 
   if ($inNomo) {
     $addressNotifier.value = await WebonKitDart.getEvmAddress();
-    initNomo();
+    $metamask = null;
+    await initNomo();
   } else {
     $metamask = MetamaskConnection(
       accoutNotifier: $addressNotifier,
       defaultChain: zeniqSmartChainInfo,
     );
     await $metamask!.initFuture;
-    initMetamask();
   }
 
   runApp(MyApp());
@@ -96,55 +104,43 @@ Future<void> initNomo() async {
         })
         .map((asset) {
           if (asset.contractAddress != null) {
-            return ERC20Entity(
-              name: asset.name,
-              symbol: asset.symbol,
-              decimals: asset.decimals,
-              contractAddress: asset.contractAddress!,
-              chainID: asset.chainId!,
+            return TokenEntity(
+              ERC20Entity(
+                name: asset.name,
+                symbol: asset.symbol,
+                decimals: asset.decimals,
+                contractAddress: asset.contractAddress!,
+                chainID: asset.chainId!,
+              ),
+              pairTypes: [],
+              image: null,
             );
           }
 
           return null;
         })
-        .whereType<ERC20Entity>()
+        .whereType<TokenEntity>()
         .toList(),
   );
 
-  final assetsWithLiquidity = await TokenRepository.fetchTokensWhereLiquidty(
-    allTokens: allAppAssets,
-    minZeniqInPool: 1,
-  );
+  print(allAppAssets);
 
-  $tokenNotifier.value = {
-    zeniqTokenWrapper,
-    ...assetsWithLiquidity,
-    ...$tokenNotifier.value
-  };
+  $tokenNotifier.value = {...allAppAssets, ...$tokenNotifier.value};
 }
 
-Future<void> initMetamask() async {
-  try {
-    final fixedTokens = await TokenRepository.fetchFixedTokens();
-    final tokens = await TokenRepository.fetchTokensWhereLiquidty(
-      allTokens: fixedTokens,
-      minZeniqInPool: 1,
-    );
+Future<String> metamaskSigner(String rawTxSerialized) async {
+  final rawTx = RawEVMTransactionType0.fromUnsignedHex(rawTxSerialized);
 
-    $tokenNotifier.value = {
-      zeniqTokenWrapper,
-      ...tokens,
-      ...$tokenNotifier.value
-    };
-  } catch (e) {
-    $tokenNotifier.value = {
-      zeniqTokenWrapper,
-      tupanToken,
-      iLoveSafirToken,
-      avinocZSC,
-      ...$tokenNotifier.value
-    };
-  }
+  return MetamaskConnection.ethereumSendTransaction(
+    {
+      "from": $addressNotifier.value!,
+      "to": rawTx.to,
+      "value": rawTx.value.toHexWithPrefix,
+      "data": rawTx.data.toHex,
+      "gas": rawTx.gasLimit.toHexWithPrefix,
+      "gasPrice": rawTx.gasPrice.toHexWithPrefix,
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -154,46 +150,39 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InheritedImageProvider(
-      provider: TokenImageProvider($tokenNotifier),
-      child: InheritedSwapProvider(
-        swapProvider: SwapProvider(
-          $addressNotifier,
-          $inNomo
-              ? WebonKitDart.signTransaction
-              : (rawTxSerialized) async {
-                  final rawTx =
-                      RawEVMTransactionType0.fromUnsignedHex(rawTxSerialized);
-
-                  return MetamaskConnection.ethereumSendTransaction(
-                    {
-                      "from": $addressNotifier.value!,
-                      "to": rawTx.to,
-                      "value": rawTx.value.toHexWithPrefix,
-                      "data": rawTx.data.toHex,
-                      "gas": rawTx.gasLimit.toHexWithPrefix,
-                      "gasPrice": rawTx.gasPrice.toHexWithPrefix,
-                    },
-                  );
-                },
-          needToBroadcast: $inNomo,
+    return MultiProvider(
+      providers: [
+        Provider<TokenProvider>(
+          create: (context) => TokenProvider(
+            $tokenNotifier.value,
+          ),
         ),
-        child: InheritedAssetProvider(
-          notifier: AssetNotifier(
-            $addressNotifier,
-            $tokenNotifier,
-            $currencyNotifier,
+        Provider<BalanceProvider>(
+          create: (context) => BalanceProvider(
+            addressNotifier: $addressNotifier,
+            tokenProvider: context.read<TokenProvider>(),
           ),
-          child: NomoNavigator(
-            delegate: appRouter.delegate,
-            defaultTransistion: PageFadeTransition(),
-            child: NomoApp(
-              color: const Color(0xFF1A1A1A),
-              routerConfig: appRouter.config,
-              supportedLocales: const [Locale('en', 'US')],
-              themeDelegate: AppThemeDelegate(),
-            ),
+        ),
+        Provider(
+          create: (context) => PriceProvider(
+            currencyNotifier: $currencyNotifier,
+            tokenProvider: context.read<TokenProvider>(),
           ),
+        ),
+        Provider(
+          create: (context) => PoolProvider(
+            addressNotifier: $addressNotifier,
+          ),
+        ),
+      ],
+      child: NomoNavigator(
+        delegate: appRouter.delegate,
+        defaultTransistion: PageFadeTransition(),
+        child: NomoApp(
+          color: const Color(0xFF1A1A1A),
+          routerConfig: appRouter.config,
+          supportedLocales: const [Locale('en', 'US')],
+          themeDelegate: AppThemeDelegate(),
         ),
       ),
     );

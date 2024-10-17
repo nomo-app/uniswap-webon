@@ -40,7 +40,7 @@ jobs:
         run: flutter pub get
 
       - name: Build web app
-        run: flutter build web --wasm
+        run: flutter build web --wasm --dart-define=isPools=false
 
       - name: Add SSH key
         run: |

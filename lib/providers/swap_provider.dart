@@ -23,6 +23,7 @@ final zeniqSwapRouter = UniswapV2Router(
   rpc: rpc,
   contractAddress: "0xEBb0C81b3450520f54282A9ca9996A1960Be7c7A",
 );
+
 final zfactory = UniswapV2Factory(
   rpc: rpc,
   contractAddress: "0x40a4E23Cc9E57161699Fd37c0A4d8bca383325f3",
@@ -214,9 +215,10 @@ BigInt? parseFromString(String value, int decimals) {
     return null;
   }
 
-  final right = split.length == 2
+  var right = split.length == 2
       ? split[1].padRight(decimals, '0')
       : ''.padRight(decimals, '0');
+  right = right.length > decimals ? right.substring(0, decimals) : right;
   final left = split[0];
 
   return BigInt.tryParse('$left$right');
@@ -241,10 +243,11 @@ class SwapProvider {
   late ValueNotifier<String?> fromErrorNotifier = ValueNotifier(null);
   late ValueNotifier<String?> toErrorNotifier = ValueNotifier(null);
 
-  SwapProvider(
-    this.addressNotifier,
-    this.signer, {
+  SwapProvider({
+    required this.addressNotifier,
+    required this.signer,
     required this.needToBroadcast,
+    required this.slippageNotifier,
   }) {
     fromToken.addListener(() => checkSwapInfo());
     toToken.addListener(() => checkSwapInfo());
@@ -253,7 +256,7 @@ class SwapProvider {
     addressNotifier.addListener(() => checkSwapInfo());
     fromAmountString.addListener(fromAmountStringChanged);
     toAmountString.addListener(toAmountStringChanged);
-    slippageString.addListener(slippageChanged);
+    slippageNotifier.addListener(checkSwapInfo);
     Timer.periodic(_refreshInterval, (_) {
       checkSwapInfo();
     });
@@ -266,22 +269,9 @@ class SwapProvider {
   final ValueNotifier<SwapState> swapState = ValueNotifier(SwapState.None);
   final ValueNotifier<SwapInfo?> swapInfo = ValueNotifier(null);
 
-  double slippage = 0.5;
+  double get slippage => slippageNotifier.value;
 
-  late final ValueNotifier<String> slippageString =
-      ValueNotifier(slippage.toString());
-
-  void slippageChanged() {
-    final slippage_s = slippageString.value;
-
-    final slippage_d = double.tryParse(slippage_s);
-
-    if (slippage_d == null) return;
-
-    slippage = slippage_d;
-
-    checkSwapInfo(); // Recalculate the swap info
-  }
+  final ValueNotifier<double> slippageNotifier;
 
   void fromAmountStringChanged() {
     final value = fromAmountString.value;
@@ -611,11 +601,11 @@ Future<FromSwapInfo?> fromSwapInfo({
     return null;
   }
 
-  final _s = 1000.toBigInt - Amount.convert(value: slippage, decimals: 1).value;
+  final slippageMultiplier = 1 - slippage;
 
   final outputValue = outputs.last;
 
-  final minOutputValue = (outputValue * _s) ~/ 1000.toBigInt;
+  final minOutputValue = outputValue.multiply(slippageMultiplier);
 
   final bool needsApproval;
 
@@ -678,10 +668,10 @@ Future<ToSwapInfo?> toSwapInfo({
     return null;
   }
 
-  final _s = 1000.toBigInt + Amount.convert(value: slippage, decimals: 1).value;
+  final slippageMultiplier = 1 + slippage;
 
   final inputValue = inputs.first;
-  final maxInputValue = (inputValue * _s) ~/ 1000.toBigInt;
+  final maxInputValue = inputValue.multiply(slippageMultiplier);
 
   final bool needsApproval;
 
@@ -720,30 +710,6 @@ Future<ToSwapInfo?> toSwapInfo({
     needsApproval: needsApproval,
     path: contractPath,
   );
-}
-
-class InheritedSwapProvider extends InheritedWidget {
-  const InheritedSwapProvider({
-    super.key,
-    required this.swapProvider,
-    required super.child,
-  });
-
-  final SwapProvider swapProvider;
-
-  static SwapProvider of(BuildContext context) {
-    final result =
-        context.dependOnInheritedWidgetOfExactType<InheritedSwapProvider>();
-    if (result == null) {
-      throw Exception('InheritedSwapProvider not found in context');
-    }
-    return result.swapProvider;
-  }
-
-  @override
-  bool updateShouldNotify(InheritedSwapProvider oldWidget) {
-    return false;
-  }
 }
 
 Future<double> calculatePriceImpact(

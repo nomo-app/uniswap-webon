@@ -18,3 +18,10 @@ flutter run -d chrome
 
 
 https://github.com/Uniswap/sdks/blob/30b98e09d0486cd5cc3e4360e3277eb7cb60d2d5/sdks/sdk-core/src/utils/computePriceImpact.ts#L9
+
+
+TODO:
+Fix Routing (Url parameters)
+
+Deploy with env variable 
+QR Code Deeplink on WebStart

@@ -8,7 +8,7 @@ version: 1.0.0+1
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
-  flutter: ">=3.24.0 <4.0.0"
+  flutter: ">=3.24.3 <4.0.0"
 
 dependencies:
   flutter:
@@ -16,9 +16,10 @@ dependencies:
 
   flutter_web_plugins:
     sdk: flutter
-  nomo_ui_kit: 0.0.32
+  nomo_ui_kit:
+    path: packages/nomo-ui-kit
   nomo_router: 0.0.3
-  route_gen: 0.0.2
+  route_gen: 0.0.6
   webon_kit_dart:
     path: packages/webon-kit-dart
   walletkit_dart:
@@ -30,10 +31,12 @@ dependencies:
   url_launcher: ^6.3.0
   mesh: ^0.4.1
   barcode_widget: ^2.0.4
+  provider: ^6.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  #test: ^1.25.8
   build_runner: ^2.4.8
   flutter_lints: ^2.0.0
   custom_lint: ^0.6.0

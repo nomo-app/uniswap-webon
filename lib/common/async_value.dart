@@ -11,6 +11,9 @@ sealed class AsyncValue<T> {
 
   bool get hasError => this is AsyncError;
 
+  Object? get errorOrNull =>
+      this is AsyncError ? (this as AsyncError).error : null;
+
   T? get valueOrNull => this is Value ? (this as Value).value : null;
 
   factory AsyncValue.loading() => const AsyncLoading();

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:nomo_ui_kit/components/app/bottom_bar/nomo_bottom_bar.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/dialog/nomo_dialog.dart';
-import 'package:nomo_ui_kit/components/divider/nomo_divider.dart';
 import 'package:nomo_ui_kit/components/dropdownmenu/drop_down_item.dart';
 import 'package:nomo_ui_kit/components/dropdownmenu/dropdownmenu.dart';
 import 'package:nomo_ui_kit/components/input/textInput/nomo_input.dart';
@@ -13,99 +12,129 @@ import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/theme/theme_provider.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
-import 'package:zeniq_swap_frontend/common/price_repository.dart';
-import 'package:zeniq_swap_frontend/providers/asset_notifier.dart';
-import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
+import 'package:zeniq_swap_frontend/main.dart';
+import 'package:zeniq_swap_frontend/providers/models/currency.dart';
 import 'package:zeniq_swap_frontend/theme.dart';
 
-class SettingsDialog extends StatelessWidget {
+class SettingsDialog extends StatefulWidget {
   const SettingsDialog({super.key});
 
   @override
+  State<SettingsDialog> createState() => _SettingsDialogState();
+}
+
+class _SettingsDialogState extends State<SettingsDialog> {
+  late final ValueNotifier<String> slippageStringNotifier = ValueNotifier(
+    ($slippageNotifier.value * 100).toString(),
+  );
+
+  @override
+  void initState() {
+    slippageStringNotifier.addListener(slippageChanged);
+    super.initState();
+  }
+
+  void slippageChanged() {
+    final slippage_s = slippageStringNotifier.value;
+
+    final slippage_d = double.tryParse(slippage_s);
+
+    if (slippage_d == null) return;
+
+    $slippageNotifier.value = slippage_d / 100;
+  }
+
+  @override
+  void dispose() {
+    slippageStringNotifier.removeListener(slippageChanged);
+    slippageStringNotifier.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final assetNotifer = InheritedAssetProvider.of(context);
-    final swapProcider = InheritedSwapProvider.of(context);
     return NomoDialog(
-      maxWidth: 480,
+      maxWidth: 420,
       widthRatio: 0.9,
-      leading: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          NomoText("Settings", style: context.typography.h1),
-          8.vSpacing,
-          NomoText(
-            "Adjust to your personal preference",
-            style: context.typography.b1,
-          ),
-        ],
+      leading: NomoText(
+        "Settings",
+        style: context.typography.h1,
+        fontSize: context.typography.b3.fontSize,
       ),
       backgroundColor: context.colors.background2,
       padding: const EdgeInsets.all(24),
+      elevation: 0.0.ifElse(context.isDark, other: 1),
+      border: Border.all(
+        color: Colors.white24,
+        strokeAlign: BorderSide.strokeAlignInside,
+        width: 1,
+      ).ifElseNull(context.isDark),
+      showCloseButton: false,
       borderRadius: BorderRadius.circular(16),
       content: Column(
         children: [
-          NomoDivider(
-            color: context.colors.disabled,
-          ),
-          16.vSpacing,
+          12.vSpacing,
           Row(
             children: [
-              NomoText("Theme", style: context.typography.b2),
+              NomoText("Theme", style: context.typography.b1),
               const Spacer(),
-              NomoBottomBar(
-                items: const [
-                  NomoMenuIconItem(
-                    title: "Dark",
-                    key: ColorMode.DARK,
-                    icon: Icons.dark_mode,
-                  ),
-                  NomoMenuIconItem(
-                    title: "Light",
-                    key: ColorMode.LIGHT,
-                    icon: Icons.light_mode,
-                  ),
-                ],
-                elevation: 0,
-                selected: context.getColorMode(),
-                onTap: (item) {
-                  ThemeProvider.of(context).changeColorTheme(item.key);
-                  WebLocalStorage.setItem(
-                      "theme", item.key == ColorMode.LIGHT ? "light" : "dark");
-                },
-                borderRadius: BorderRadius.circular(16),
-                background: context.colors.background1,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                itemWidth: 64,
-                itemPadding: EdgeInsets.zero,
+              SizedBox(
+                width: 160,
+                child: NomoBottomBar(
+                  items: const [
+                    NomoMenuIconItem(
+                      title: "Dark",
+                      key: ColorMode.DARK,
+                      icon: Icons.dark_mode,
+                    ),
+                    NomoMenuIconItem(
+                      title: "Light",
+                      key: ColorMode.LIGHT,
+                      icon: Icons.light_mode,
+                    ),
+                  ],
+                  elevation: 0,
+                  selected: context.getColorMode(),
+                  onTap: (item) {
+                    ThemeProvider.of(context).changeColorTheme(item.key);
+                    WebLocalStorage.setItem("theme",
+                        item.key == ColorMode.LIGHT ? "light" : "dark");
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  background: context.colors.background1,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  itemWidth: 64,
+                  style: context.typography.b1.copyWith(fontSize: 12),
+                  itemPadding: EdgeInsets.zero,
+                  iconSize: 22,
+                  height: 58,
+                ),
               ),
             ],
           ),
           16.vSpacing,
           Row(
             children: [
-              NomoText("Currency", style: context.typography.b2),
+              NomoText("Currency", style: context.typography.b1),
               const Spacer(),
-              SizedBox(
-                width: 200,
-                child: NomoDropDownMenu(
-                  backgroundColor: context.colors.background1,
-                  dropdownColor: context.colors.background1,
-                  borderRadius: BorderRadius.circular(16),
-                  itemPadding: const EdgeInsets.symmetric(horizontal: 24),
-                  valueNotifer: assetNotifer.currencyNotifier,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  iconColor: context.colors.foreground1,
-                  height: 48,
-                  items: [
-                    for (final currency in Currency.values)
-                      NomoDropDownItemString(
-                        value: currency,
-                        title: "${currency.displayName} ${currency.symbol} ",
-                      )
-                  ],
-                ),
+              NomoDropDownMenu(
+                width: 160,
+                backgroundColor: context.colors.background1,
+                dropdownColor: context.colors.background1,
+                borderRadius: BorderRadius.circular(16),
+                itemPadding: const EdgeInsets.symmetric(horizontal: 24),
+                valueNotifer: $currencyNotifier,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                iconColor: context.colors.foreground1,
+                height: 48,
+                items: [
+                  for (final currency in Currency.values)
+                    NomoDropDownItemString(
+                      value: currency,
+                      title: "${currency.displayName} ${currency.symbol} ",
+                    )
+                ],
               ),
             ],
           ),
@@ -113,7 +142,7 @@ class SettingsDialog extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              NomoText("Slippage Tolerance", style: context.typography.b2),
+              NomoText("Slippage Tolerance", style: context.typography.b1),
               16.vSpacing,
               NomoInput(
                 background: context.colors.background1,
@@ -121,10 +150,10 @@ class SettingsDialog extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 trailling: NomoText(
                   "%",
-                  style: context.typography.b2,
+                  style: context.typography.b1,
                 ),
-                valueNotifier: swapProcider.slippageString,
-                style: context.typography.b2,
+                valueNotifier: slippageStringNotifier,
+                style: context.typography.b1,
                 textAlign: TextAlign.end,
                 maxLines: 1,
                 inputFormatters: [
@@ -150,8 +179,7 @@ class SettingsDialog extends StatelessWidget {
                         foregroundColor: context.colors.foreground3,
                         margin: const EdgeInsets.only(right: 8),
                         onPressed: () {
-                          swapProcider.slippageString.value =
-                              slippage.toString();
+                          slippageStringNotifier.value = slippage.toString();
                         },
                       )
                   ],

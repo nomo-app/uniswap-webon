@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/http_client.dart';
-import 'package:zeniq_swap_frontend/common/price_repository.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
 abstract class TokenRepository {
@@ -15,7 +14,7 @@ abstract class TokenRepository {
       headers: {"Content-Type": "application/json"},
     ).timeout(
       const Duration(seconds: 5),
-      onTimeout: () => throw TimeoutException("Timeout", REQUEST_TIMEOUT_LIMIT),
+      onTimeout: () => throw TimeoutException("Timeout", Duration(seconds: 10)),
     );
 
     if (response.statusCode != 200) {
