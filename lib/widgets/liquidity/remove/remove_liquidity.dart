@@ -25,11 +25,11 @@ import 'package:zeniq_swap_frontend/widgets/swap/token_price_display.dart';
 final percentages = <double>[0.25, 0.5, 0.75, 1];
 
 class PoolRemoveLiquidity extends StatefulWidget {
-  final OwnedPairInfo pairInfo;
+  final ValueNotifier<PairInfoEntity> pairInfoNotifer;
 
   const PoolRemoveLiquidity({
     super.key,
-    required this.pairInfo,
+    required this.pairInfoNotifer,
   });
 
   @override
@@ -39,11 +39,13 @@ class PoolRemoveLiquidity extends StatefulWidget {
 class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
   late final RemoveLiqudityProvider provider;
 
+  OwnedPairInfo get pairInfo => widget.pairInfoNotifer.value as OwnedPairInfo;
+
   @override
   void initState() {
     provider = RemoveLiqudityProvider(
       poolProvider: context.read<PoolProvider>(),
-      pairInfo: widget.pairInfo,
+      pairInfoNotifier: widget.pairInfoNotifer,
       addressNotifier: $addressNotifier,
       slippageNotifier: $slippageNotifier,
       needToBroadcast: $inNomo,
@@ -234,7 +236,7 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                           ),
                           ValueListenableBuilder(
                             valueListenable: provider.pairInfoNotifier,
-                            builder: (context, pairInfo, _) {
+                            builder: (context, __, _) {
                               return NomoText(
                                 "${pairInfo.pairTokenAmountAmount.displayDouble.toStringAsFixed(2)}",
                                 style: context.typography.b1,
@@ -300,12 +302,12 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                   child: Row(
                     children: [
                       NomoText(
-                        widget.pairInfo.token0.symbol,
+                        pairInfo.token0.symbol,
                       ),
                       Spacer(),
                       TokenPriceDisplay(
-                        token: widget.pairInfo.token0,
-                        type: widget.pairInfo.type,
+                        token: pairInfo.token0,
+                        type: pairInfo.type,
                       ),
                     ],
                   ),
@@ -315,7 +317,7 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                 valueNotifier: provider.token0InputNotifier,
                 background: context.colors.background2.withOpacity(0.5),
                 trailling: AssetPicture(
-                  token: widget.pairInfo.token0,
+                  token: pairInfo.token0,
                   size: 36,
                 ),
                 errorNotifier: provider.inputErrorNotifer,
@@ -323,7 +325,7 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                   FilteringTextInputFormatter.allow(
                     RegExp(
                       r'^\d+([.,]?\d{0,' +
-                          widget.pairInfo.token0.decimals.toString() +
+                          pairInfo.token0.decimals.toString() +
                           r'})',
                     ),
                   ),
@@ -332,7 +334,7 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                   padding: const EdgeInsets.only(top: 16),
                   child: ValueListenableBuilder(
                     valueListenable: provider.pairInfoNotifier,
-                    builder: (context, pairInfo, _) {
+                    builder: (context, __, _) {
                       return AddLiqudityInputBottom(
                         token: pairInfo.token0,
                         amountNotifier: provider.token0AmountNotifier,
@@ -356,12 +358,12 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                   child: Row(
                     children: [
                       NomoText(
-                        widget.pairInfo.token1.symbol,
+                        pairInfo.token1.symbol,
                       ),
                       Spacer(),
                       TokenPriceDisplay(
-                        token: widget.pairInfo.token1,
-                        type: widget.pairInfo.type,
+                        token: pairInfo.token1,
+                        type: pairInfo.type,
                       ),
                     ],
                   ),
@@ -371,7 +373,7 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                 valueNotifier: provider.token1InputNotifier,
                 background: context.colors.background2.withOpacity(0.5),
                 trailling: AssetPicture(
-                  token: widget.pairInfo.token1,
+                  token: pairInfo.token1,
                   size: 36,
                 ),
                 errorNotifier: provider.inputErrorNotifer,
@@ -379,7 +381,7 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                   FilteringTextInputFormatter.allow(
                     RegExp(
                       r'^\d+([.,]?\d{0,' +
-                          widget.pairInfo.token1.decimals.toString() +
+                          pairInfo.token1.decimals.toString() +
                           r'})',
                     ),
                   ),
@@ -388,11 +390,11 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                   padding: const EdgeInsets.only(top: 16),
                   child: ValueListenableBuilder(
                     valueListenable: provider.pairInfoNotifier,
-                    builder: (context, pairInfo, _) {
+                    builder: (context, __, _) {
                       return AddLiqudityInputBottom(
-                        token: widget.pairInfo.token1,
+                        token: pairInfo.token1,
                         amountNotifier: provider.token1AmountNotifier,
-                        balance: widget.pairInfo.myAmount1,
+                        balance: pairInfo.myAmount1,
                         balanceString: "In Pool:",
                       );
                     },

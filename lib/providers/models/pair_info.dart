@@ -138,6 +138,26 @@ sealed class PairInfoEntity {
     required this.poolSupply,
   });
 
+  Future<PairInfoEntity> updateAndCheckOwned(String? address) {
+    return switch (this) {
+      PairInfo pairInfo => () async {
+          final balance = address != null
+              ? await pairInfo.erc20Contract.getBalance(address)
+              : null;
+
+          final updated = await pairInfo.update();
+
+          return balance != null
+              ? OwnedPairInfo.fromPairInfo(
+                  pairTokenAmount: balance,
+                  pairInfo: updated,
+                )
+              : updated;
+        }.call(),
+      OwnedPairInfo ownedPairInfo => ownedPairInfo.update(address),
+    };
+  }
+
   @override
   String toString() {
     return "(token0: $token0, token1: $token1, reserve0: $reserve0, reserve1: $reserve1)";
@@ -230,7 +250,7 @@ final class PairInfo extends PairInfoEntity {
         reserve1: reserve1 ?? this.reserve1,
       );
 
-  Future<PairInfoEntity> update() async {
+  Future<PairInfo> update() async {
     final supply = await erc20Contract.getSupply();
     final (reserve0, reserve1) = await pair.getReserves();
 
@@ -327,6 +347,22 @@ final class OwnedPairInfo extends PairInfoEntity {
       poolSupply: supply,
       pairTokenAmount: pairTokenAmount,
     );
+  }
+
+  PairInfoEntity checkIfStillOwned() {
+    if (pairTokenAmount == BigInt.zero) {
+      return PairInfo(
+        pair: pair,
+        token0: token0,
+        token1: token1,
+        reserve0: reserve0,
+        reserve1: reserve1,
+        poolSupply: poolSupply,
+        type: type,
+      );
+    }
+
+    return this;
   }
 
   OwnedPairInfo.fromPairInfo({

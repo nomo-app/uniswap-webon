@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
@@ -5,6 +7,7 @@ import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/common/logger.dart';
 import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
+import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
 enum LastTokenChanged {
@@ -152,8 +155,12 @@ class DepositInfo {
 }
 
 class AddLiquidityProvider {
-  final PairInfoEntity pairInfo;
+  final PoolProvider poolProvider;
+  final BalanceProvider balanceProvider;
 
+  final ValueNotifier<PairInfoEntity> pairInfoNotifier;
+
+  PairInfoEntity get pairInfo => pairInfoNotifier.value;
   ERC20Entity get token0 => pairInfo.token0;
   ERC20Entity get token1 => pairInfo.token1;
 
@@ -189,21 +196,23 @@ class AddLiquidityProvider {
 
   final Future<String> Function(String tx) signer;
 
+  bool isDisposed = false;
+
   AddLiquidityProvider({
-    required this.pairInfo,
-    required BalanceProvider assetNotifier,
+    required this.pairInfoNotifier,
+    required this.poolProvider,
+    required this.balanceProvider,
     required this.addressNotifier,
     required this.slippageNotifier,
     required this.needToBroadcast,
     required this.signer,
   }) {
-    token0BalanceNotifier = assetNotifier.balanceNotifierForToken(token0)
+    token0BalanceNotifier = balanceProvider.balanceNotifierForToken(token0)
       ..addListener(checkToken0Balance);
-    token1BalanceNotifier = assetNotifier.balanceNotifierForToken(token1)
+    token1BalanceNotifier = balanceProvider.balanceNotifierForToken(token1)
       ..addListener(checkToken1Balance);
 
     token0InputNotifier.addListener(token0InputChanged);
-
     token1InputNotifier.addListener(token1InputChanged);
 
     token0AmountNotifier
@@ -212,6 +221,32 @@ class AddLiquidityProvider {
     token1AmountNotifier
       ..addListener(calculateToken0)
       ..addListener(checkDepositInfo);
+
+    depositState.addListener(onDepositStateChanged);
+  }
+
+  void onDepositStateChanged() {
+    final state = depositState.value;
+
+    if (state == AddLiquidityState.confirming) {
+      refresh();
+      return;
+    }
+
+    if (state == AddLiquidityState.deposited) {
+      refresh();
+      return;
+    }
+  }
+
+  void refresh() async {
+    final updatedPair = await pairInfo.updateAndCheckOwned(address);
+
+    balanceProvider.refreshForToken(token0);
+    balanceProvider.refreshForToken(token1);
+
+    pairInfoNotifier.value = updatedPair;
+    poolProvider.updatePair(updatedPair.pair.contractAddress, updatedPair);
   }
 
   bool checkToken0Balance() {
@@ -311,8 +346,6 @@ class AddLiquidityProvider {
         )!,
       ) as RawEVMTransactionType0;
 
-      depositState.value = AddLiquidityState.waitingForUserApproval;
-
       final String hash;
       if (needToBroadcast) {
         final signedTX = await signer(
@@ -398,6 +431,10 @@ class AddLiquidityProvider {
 
       final successfull = await rpc.waitForTxConfirmation(hash);
 
+      if (isDisposed) {
+        return hash;
+      }
+
       depositState.value =
           successfull ? AddLiquidityState.deposited : AddLiquidityState.error;
 
@@ -409,8 +446,12 @@ class AddLiquidityProvider {
 
       return hash;
     } catch (e) {
-      depositState.value = AddLiquidityState.error;
-      recalculateInputs = true;
+      if (isDisposed == false) {
+        depositState.value = AddLiquidityState.error;
+        recalculateInputs = true;
+        checkDepositInfo();
+      }
+
       rethrow;
     }
   }
@@ -514,7 +555,10 @@ class AddLiquidityProvider {
       ..removeListener(calculateToken0)
       ..removeListener(checkDepositInfo)
       ..dispose();
-    depositState.dispose();
+    depositState
+      ..removeListener(onDepositStateChanged)
+      ..dispose();
+    isDisposed = true;
   }
 }
 

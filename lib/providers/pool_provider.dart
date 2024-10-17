@@ -70,6 +70,20 @@ class PoolProvider {
 
   void updatePair(String address, PairInfoEntity updatedPair) {
     getPairNotifier(address).setValue(updatedPair);
+
+    allPairsNotifier.setValue(
+      [
+        ...?allPairsNotifier.value.valueOrNull?.map(
+          (pair) {
+            if (pair.pair.contractAddress == address) {
+              return updatedPair;
+            }
+
+            return pair;
+          },
+        ).toList(),
+      ],
+    );
   }
 
   PoolProvider({

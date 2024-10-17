@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/card/nomo_card.dart';
 import 'package:nomo_ui_kit/components/info_item/nomo_info_item.dart';
@@ -17,28 +16,38 @@ import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 import 'package:zeniq_swap_frontend/widgets/liquidity/pair_ratio_display.dart';
 
 class PoolOverview extends StatefulWidget {
-  final PairInfoEntity pairInfo;
+  final ValueNotifier<PairInfoEntity> pairInfoNotifer;
 
-  const PoolOverview({super.key, required this.pairInfo});
+  const PoolOverview({super.key, required this.pairInfoNotifer});
 
   @override
   State<PoolOverview> createState() => _PoolOverviewState();
 }
 
 class _PoolOverviewState extends State<PoolOverview> {
-  late final ValueNotifier<bool> invertRatioNotifier = ValueNotifier(true);
-  late PriceProvider assetNotifier;
+  late final invertRatioNotifier = ValueNotifier(true);
+  late final assetNotifier = context.read<PriceProvider>();
 
-  @override
-  didChangeDependencies() {
-    assetNotifier = context.read<PriceProvider>();
-    super.didChangeDependencies();
-  }
-
-  PairInfoEntity get pairInfo => widget.pairInfo;
+  PairInfoEntity get pairInfo => widget.pairInfoNotifer.value;
 
   OwnedPairInfo? get ownedPairInfo =>
       pairInfo is OwnedPairInfo ? pairInfo as OwnedPairInfo : null;
+
+  @override
+  void initState() {
+    widget.pairInfoNotifer.addListener(onPairChanged);
+    super.initState();
+  }
+
+  void onPairChanged() {
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.pairInfoNotifer.removeListener(onPairChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +83,7 @@ class _PoolOverviewState extends State<PoolOverview> {
                   iconSize: 18,
                   onPressed: () {
                     Clipboard.setData(
-                      ClipboardData(text: widget.pairInfo.pair.contractAddress),
+                      ClipboardData(text: pairInfo.pair.contractAddress),
                     );
                   },
                 )
@@ -105,10 +114,10 @@ class _PoolOverviewState extends State<PoolOverview> {
                 return NomoText("Error");
               }
 
-              final price0 = price0Async.valueOrNull!
-                  .getPriceForType(widget.pairInfo.type);
-              final price1 = price1Async.valueOrNull!
-                  .getPriceForType(widget.pairInfo.type);
+              final price0 =
+                  price0Async.valueOrNull!.getPriceForType(pairInfo.type);
+              final price1 =
+                  price1Async.valueOrNull!.getPriceForType(pairInfo.type);
               final currency = $currencyNotifier.value;
 
               return Column(
@@ -129,12 +138,12 @@ class _PoolOverviewState extends State<PoolOverview> {
                         Row(
                           children: [
                             AssetPicture(
-                              token: widget.pairInfo.token0,
+                              token: pairInfo.token0,
                               size: 24,
                             ),
                             12.hSpacing,
                             NomoText(
-                              "${widget.pairInfo.amount0.displayDouble.toStringAsFixed(0)} ${widget.pairInfo.token0.symbol}",
+                              "${pairInfo.amount0.displayDouble.toStringAsFixed(0)} ${pairInfo.token0.symbol}",
                               style: context.typography.b2,
                             ),
                           ],
@@ -143,12 +152,12 @@ class _PoolOverviewState extends State<PoolOverview> {
                         Row(
                           children: [
                             AssetPicture(
-                              token: widget.pairInfo.token1,
+                              token: pairInfo.token1,
                               size: 24,
                             ),
                             12.hSpacing,
                             NomoText(
-                              "${widget.pairInfo.amount1.displayDouble.toStringAsFixed(0)} ${widget.pairInfo.token1.symbol}",
+                              "${pairInfo.amount1.displayDouble.toStringAsFixed(0)} ${pairInfo.token1.symbol}",
                               style: context.typography.b2,
                             ),
                           ],
@@ -173,7 +182,7 @@ class _PoolOverviewState extends State<PoolOverview> {
                             ),
                             12.hSpacing,
                             NomoText(
-                              "${currency.symbol}${widget.pairInfo.totalValueLocked(price0, price1).toStringAsFixed(0)}",
+                              "${currency.symbol}${pairInfo.totalValueLocked(price0, price1).toStringAsFixed(0)}",
                               style: context.typography.b2,
                             ),
                           ],
@@ -182,12 +191,12 @@ class _PoolOverviewState extends State<PoolOverview> {
                         Row(
                           children: [
                             AssetPicture(
-                              token: widget.pairInfo.token0,
+                              token: pairInfo.token0,
                               size: 24,
                             ),
                             12.hSpacing,
                             NomoText(
-                              "${currency.symbol}${(widget.pairInfo.amount0.displayDouble * price0).toStringAsFixed(0)}",
+                              "${currency.symbol}${(pairInfo.amount0.displayDouble * price0).toStringAsFixed(0)}",
                               style: context.typography.b2,
                             ),
                           ],
@@ -196,12 +205,12 @@ class _PoolOverviewState extends State<PoolOverview> {
                         Row(
                           children: [
                             AssetPicture(
-                              token: widget.pairInfo.token1,
+                              token: pairInfo.token1,
                               size: 24,
                             ),
                             12.hSpacing,
                             NomoText(
-                              "${currency.symbol}${(widget.pairInfo.amount1.displayDouble * price1).toStringAsFixed(0)}",
+                              "${currency.symbol}${(pairInfo.amount1.displayDouble * price1).toStringAsFixed(0)}",
                               style: context.typography.b2,
                             ),
                           ],
@@ -239,7 +248,7 @@ class _PoolOverviewState extends State<PoolOverview> {
                           Row(
                             children: [
                               AssetPicture(
-                                token: widget.pairInfo.token0,
+                                token: pairInfo.token0,
                                 size: 24,
                               ),
                               12.hSpacing,
@@ -253,7 +262,7 @@ class _PoolOverviewState extends State<PoolOverview> {
                           Row(
                             children: [
                               AssetPicture(
-                                token: widget.pairInfo.token1,
+                                token: pairInfo.token1,
                                 size: 24,
                               ),
                               12.hSpacing,
@@ -292,7 +301,7 @@ class _PoolOverviewState extends State<PoolOverview> {
                           Row(
                             children: [
                               AssetPicture(
-                                token: widget.pairInfo.token0,
+                                token: pairInfo.token0,
                                 size: 24,
                               ),
                               12.hSpacing,
@@ -306,7 +315,7 @@ class _PoolOverviewState extends State<PoolOverview> {
                           Row(
                             children: [
                               AssetPicture(
-                                token: widget.pairInfo.token1,
+                                token: pairInfo.token1,
                                 size: 24,
                               ),
                               12.hSpacing,

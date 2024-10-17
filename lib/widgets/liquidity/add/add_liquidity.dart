@@ -10,31 +10,37 @@ import 'package:nomo_ui_kit/components/notification/nomo_notification.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
+import 'package:provider/provider.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/add_liquidity_provider.dart';
 import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
+import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 import 'package:zeniq_swap_frontend/widgets/liquidity/add/add_liquidity_input_bottom.dart';
 import 'package:zeniq_swap_frontend/widgets/liquidity/pair_ratio_display.dart';
 import 'package:zeniq_swap_frontend/common/extensions.dart';
 
 class PoolAddLiquidity extends StatefulWidget {
-  final PairInfoEntity pairInfo;
-  final BalanceProvider assetNotifier;
+  final ValueNotifier<PairInfoEntity> pairInfoNotifer;
 
-  const PoolAddLiquidity(
-      {super.key, required this.pairInfo, required this.assetNotifier});
+  const PoolAddLiquidity({
+    super.key,
+    required this.pairInfoNotifer,
+  });
 
   @override
   State<PoolAddLiquidity> createState() => _PoolAddLiquidityState();
 }
 
 class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
+  PairInfoEntity get pairInfo => widget.pairInfoNotifer.value;
+
   late final AddLiquidityProvider provider = AddLiquidityProvider(
-    pairInfo: widget.pairInfo,
-    assetNotifier: widget.assetNotifier,
+    pairInfoNotifier: widget.pairInfoNotifer,
+    balanceProvider: context.read<BalanceProvider>(),
+    poolProvider: context.read<PoolProvider>(),
     addressNotifier: $addressNotifier,
     slippageNotifier: $slippageNotifier,
     needToBroadcast: $inNomo,
@@ -54,10 +60,8 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
 
     /// User just completed the swap
     if (depositState == AddLiquidityState.deposited) {
-      final depositInfo = provider.depositInfoNotifier
-          .value; // TODO: This needs to be more precise and only refresh the tokens that are affected
+      final depositInfo = provider.depositInfoNotifier.value;
 
-      //  widget.assetNotifier.refresh();
       InAppNotification.show(
         right: 16,
         top: 16,
@@ -82,8 +86,6 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
 
     /// User just completed the swap
     if (depositState == AddLiquidityState.confirming) {
-      // widget.assetNotifier
-      //     .refresh(); // TODO: This needs to be more precise and only refresh the tokens that are affected
       InAppNotification.show(
         right: 16,
         top: 16,
@@ -183,7 +185,7 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
                   final enabled = state.buttonEnabled;
                   return NomoInput(
                     trailling: AssetPicture(
-                      token: widget.pairInfo.token0,
+                      token: pairInfo.token0,
                       size: 36,
                     ),
                     enabled: enabled,
@@ -196,7 +198,7 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
                     placeHolderStyle: context.typography.b3,
                     maxLines: 1,
                     bottom: AddLiqudityInputBottom(
-                      token: widget.pairInfo.token0,
+                      token: pairInfo.token0,
                       amountNotifier: provider.token0AmountNotifier,
                     ),
                   );
@@ -208,7 +210,7 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
                 final enabled = state.buttonEnabled;
                 return NomoInput(
                   trailling: AssetPicture(
-                    token: widget.pairInfo.token1,
+                    token: pairInfo.token1,
                     size: 36,
                   ),
                   enabled: enabled,
@@ -221,7 +223,7 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
                   placeHolderStyle: context.typography.b3,
                   maxLines: 1,
                   bottom: AddLiqudityInputBottom(
-                    token: widget.pairInfo.token1,
+                    token: pairInfo.token1,
                     amountNotifier: provider.token1AmountNotifier,
                   ),
                 );
@@ -251,7 +253,7 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
                             style: context.typography.b2,
                           ),
                           Spacer(),
-                          PairRatioDisplay.fromPairInfo(widget.pairInfo),
+                          PairRatioDisplay.fromPairInfo(pairInfo),
                         ],
                       ),
                       NomoDivider(),

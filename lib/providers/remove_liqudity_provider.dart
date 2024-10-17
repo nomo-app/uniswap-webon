@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
-import 'package:zeniq_swap_frontend/common/logger.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
@@ -182,14 +181,12 @@ class WithdrawInfo {
   }
 }
 
-const refreshIntervall = Duration(seconds: 30);
-
 class RemoveLiqudityProvider {
   final PoolProvider poolProvider;
 
-  final ValueNotifier<OwnedPairInfo> pairInfoNotifier;
+  final ValueNotifier<PairInfoEntity> pairInfoNotifier;
 
-  OwnedPairInfo get pairInfo => pairInfoNotifier.value;
+  OwnedPairInfo get pairInfo => pairInfoNotifier.value as OwnedPairInfo;
 
   ERC20Entity get token0 => pairInfo.token0;
   ERC20Entity get token1 => pairInfo.token1;
@@ -242,26 +239,24 @@ class RemoveLiqudityProvider {
 
   final Future<String> Function(String tx) signer;
 
-  late final Timer refreshTimer;
-
   bool disposed = false;
 
   RemoveLiqudityProvider({
-    required OwnedPairInfo pairInfo,
+    required this.pairInfoNotifier,
     required this.poolProvider,
     required this.addressNotifier,
     required this.slippageNotifier,
     required this.needToBroadcast,
     required this.signer,
-  }) : pairInfoNotifier = ValueNotifier(pairInfo) {
-    refresh();
-    refreshTimer = Timer.periodic(refreshIntervall, (_) {
-      refresh();
-    });
-  }
+  });
 
   void removeStateChanged() {
     final newState = removeState.value;
+
+    if (newState == RemoveLiqudityState.confirming) {
+      refresh();
+      return;
+    }
 
     if (newState == RemoveLiqudityState.removed) {
       refresh();
@@ -272,7 +267,10 @@ class RemoveLiqudityProvider {
   void refresh() async {
     final updatedPairInfo = await pairInfo.update(address);
     pairInfoNotifier.value = updatedPairInfo;
-    poolProvider.updatePair(pairInfo.pair.contractAddress, updatedPairInfo);
+    poolProvider.updatePair(
+      pairInfo.pair.contractAddress,
+      updatedPairInfo.checkIfStillOwned(),
+    );
   }
 
   void checkRemoveInfo() async {
@@ -518,8 +516,6 @@ class RemoveLiqudityProvider {
   }
 
   void dispose() {
-    refreshTimer.cancel();
-
     removeState
       ..removeListener(removeStateChanged)
       ..dispose();

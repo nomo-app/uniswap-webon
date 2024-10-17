@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_ui_kit/components/app/routebody/nomo_route_body.dart';
@@ -7,6 +9,7 @@ import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:provider/provider.dart';
 import 'package:zeniq_swap_frontend/common/notifier.dart';
+import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
@@ -86,11 +89,17 @@ class PoolWrapper extends StatefulWidget {
   State<PoolWrapper> createState() => _PoolWrapperState();
 }
 
+const refreshIntervall = Duration(seconds: 30);
+
 class _PoolWrapperState extends State<PoolWrapper> {
-  PairInfoEntity get pairInfo => widget.pairInfo;
+  PairInfoEntity get pairInfo => pairInfoNotifer.value;
+
+  late final pairInfoNotifer = ValueNotifier(widget.pairInfo);
+
+  late final poolProvider = context.read<PoolProvider>();
 
   late final ValueNotifier<PoolDetailLocation> locationNotifier =
-      ValueNotifier(PoolDetailLocation.removeLiquidity);
+      ValueNotifier(PoolDetailLocation.overview);
 
   List<PoolDetailLocation> get locations => switch (pairInfo) {
         OwnedPairInfo pairInfo => [
@@ -106,7 +115,38 @@ class _PoolWrapperState extends State<PoolWrapper> {
           ],
       };
 
+  late final Timer refreshTimer;
+
+  @override
+  void initState() {
+    refresh();
+    refreshTimer = Timer.periodic(refreshIntervall, (_) {
+      refresh();
+    });
+    super.initState();
+  }
+
+  void refresh() async {
+    switch (pairInfo) {
+      case OwnedPairInfo pairInfo:
+        final updatedPair = await pairInfo.update($addressNotifier.value);
+        pairInfoNotifer.value = updatedPair;
+        poolProvider.updatePair(
+          pairInfo.pair.contractAddress,
+          updatedPair.checkIfStillOwned(),
+        );
+        break;
+      case PairInfo pairInfo:
+        final updatedPair =
+            await pairInfo.updateAndCheckOwned($addressNotifier.value);
+        pairInfoNotifer.value = updatedPair;
+        poolProvider.updatePair(updatedPair.pair.contractAddress, updatedPair);
+        break;
+    }
+  }
+
   void dispose() {
+    refreshTimer.cancel();
     locationNotifier.dispose();
     super.dispose();
   }
@@ -144,14 +184,13 @@ class _PoolWrapperState extends State<PoolWrapper> {
               duration: Duration(milliseconds: 300),
               child: switch (location) {
                 PoolDetailLocation.overview => PoolOverview(
-                    pairInfo: widget.pairInfo,
+                    pairInfoNotifer: pairInfoNotifer,
                   ),
                 PoolDetailLocation.addLiquidity => PoolAddLiquidity(
-                    pairInfo: widget.pairInfo,
-                    assetNotifier: context.watch<BalanceProvider>(),
+                    pairInfoNotifer: pairInfoNotifer,
                   ),
                 PoolDetailLocation.removeLiquidity => PoolRemoveLiquidity(
-                    pairInfo: ownedPairInfo!,
+                    pairInfoNotifer: pairInfoNotifer,
                   ),
               },
             )
