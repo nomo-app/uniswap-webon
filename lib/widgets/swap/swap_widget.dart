@@ -14,6 +14,7 @@ import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:provider/provider.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
+import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/common/extensions.dart';
 import 'package:zeniq_swap_frontend/main.dart';
@@ -53,7 +54,7 @@ class _SwapWidgetState extends State<SwapWidget> {
     swapProvider = SwapProvider(
       addressNotifier: $addressNotifier,
       slippageNotifier: $slippageNotifier,
-      signer: metamaskSigner,
+      signer: $inNomo ? WebonKitDart.signTransaction : metamaskSigner,
       needToBroadcast: $inNomo,
     );
     super.initState();
