@@ -10,8 +10,7 @@ import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:http/http.dart' as http;
 
-const backendUrl = "http://127.0.0.1:3001";
-// "https://zeniqswap-backend-v7s4few-dev2-nomo.globeapp.dev/";
+const backendUrl = "https://zeniqswap-backend-v7s4few-dev2-nomo.globeapp.dev";
 
 final factoryNew = UniswapV2Factory(
   rpc: rpc,
