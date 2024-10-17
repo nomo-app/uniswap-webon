@@ -13,7 +13,6 @@ import 'package:nomo_ui_kit/theme/theme_provider.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/main.dart';
-import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/currency.dart';
 import 'package:zeniq_swap_frontend/theme.dart';
 

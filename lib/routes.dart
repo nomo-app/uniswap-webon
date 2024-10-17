@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +6,7 @@ import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_router/router/entities/route.dart';
 import 'package:nomo_ui_kit/entities/menu_item.dart';
 import 'package:route_gen/anotations.dart';
+import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/pages/home_page.dart';
 import 'package:zeniq_swap_frontend/pages/pool_detail_page.dart';
 import 'package:zeniq_swap_frontend/pages/pools_page.dart';
@@ -20,10 +20,13 @@ import 'package:zeniq_swap_frontend/widgets/settings_dialog.dart';
 part 'routes.g.dart';
 
 final appRouter = AppRouter(
+  delayInit: true,
   nestedNavigatorObservers: {
     ValueKey("/"): [nestedNavObserver]
   },
-);
+)..init(
+    initialUri: Uri.parse(isPools ? "/pools" : "/"),
+  );
 
 final nestedNavObserver = AppNavObserver();
 
@@ -84,8 +87,6 @@ const _routes = [
   ModalRouteInfo(path: "/settings", page: SettingsDialog),
   ModalRouteInfo(path: "/selectAsset", page: SelectAssetDialog)
 ];
-
-final menuItems = appRouter.routeInfos.toMenuRoutes.toMenuItems;
 
 Widget wrapper(nav) => HomePage(nav: nav);
 

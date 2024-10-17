@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:nomo_router/nomo_router.dart';
 import 'package:nomo_ui_kit/components/app/app_bar/nomo_app_bar.dart';
-import 'package:nomo_ui_kit/components/app/bottom_bar/nomo_bottom_bar.dart';
-import 'package:nomo_ui_kit/components/app/bottom_bar/nomo_horizontal_tile.dart';
 import 'package:nomo_ui_kit/components/app/routebody/nomo_route_body.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.dart';
+import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
@@ -60,7 +59,14 @@ class AppBar extends StatelessWidget {
               height: 42,
             ),
             16.hSpacing,
-            Menu(),
+            NomoText(
+              isPools ? "Pools" : "Swap",
+              style: context.typography.h1,
+              fontWeight: FontWeight.w800,
+              fontSize: 28,
+            ),
+
+            // Menu(),
           ],
         ),
         trailling: Row(
@@ -174,36 +180,36 @@ class AccountAction extends StatelessWidget {
   }
 }
 
-class Menu extends StatelessWidget {
-  const Menu({super.key});
-  void onMenuTap(String path) {
-    NomoNavigator.fromKey.replaceNamed(path);
-  }
+// class Menu extends StatelessWidget {
+//   const Menu({super.key});
+//   void onMenuTap(String path) {
+//     NomoNavigator.fromKey.replaceNamed(path);
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    NomoNavigatorInformationProvider.of(context);
-    final selected = nestedNavObserver.currentNested?.path;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final item in menuItems)
-          NomoHorizontalListTile(
-            itemWidth:
-                context.responsiveValue(small: 80, medium: 96, large: 128),
-            item: item,
-            height: 42,
-            style: context.typography.h1
-                .copyWith(fontSize: 28, fontWeight: FontWeight.w800),
-            theme: NomoBottomBarThemeData(
-              selectedForeground: context.colors.primary,
-              foreground: context.colors.foreground2,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            selected: item.key == selected,
-            onTap: () => onMenuTap(item.key),
-          )
-      ],
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     NomoNavigatorInformationProvider.of(context);
+//     final selected = nestedNavObserver.currentNested?.path;
+//     return Row(
+//       mainAxisSize: MainAxisSize.min,
+//       children: [
+//         for (final item in menuItems)
+//           NomoHorizontalListTile(
+//             itemWidth:
+//                 context.responsiveValue(small: 80, medium: 96, large: 128),
+//             item: item,
+//             height: 42,
+//             style: context.typography.h1
+//                 .copyWith(fontSize: 28, fontWeight: FontWeight.w800),
+//             theme: NomoBottomBarThemeData(
+//               selectedForeground: context.colors.primary,
+//               foreground: context.colors.foreground2,
+//               borderRadius: BorderRadius.circular(24),
+//             ),
+//             selected: item.key == selected,
+//             onTap: () => onMenuTap(item.key),
+//           )
+//       ],
+//     );
+//   }
+// }

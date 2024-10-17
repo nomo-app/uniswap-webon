@@ -23,6 +23,8 @@ final $addressNotifier = ValueNotifier<String?>(null);
 final $currencyNotifier = ValueNotifier(Currency.usd);
 final $slippageNotifier = ValueNotifier(0.005);
 
+const isPools = bool.fromEnvironment('isPools');
+
 const ChainInfo zeniqSmartChainInfo = (
   chainId: 383414847825,
   chainName: 'Zeniq',

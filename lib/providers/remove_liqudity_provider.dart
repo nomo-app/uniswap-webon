@@ -570,7 +570,7 @@ class RemoveLiqudityProvider {
         owner: address,
       );
       return allowance >= poolAmount.value;
-    } catch (e, s) {
+    } catch (e) {
       throw e;
     }
   }

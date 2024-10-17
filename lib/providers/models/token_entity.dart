@@ -45,7 +45,7 @@ class TokenEntity extends ERC20Entity {
             .toList(),
         image: json["image"] as String?,
       );
-    } catch (e, s) {
+    } catch (e) {
       print("token_entity: Error parsing token entity: $e");
       rethrow;
     }

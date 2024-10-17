@@ -5,14 +5,12 @@ import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart'
 import 'package:nomo_ui_kit/components/buttons/secondary/nomo_secondary_button.dart';
 import 'package:nomo_ui_kit/components/buttons/text/nomo_text_button.dart';
 import 'package:nomo_ui_kit/components/card/nomo_card.dart';
-import 'package:nomo_ui_kit/components/info_item/nomo_info_item.dart';
 import 'package:nomo_ui_kit/components/input/textInput/nomo_input.dart';
 import 'package:nomo_ui_kit/components/loading/loading.dart';
 import 'package:nomo_ui_kit/components/outline_container/nomo_outline_container.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:provider/provider.dart';
-import 'package:walletkit_dart/walletkit_dart.dart';
 import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';

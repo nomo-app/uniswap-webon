@@ -10,7 +10,6 @@ import 'package:nomo_ui_kit/utils/layout_extensions.dart';
 import 'package:provider/provider.dart';
 import 'package:zeniq_swap_frontend/common/notifier.dart';
 import 'package:zeniq_swap_frontend/main.dart';
-import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
 import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
