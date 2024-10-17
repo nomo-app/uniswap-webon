@@ -176,20 +176,30 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          NomoText(
-            "Remove",
-            style: context.typography.b3,
-          ),
-          12.vSpacing,
-          NomoText(
-            "Remove to receive pool tokens and earned trading fees",
-            style: context.typography.b2,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                NomoText(
+                  "Remove",
+                  style: context.typography.b3,
+                ),
+                12.vSpacing,
+                NomoText(
+                  "Remove to receive pool tokens and earned trading fees",
+                  style: context.typography.b2,
+                ),
+              ],
+            ),
           ),
           24.vSpacing,
           ValueListenableBuilder(
             valueListenable: provider.removeState,
             builder: (context, state, child) {
               return NomoInput(
+                maxLines: 1,
+                scrollable: true,
                 enabled:
                     state.inputsEnabled && !provider.onlyAllowRemovingFully,
                 valueNotifier: provider.poolTokenInputNotifier,
@@ -289,7 +299,7 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
               );
             },
           ),
-          48.vSpacing,
+          24.vSpacing,
           ValueListenableBuilder(
             valueListenable: provider.removeState,
             builder: (context, state, child) {
@@ -311,6 +321,8 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                     ],
                   ),
                 ),
+                maxLines: 1,
+                scrollable: true,
                 padding: EdgeInsets.all(24),
                 style: context.typography.b3,
                 valueNotifier: provider.token0InputNotifier,
@@ -346,7 +358,7 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
               );
             },
           ),
-          24.vSpacing,
+          16.vSpacing,
           ValueListenableBuilder(
             valueListenable: provider.removeState,
             builder: (context, state, child) {
@@ -368,6 +380,8 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                     ],
                   ),
                 ),
+                scrollable: true,
+                maxLines: 1,
                 padding: EdgeInsets.all(24),
                 style: context.typography.b3,
                 valueNotifier: provider.token1InputNotifier,

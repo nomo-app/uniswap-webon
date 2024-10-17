@@ -172,37 +172,44 @@ class _PoolWrapperState extends State<PoolWrapper> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                for (final location in locations)
-                  SecondaryNomoButton(
-                    height: 48,
-                    padding: EdgeInsets.symmetric(horizontal: 24),
-                    onPressed: () {
-                      locationNotifier.value = location;
-                    },
-                    text: location.title,
-                    backgroundColor: Colors.transparent,
-                    foregroundColor: location == locationNotifier.value
-                        ? context.colors.primary
-                        : context.colors.foreground1,
-                  ),
-              ].spacingH(12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final location in locations)
+                    SecondaryNomoButton(
+                      height: 48,
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      onPressed: () {
+                        locationNotifier.value = location;
+                      },
+                      text: location.title,
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: location == locationNotifier.value
+                          ? context.colors.primary
+                          : context.colors.foreground1,
+                    ),
+                ].spacingH(12),
+              ),
             ),
             24.vSpacing,
-            AnimatedSwitcher(
-              duration: Duration(milliseconds: 300),
-              child: switch (location) {
-                PoolDetailLocation.overview => PoolOverview(
-                    pairInfoNotifer: pairInfoNotifer,
-                  ),
-                PoolDetailLocation.addLiquidity => PoolAddLiquidity(
-                    pairInfoNotifer: pairInfoNotifer,
-                  ),
-                PoolDetailLocation.removeLiquidity => PoolRemoveLiquidity(
-                    pairInfoNotifer: pairInfoNotifer,
-                  ),
-              },
+            Expanded(
+              child: SingleChildScrollView(
+                child: AnimatedSwitcher(
+                  duration: Duration(milliseconds: 300),
+                  child: switch (location) {
+                    PoolDetailLocation.overview => PoolOverview(
+                        pairInfoNotifer: pairInfoNotifer,
+                      ),
+                    PoolDetailLocation.addLiquidity => PoolAddLiquidity(
+                        pairInfoNotifer: pairInfoNotifer,
+                      ),
+                    PoolDetailLocation.removeLiquidity => PoolRemoveLiquidity(
+                        pairInfoNotifer: pairInfoNotifer,
+                      ),
+                  },
+                ),
+              ),
             )
           ],
         );

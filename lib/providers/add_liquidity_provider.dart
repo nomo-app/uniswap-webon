@@ -290,14 +290,6 @@ class AddLiquidityProvider {
 
     final address = this.address ?? arbitrumTestWallet;
 
-    final token0BalanceValid = checkToken0Balance();
-    final token1BalanceValid = checkToken1Balance();
-
-    if (token0BalanceValid == false || token1BalanceValid == false) {
-      depositState.value = AddLiquidityState.none;
-      return;
-    }
-
     final amount0 = token0AmountNotifier.value;
     final amount1 = token1AmountNotifier.value;
 
@@ -305,6 +297,15 @@ class AddLiquidityProvider {
         amount0.value == BigInt.zero ||
         amount1 == null ||
         amount1.value == BigInt.zero) {
+      depositState.value = AddLiquidityState.none;
+      depositInfoNotifier.value = null;
+      return;
+    }
+
+    final token0BalanceValid = checkToken0Balance();
+    final token1BalanceValid = checkToken1Balance();
+
+    if (token0BalanceValid == false || token1BalanceValid == false) {
       depositState.value = AddLiquidityState.none;
       return;
     }

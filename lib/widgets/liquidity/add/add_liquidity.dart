@@ -232,37 +232,29 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
             12.vSpacing,
             NomoDividerThemeOverride(
               data: NomoDividerThemeDataNullable(
-                crossAxisSpacing: 16,
+                crossAxisSpacing: 12,
               ),
               child: NomoInfoItemThemeOverride(
                 data: NomoInfoItemThemeDataNullable(
-                  titleStyle: context.typography.b2,
-                  valueStyle: context.typography.b2,
+                  titleStyle: context.typography.b1,
+                  valueStyle: context.typography.b1,
                 ),
                 child: NomoCard(
                   backgroundColor: context.colors.background2.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(16),
-                  padding: EdgeInsets.all(24),
+                  padding: EdgeInsets.all(16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(
-                        children: [
-                          NomoText(
-                            "Ratio",
-                            style: context.typography.b2,
-                          ),
-                          Spacer(),
-                          PairRatioDisplay.fromPairInfo(pairInfo),
-                        ],
-                      ),
-                      NomoDivider(),
+                      PairRatioDisplay.fromPairInfo(pairInfo),
                       ValueListenableBuilder(
                         valueListenable: provider.depositInfoNotifier,
                         builder: (context, depositInfo, child) {
                           return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               if (depositInfo != null) ...[
+                                NomoDivider(),
                                 NomoInfoItem(
                                   title:
                                       "Minimum ${depositInfo.pairInfo.token0.symbol} provided",
@@ -277,12 +269,12 @@ class _PoolAddLiquidityState extends State<PoolAddLiquidity> {
                                       "${depositInfo.amount1Min.displayDouble.toStringAsFixed(2)} ${depositInfo.pairInfo.token1.symbol}",
                                 ),
                                 NomoDivider(),
+                                NomoInfoItem(
+                                  title: "Pool Share",
+                                  value:
+                                      "${(depositInfo.poolShare.formatPriceImpact().$1)}%",
+                                ),
                               ],
-                              NomoInfoItem(
-                                title: "Pool Share",
-                                value:
-                                    "${(depositInfo?.poolShare.formatPriceImpact().$1 ?? 0)}%",
-                              ),
                             ],
                           );
                         },

@@ -53,15 +53,15 @@ class _PairRatioDisplayState extends State<PairRatioDisplay> {
               AssetPicture(token: widget.token1),
               8.hSpacing,
               NomoText(
-                "1 ${widget.token1.name}",
-                style: context.typography.b2,
+                "1 ${widget.token1.symbol}",
+                style: context.typography.b1,
               )
             ] else ...[
               AssetPicture(token: widget.token0),
               8.hSpacing,
               NomoText(
-                "1 ${widget.token0.name}",
-                style: context.typography.b2,
+                "1 ${widget.token0.symbol}",
+                style: context.typography.b1,
               )
             ],
             8.hSpacing,
@@ -82,15 +82,15 @@ class _PairRatioDisplayState extends State<PairRatioDisplay> {
               AssetPicture(token: widget.token0),
               8.hSpacing,
               NomoText(
-                "${widget.ratio0.toStringAsFixed(3)} ${widget.token0.name}",
-                style: context.typography.b2,
+                "${widget.ratio0.toStringAsFixed(3)} ${widget.token0.symbol}",
+                style: context.typography.b1,
               )
             ] else ...[
               AssetPicture(token: widget.token1),
               8.hSpacing,
               NomoText(
-                "${widget.ratio1.toStringAsFixed(3)} ${widget.token1.name}",
-                style: context.typography.b2,
+                "${widget.ratio1.toStringAsFixed(3)} ${widget.token1.symbol}",
+                style: context.typography.b1,
               )
             ],
           ],

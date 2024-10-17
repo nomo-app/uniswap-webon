@@ -21,8 +21,7 @@ https://github.com/Uniswap/sdks/blob/30b98e09d0486cd5cc3e4360e3277eb7cb60d2d5/sd
 
 
 TODO:
-Fix Routing (Url parameters): Tomorrow
-Update UI Pools Page: Tomorrow
+Fix Routing (Url parameters)
 
 Deploy with env variable 
 QR Code Deeplink on WebStart

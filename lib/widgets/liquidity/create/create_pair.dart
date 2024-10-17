@@ -188,154 +188,148 @@ class _CreatePairPageState extends State<CreatePairPage> {
     }
     return NomoRouteBody(
       maxContentWidth: 1000,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          NomoText(
-            "Create",
-            style: context.typography.b3,
-          ),
-          12.vSpacing,
-          NomoText(
-            "Create a Pool and provide tokens to start earning trading fees",
-            style: context.typography.b2,
-          ),
-          24.vSpacing,
-          Column(
-            children: [
-              ValueListenableBuilder(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            NomoText(
+              "Create",
+              style: context.typography.b3,
+            ),
+            12.vSpacing,
+            NomoText(
+              "Create a Pool and provide tokens to start earning trading fees",
+              style: context.typography.b2,
+            ),
+            24.vSpacing,
+            Column(
+              children: [
+                ValueListenableBuilder(
+                    valueListenable: provider.createState,
+                    builder: (context, state, child) {
+                      final enabled = state.buttonEnabled;
+                      return NomoInput(
+                        trailling: AssetPicture(
+                          token: token0,
+                          size: 36,
+                        ),
+                        enabled: enabled,
+                        background: context.colors.background2.withOpacity(0.5),
+                        valueNotifier: provider.token0InputNotifier,
+                        errorNotifier: provider.token0ErrorNotifier,
+                        placeHolder: "0",
+                        style: context.typography.b3,
+                        placeHolderStyle: context.typography.b3,
+                        maxLines: 1,
+                        bottom: AddLiqudityInputBottom(
+                          token: token0,
+                          amountNotifier: provider.token0AmountNotifier,
+                        ),
+                      );
+                    }),
+                12.vSpacing,
+                ValueListenableBuilder(
                   valueListenable: provider.createState,
                   builder: (context, state, child) {
                     final enabled = state.buttonEnabled;
                     return NomoInput(
                       trailling: AssetPicture(
-                        token: token0,
+                        token: token1,
                         size: 36,
                       ),
                       enabled: enabled,
                       background: context.colors.background2.withOpacity(0.5),
-                      valueNotifier: provider.token0InputNotifier,
-                      errorNotifier: provider.token0ErrorNotifier,
+                      valueNotifier: provider.token1InputNotifier,
+                      errorNotifier: provider.token1ErrorNotifier,
                       placeHolder: "0",
                       style: context.typography.b3,
                       placeHolderStyle: context.typography.b3,
                       maxLines: 1,
                       bottom: AddLiqudityInputBottom(
-                        token: token0,
-                        amountNotifier: provider.token0AmountNotifier,
+                        token: token1,
+                        amountNotifier: provider.token1AmountNotifier,
                       ),
                     );
-                  }),
-              12.vSpacing,
-              ValueListenableBuilder(
-                valueListenable: provider.createState,
-                builder: (context, state, child) {
-                  final enabled = state.buttonEnabled;
-                  return NomoInput(
-                    trailling: AssetPicture(
-                      token: token1,
-                      size: 36,
-                    ),
-                    enabled: enabled,
-                    background: context.colors.background2.withOpacity(0.5),
-                    valueNotifier: provider.token1InputNotifier,
-                    errorNotifier: provider.token1ErrorNotifier,
-                    placeHolder: "0",
-                    style: context.typography.b3,
-                    placeHolderStyle: context.typography.b3,
-                    maxLines: 1,
-                    bottom: AddLiqudityInputBottom(
-                      token: token1,
-                      amountNotifier: provider.token1AmountNotifier,
-                    ),
-                  );
-                },
-              ),
-              12.vSpacing,
-              NomoDividerThemeOverride(
-                data: NomoDividerThemeDataNullable(
-                  crossAxisSpacing: 16,
+                  },
                 ),
-                child: NomoInfoItemThemeOverride(
-                  data: NomoInfoItemThemeDataNullable(
-                    titleStyle: context.typography.b2,
-                    valueStyle: context.typography.b2,
+                12.vSpacing,
+                NomoDividerThemeOverride(
+                  data: NomoDividerThemeDataNullable(
+                    crossAxisSpacing: 12,
                   ),
-                  child: ValueListenableBuilder(
-                    valueListenable: provider.createInfoNotifier,
-                    builder: (context, createInfo, child) {
-                      if (createInfo == null) {
-                        return const SizedBox();
-                      }
-                      return NomoCard(
-                        backgroundColor:
-                            context.colors.background2.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(16),
-                        padding: EdgeInsets.all(24),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                NomoText(
-                                  "Ratio",
-                                  style: context.typography.b2,
-                                ),
-                                Spacer(),
-                                PairRatioDisplay(
-                                  token0: createInfo.token0,
-                                  token1: createInfo.token1,
-                                  ratio0: createInfo.ratio0,
-                                  ratio1: createInfo.ratio1,
-                                ),
-                              ],
-                            ),
-                            NomoDivider(),
-                            NomoInfoItem(
-                              title:
-                                  "Minimum ${createInfo.token0.symbol} provided",
-                              value:
-                                  "${createInfo.amount0Min.displayDouble.toStringAsFixed(2)} ${createInfo.token0.symbol}",
-                            ),
-                            NomoDivider(),
-                            NomoInfoItem(
-                              title:
-                                  "Minimum ${createInfo.token1.symbol} provided",
-                              value:
-                                  "${createInfo.amount1Min.displayDouble.toStringAsFixed(2)} ${createInfo.token1.symbol}",
-                            ),
-                            NomoDivider(),
-                            NomoInfoItem(
-                              title: "Pool Share",
-                              value:
-                                  "${(createInfo.poolShare.formatPriceImpact().$1)}%",
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                  child: NomoInfoItemThemeOverride(
+                    data: NomoInfoItemThemeDataNullable(
+                      titleStyle: context.typography.b1,
+                      valueStyle: context.typography.b1,
+                    ),
+                    child: ValueListenableBuilder(
+                      valueListenable: provider.createInfoNotifier,
+                      builder: (context, createInfo, child) {
+                        if (createInfo == null) {
+                          return const SizedBox();
+                        }
+                        return NomoCard(
+                          backgroundColor:
+                              context.colors.background2.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(16),
+                          padding: EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              PairRatioDisplay(
+                                token0: createInfo.token0,
+                                token1: createInfo.token1,
+                                ratio0: createInfo.ratio0,
+                                ratio1: createInfo.ratio1,
+                              ),
+                              NomoDivider(),
+                              NomoInfoItem(
+                                title:
+                                    "Minimum ${createInfo.token0.symbol} provided",
+                                value:
+                                    "${createInfo.amount0Min.displayDouble.toStringAsFixed(2)} ${createInfo.token0.symbol}",
+                              ),
+                              NomoDivider(),
+                              NomoInfoItem(
+                                title:
+                                    "Minimum ${createInfo.token1.symbol} provided",
+                                value:
+                                    "${createInfo.amount1Min.displayDouble.toStringAsFixed(2)} ${createInfo.token1.symbol}",
+                              ),
+                              NomoDivider(),
+                              NomoInfoItem(
+                                title: "Pool Share",
+                                value:
+                                    "${(createInfo.poolShare.formatPriceImpact().$1)}%",
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-              24.vSpacing,
-              ValueListenableBuilder(
-                valueListenable: provider.createState,
-                builder: (context, state, child) {
-                  return PrimaryNomoButton(
-                    text: state.buttonText,
-                    type: state.buttonType,
-                    onPressed: provider.deposit,
-                    expandToConstraints: true,
-                    enabled: state.buttonEnabled,
-                    height: 64,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    borderRadius: BorderRadius.circular(16),
-                    textStyle: context.typography.h1,
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
+                24.vSpacing,
+                ValueListenableBuilder(
+                  valueListenable: provider.createState,
+                  builder: (context, state, child) {
+                    return PrimaryNomoButton(
+                      text: state.buttonText,
+                      type: state.buttonType,
+                      onPressed: provider.deposit,
+                      expandToConstraints: true,
+                      enabled: state.buttonEnabled,
+                      height: 64,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      borderRadius: BorderRadius.circular(16),
+                      textStyle: context.typography.h1,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
