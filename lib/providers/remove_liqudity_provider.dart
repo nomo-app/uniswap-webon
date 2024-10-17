@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:nomo_ui_kit/components/buttons/primary/nomo_primary_button.dart';
 import 'package:walletkit_dart/walletkit_dart.dart';
+import 'package:zeniq_swap_frontend/common/logger.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
+import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
 final zeniqSwapRouter = UniswapV2Router(
@@ -178,8 +182,14 @@ class WithdrawInfo {
   }
 }
 
+const refreshIntervall = Duration(seconds: 30);
+
 class RemoveLiqudityProvider {
-  final OwnedPairInfo pairInfo;
+  final PoolProvider poolProvider;
+
+  final ValueNotifier<OwnedPairInfo> pairInfoNotifier;
+
+  OwnedPairInfo get pairInfo => pairInfoNotifier.value;
 
   ERC20Entity get token0 => pairInfo.token0;
   ERC20Entity get token1 => pairInfo.token1;
@@ -212,8 +222,8 @@ class RemoveLiqudityProvider {
 
   final ValueNotifier<WithdrawInfo?> removeInfoNotifier = ValueNotifier(null);
 
-  final ValueNotifier<RemoveLiqudityState> removeState =
-      ValueNotifier(RemoveLiqudityState.none);
+  late final removeState = ValueNotifier(RemoveLiqudityState.none)
+    ..addListener(removeStateChanged);
 
   UniswapV2Router get router => switch (pairInfo.type) {
         PairType.legacy => zeniqSwapRouterOld,
@@ -232,13 +242,38 @@ class RemoveLiqudityProvider {
 
   final Future<String> Function(String tx) signer;
 
+  late final Timer refreshTimer;
+
+  bool disposed = false;
+
   RemoveLiqudityProvider({
-    required this.pairInfo,
+    required OwnedPairInfo pairInfo,
+    required this.poolProvider,
     required this.addressNotifier,
     required this.slippageNotifier,
     required this.needToBroadcast,
     required this.signer,
-  });
+  }) : pairInfoNotifier = ValueNotifier(pairInfo) {
+    refresh();
+    refreshTimer = Timer.periodic(refreshIntervall, (_) {
+      refresh();
+    });
+  }
+
+  void removeStateChanged() {
+    final newState = removeState.value;
+
+    if (newState == RemoveLiqudityState.removed) {
+      refresh();
+      return;
+    }
+  }
+
+  void refresh() async {
+    final updatedPairInfo = await pairInfo.update(address);
+    pairInfoNotifier.value = updatedPairInfo;
+    poolProvider.updatePair(pairInfo.pair.contractAddress, updatedPairInfo);
+  }
 
   void checkRemoveInfo() async {
     if (recalculate == false) return;
@@ -369,6 +404,8 @@ class RemoveLiqudityProvider {
 
       final successfull = await rpc.waitForTxConfirmation(hash);
 
+      if (disposed) return hash;
+
       removeState.value =
           successfull ? RemoveLiqudityState.removed : RemoveLiqudityState.error;
 
@@ -380,9 +417,11 @@ class RemoveLiqudityProvider {
 
       return hash;
     } catch (e) {
-      removeState.value = RemoveLiqudityState.error;
-      recalculate = true;
-      checkRemoveInfo();
+      if (disposed == false) {
+        removeState.value = RemoveLiqudityState.error;
+        recalculate = true;
+        checkRemoveInfo();
+      }
       rethrow;
     }
   }
@@ -479,6 +518,12 @@ class RemoveLiqudityProvider {
   }
 
   void dispose() {
+    refreshTimer.cancel();
+
+    removeState
+      ..removeListener(removeStateChanged)
+      ..dispose();
+
     poolTokenInputNotifier
       ..removeListener(poolTokenStringChanged)
       ..dispose();
@@ -488,6 +533,8 @@ class RemoveLiqudityProvider {
     token1InputNotifier
       ..removeListener(token1StringChanged)
       ..dispose();
+
+    disposed = true;
   }
 
   Future<bool> checkTokenApproval(

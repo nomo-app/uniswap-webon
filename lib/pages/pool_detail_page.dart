@@ -55,11 +55,7 @@ class _PoolDetailPageState extends State<PoolDetailPage> {
         builder: (context, pairInfoAsync, child) {
           return pairInfoAsync.when(
             loading: () => Center(child: const Loading()),
-            data: (value) {
-              return PoolWrapper(
-                pairInfo: value,
-              );
-            },
+            data: (value) => PoolWrapper(pairInfo: value),
             error: (error) => Center(child: Text(error.toString())),
           );
         },
@@ -91,10 +87,12 @@ class PoolWrapper extends StatefulWidget {
 }
 
 class _PoolWrapperState extends State<PoolWrapper> {
+  PairInfoEntity get pairInfo => widget.pairInfo;
+
   late final ValueNotifier<PoolDetailLocation> locationNotifier =
       ValueNotifier(PoolDetailLocation.removeLiquidity);
 
-  List<PoolDetailLocation> get locations => switch (widget.pairInfo) {
+  List<PoolDetailLocation> get locations => switch (pairInfo) {
         OwnedPairInfo pairInfo => [
             PoolDetailLocation.overview,
             if (pairInfo.type != PairType.legacy)
@@ -108,9 +106,13 @@ class _PoolWrapperState extends State<PoolWrapper> {
           ],
       };
 
-  OwnedPairInfo? get ownedPairInfo => widget.pairInfo is OwnedPairInfo
-      ? widget.pairInfo as OwnedPairInfo
-      : null;
+  void dispose() {
+    locationNotifier.dispose();
+    super.dispose();
+  }
+
+  OwnedPairInfo? get ownedPairInfo =>
+      pairInfo is OwnedPairInfo ? pairInfo as OwnedPairInfo : null;
 
   @override
   Widget build(BuildContext context) {

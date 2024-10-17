@@ -11,10 +11,12 @@ import 'package:nomo_ui_kit/components/notification/nomo_notification.dart';
 import 'package:nomo_ui_kit/components/text/nomo_text.dart';
 import 'package:nomo_ui_kit/theme/nomo_theme.dart';
 import 'package:nomo_ui_kit/utils/layout_extensions.dart';
+import 'package:provider/provider.dart';
 import 'package:webon_kit_dart/webon_kit_dart.dart';
 import 'package:zeniq_swap_frontend/main.dart';
 import 'package:zeniq_swap_frontend/providers/add_liquidity_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
+import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
 import 'package:zeniq_swap_frontend/providers/remove_liqudity_provider.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
 import 'package:zeniq_swap_frontend/widgets/liquidity/add/add_liquidity_input_bottom.dart';
@@ -40,6 +42,7 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
   @override
   void initState() {
     provider = RemoveLiqudityProvider(
+      poolProvider: context.read<PoolProvider>(),
       pairInfo: widget.pairInfo,
       addressNotifier: $addressNotifier,
       slippageNotifier: $slippageNotifier,
@@ -225,11 +228,22 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                           ),
                           Spacer(),
                           NomoText(
-                            "Balance: ${provider.pairInfo.pairTokenAmountAmount.displayDouble.toStringAsFixed(2)}",
+                            "Balance: ",
                             style: context.typography.b1,
+                            opacity: 0.6,
+                          ),
+                          ValueListenableBuilder(
+                            valueListenable: provider.pairInfoNotifier,
+                            builder: (context, pairInfo, _) {
+                              return NomoText(
+                                "${pairInfo.pairTokenAmountAmount.displayDouble.toStringAsFixed(2)}",
+                                style: context.typography.b1,
+                              );
+                            },
                           ),
                         ],
                       ),
+                      8.vSpacing,
                       Material(
                         type: MaterialType.transparency,
                         child: ValueListenableBuilder(
@@ -253,6 +267,7 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                           },
                         ),
                       ),
+                      8.vSpacing,
                       Row(
                         children: [
                           for (final percentage in percentages)
@@ -315,11 +330,16 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                 ],
                 bottom: Padding(
                   padding: const EdgeInsets.only(top: 16),
-                  child: AddLiqudityInputBottom(
-                    token: widget.pairInfo.token0,
-                    amountNotifier: provider.token0AmountNotifier,
-                    balance: widget.pairInfo.myAmount0,
-                    balanceString: "In Pool:",
+                  child: ValueListenableBuilder(
+                    valueListenable: provider.pairInfoNotifier,
+                    builder: (context, pairInfo, _) {
+                      return AddLiqudityInputBottom(
+                        token: pairInfo.token0,
+                        amountNotifier: provider.token0AmountNotifier,
+                        balance: pairInfo.myAmount0,
+                        balanceString: "In Pool:",
+                      );
+                    },
                   ),
                 ),
               );
@@ -366,11 +386,16 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
                 ],
                 bottom: Padding(
                   padding: const EdgeInsets.only(top: 16),
-                  child: AddLiqudityInputBottom(
-                    token: widget.pairInfo.token1,
-                    amountNotifier: provider.token1AmountNotifier,
-                    balance: widget.pairInfo.myAmount1,
-                    balanceString: "In Pool:",
+                  child: ValueListenableBuilder(
+                    valueListenable: provider.pairInfoNotifier,
+                    builder: (context, pairInfo, _) {
+                      return AddLiqudityInputBottom(
+                        token: widget.pairInfo.token1,
+                        amountNotifier: provider.token1AmountNotifier,
+                        balance: widget.pairInfo.myAmount1,
+                        balanceString: "In Pool:",
+                      );
+                    },
                   ),
                 ),
               );

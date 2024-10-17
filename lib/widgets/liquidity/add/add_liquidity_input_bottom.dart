@@ -60,7 +60,7 @@ class AddLiqudityInputBottom extends StatelessWidget {
 
                       return NomoText(
                         "${priceState.currency.symbol}${value.toStringAsFixed(2)}",
-                        style: context.typography.b2,
+                        style: context.typography.b1,
                       );
                     },
                   );
@@ -76,8 +76,13 @@ class AddLiqudityInputBottom extends StatelessWidget {
                       return Row(
                         children: [
                           NomoText(
-                            "${balanceString ?? "Balance:"} ${balanceState.displayDouble.toStringAsFixed(2)}",
-                            style: context.typography.b2,
+                            "${balanceString ?? "Balance:"} ",
+                            style: context.typography.b1,
+                            opacity: 0.6,
+                          ),
+                          NomoText(
+                            "${balanceState.displayDouble.toStringAsFixed(2)}",
+                            style: context.typography.b1,
                           ),
                           8.hSpacing,
                           priceAsync.when(
@@ -89,7 +94,7 @@ class AddLiqudityInputBottom extends StatelessWidget {
 
                               return NomoText(
                                 "${priceState.currency.symbol}${value.toStringAsFixed(2)}",
-                                style: context.typography.b2,
+                                style: context.typography.b1,
                               );
                             },
                           ),

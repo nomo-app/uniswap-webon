@@ -128,7 +128,7 @@ sealed class PairInfoEntity {
     return (amount1.displayDouble * price1 / tvl) * 100;
   }
 
-  PairInfoEntity._({
+  PairInfoEntity({
     required this.pair,
     required this.token0,
     required this.token1,
@@ -137,28 +137,6 @@ sealed class PairInfoEntity {
     required this.type,
     required this.poolSupply,
   });
-
-  // Future<PairInfo> update() async {
-  //   final (reserve0, reserve1) = await pair.getReserves();
-
-  //   return copyWith(
-  //     reserve0: reserve0,
-  //     reserve1: reserve1,
-  //   );
-  // }
-
-  // PairInfo copyWith({
-  //   BigInt? reserve0,
-  //   BigInt? reserve1,
-  // }) =>
-  //     PairInfo(
-  //       pair: pair,
-  //       token0: token0,
-  //       token1: token1,
-  //       type: type,
-  //       reserve0: reserve0 ?? this.reserve0,
-  //       reserve1: reserve1 ?? this.reserve1,
-  //     );
 
   @override
   String toString() {
@@ -227,7 +205,7 @@ final class PairInfo extends PairInfoEntity {
     required BigInt reserve1,
     required PairType type,
     required BigInt poolSupply,
-  }) : super._(
+  }) : super(
           pair: pair,
           token0: token0,
           token1: token1,
@@ -251,6 +229,17 @@ final class PairInfo extends PairInfoEntity {
         reserve0: reserve0 ?? this.reserve0,
         reserve1: reserve1 ?? this.reserve1,
       );
+
+  Future<PairInfoEntity> update() async {
+    final supply = await erc20Contract.getSupply();
+    final (reserve0, reserve1) = await pair.getReserves();
+
+    return copyWith(
+      reserve0: reserve0,
+      reserve1: reserve1,
+      poolSupply: supply,
+    );
+  }
 }
 
 final class OwnedPairInfo extends PairInfoEntity {
@@ -325,10 +314,25 @@ final class OwnedPairInfo extends PairInfoEntity {
     );
   }
 
-  OwnedPairInfo({
+  Future<OwnedPairInfo> update(String? address) async {
+    final supply = await erc20Contract.getSupply();
+    final (reserve0, reserve1) = await pair.getReserves();
+
+    final pairTokenAmount =
+        address != null ? await erc20Contract.getBalance(address) : null;
+
+    return copyWith(
+      reserve0: reserve0,
+      reserve1: reserve1,
+      poolSupply: supply,
+      pairTokenAmount: pairTokenAmount,
+    );
+  }
+
+  OwnedPairInfo.fromPairInfo({
     required this.pairTokenAmount,
     required PairInfo pairInfo,
-  }) : super._(
+  }) : super(
           pair: pairInfo.pair,
           token0: pairInfo.token0,
           token1: pairInfo.token1,
@@ -337,4 +341,32 @@ final class OwnedPairInfo extends PairInfoEntity {
           type: pairInfo.type,
           poolSupply: pairInfo.poolSupply,
         );
+
+  OwnedPairInfo copyWith({
+    BigInt? reserve0,
+    BigInt? reserve1,
+    BigInt? poolSupply,
+    BigInt? pairTokenAmount,
+  }) =>
+      OwnedPairInfo(
+        pairTokenAmount: pairTokenAmount ?? this.pairTokenAmount,
+        pair: pair,
+        token0: token0,
+        token1: token1,
+        type: type,
+        poolSupply: poolSupply ?? this.poolSupply,
+        reserve0: reserve0 ?? this.reserve0,
+        reserve1: reserve1 ?? this.reserve1,
+      );
+
+  OwnedPairInfo({
+    required this.pairTokenAmount,
+    required super.pair,
+    required super.token0,
+    required super.token1,
+    required super.reserve0,
+    required super.reserve1,
+    required super.type,
+    required super.poolSupply,
+  });
 }

@@ -61,6 +61,17 @@ class PoolProvider {
     return notifier;
   }
 
+  void addPair(PairInfoEntity newPair) {
+    allPairsNotifier.setValue([
+      ...?allPairsNotifier.value.valueOrNull,
+      newPair,
+    ]);
+  }
+
+  void updatePair(String address, PairInfoEntity updatedPair) {
+    getPairNotifier(address).setValue(updatedPair);
+  }
+
   PoolProvider({
     required this.addressNotifier,
   }) {
@@ -86,7 +97,7 @@ class PoolProvider {
           pair.erc20Contract.getBalance(address!).then(
             (balance) {
               if (balance == BigInt.zero) return null;
-              return OwnedPairInfo(
+              return OwnedPairInfo.fromPairInfo(
                 pairTokenAmount: balance,
                 pairInfo: pair,
               );
