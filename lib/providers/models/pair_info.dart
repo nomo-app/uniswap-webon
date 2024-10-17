@@ -46,8 +46,11 @@ sealed class PairInfoEntity {
 
   final PairType type;
 
-  int get decimalOffset0 => token1.decimals - token0.decimals;
-  int get decimalOffset1 => token0.decimals - token1.decimals;
+  int get decimalOffset0 => decimalDiff0 < 0 ? 0 : decimalDiff0;
+  int get decimalOffset1 => decimalDiff1 < 0 ? 0 : decimalDiff1;
+
+  int get decimalDiff0 => token1.decimals - token0.decimals;
+  int get decimalDiff1 => token0.decimals - token1.decimals;
 
   BigInt get reserve0Adjusted => reserve0 * BigInt.from(10).pow(decimalOffset0);
   BigInt get reserve1Adjusted => reserve1 * BigInt.from(10).pow(decimalOffset1);
@@ -86,7 +89,7 @@ sealed class PairInfoEntity {
       );
 
   Amount calculateAmount0FromAmount1(Amount amount1) {
-    final amount1Adjusted = amount1.value * BigInt.from(10).pow(decimalOffset1);
+    final amount1Adjusted = amount1.value.shiftLeft(decimalOffset1);
     final amount0BI = amount1Adjusted.multiply(ratio0);
     return Amount(
       value: amount0BI,
@@ -95,7 +98,7 @@ sealed class PairInfoEntity {
   }
 
   Amount calculateAmount1FromAmount0(Amount amount0) {
-    final amount0Adjusted = amount0.value * BigInt.from(10).pow(decimalOffset0);
+    final amount0Adjusted = amount0.value.shiftRight(decimalOffset1);
     final amount1BI = amount0Adjusted.multiply(ratio1);
     return Amount(
       value: amount1BI,
@@ -147,7 +150,7 @@ sealed class PairInfoEntity {
 
           final updated = await pairInfo.update();
 
-          return balance != null
+          return balance != null && balance > BigInt.zero
               ? OwnedPairInfo.fromPairInfo(
                   pairTokenAmount: balance,
                   pairInfo: updated,
@@ -156,6 +159,75 @@ sealed class PairInfoEntity {
         }.call(),
       OwnedPairInfo ownedPairInfo => ownedPairInfo.update(address),
     };
+  }
+
+  static Future<PairInfoEntity?> fromPair(
+    UniswapV2Pair pair, {
+    required PairType type,
+    required String address,
+  }) async {
+    final erc20 = ERC20Contract(
+      contractAddress: pair.contractAddress,
+      rpc: pair.rpc,
+    );
+
+    final results = await Future.wait([
+      pair.token0().then(
+            (contractAddress) => getTokenInfo(
+              contractAddress: contractAddress,
+              rpc: pair.rpc,
+            ).then(
+              (info) => info?.toEntity(
+                pair.rpc.type.chainId,
+              ),
+            ),
+          ),
+      pair.token1().then(
+            (contractAddress) => getTokenInfo(
+              contractAddress: contractAddress,
+              rpc: pair.rpc,
+            ).then(
+              (info) => info?.toEntity(
+                pair.rpc.type.chainId,
+              ),
+            ),
+          ),
+      pair.getReserves(),
+      erc20.getSupply(),
+      erc20.getBalance(address),
+    ]);
+
+    final token0 = results[0] as ERC20Entity?;
+    final token1 = results[1] as ERC20Entity?;
+
+    if (token1 == null || token0 == null) return null;
+
+    final (reserves0, reserves1) = results[2] as (BigInt, BigInt);
+
+    final poolSupply = results[3] as BigInt;
+
+    final balance = results[4] as BigInt;
+
+    return balance > BigInt.zero
+        ? OwnedPairInfo(
+            pair: pair,
+            token0: token0,
+            token1: token1,
+            reserve0: reserves0,
+            reserve1: reserves1,
+            poolSupply: poolSupply,
+            pairTokenAmount: balance,
+            type: type,
+          )
+        : PairInfo(
+            pair: pair,
+            token0: token0,
+            token1: token1,
+            reserve0: reserves0,
+            reserve1: reserves1,
+            poolSupply: poolSupply,
+            type: type,
+          );
   }
 
   @override

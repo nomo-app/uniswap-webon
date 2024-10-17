@@ -21,6 +21,8 @@ import 'package:zeniq_swap_frontend/providers/add_liquidity_provider.dart';
 import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
 import 'package:zeniq_swap_frontend/providers/create_pair_provider.dart';
 import 'package:zeniq_swap_frontend/providers/models/token_entity.dart';
+import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
+import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 import 'package:zeniq_swap_frontend/routes.dart';
 import 'package:zeniq_swap_frontend/widgets/asset_picture.dart';
@@ -58,7 +60,9 @@ class _CreatePairPageState extends State<CreatePairPage> {
     provider = CreatePairProvider(
       token0: token0,
       token1: token1,
+      priceProvider: context.read<PriceProvider>(),
       assetNotifier: context.read<BalanceProvider>(),
+      poolProvider: context.read<PoolProvider>(),
       addressNotifier: $addressNotifier,
       slippageNotifier: $slippageNotifier,
       needToBroadcast: $inNomo,

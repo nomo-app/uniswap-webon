@@ -188,6 +188,8 @@ class RemoveLiqudityProvider {
 
   OwnedPairInfo get pairInfo => pairInfoNotifier.value as OwnedPairInfo;
 
+  bool get onlyAllowRemovingFully => pairInfo.type == PairType.legacy;
+
   ERC20Entity get token0 => pairInfo.token0;
   ERC20Entity get token1 => pairInfo.token1;
 
@@ -196,24 +198,15 @@ class RemoveLiqudityProvider {
 
   final ValueNotifier<double> slippageNotifier;
 
-  late final ValueNotifier<String> poolTokenInputNotifier = ValueNotifier("")
-    ..addListener(poolTokenStringChanged);
-  late final ValueNotifier<String> token0InputNotifier = ValueNotifier("")
-    ..addListener(token0StringChanged);
+  late final ValueNotifier<String> poolTokenInputNotifier = ValueNotifier("");
+  late final ValueNotifier<String> token0InputNotifier = ValueNotifier("");
 
-  late final ValueNotifier<String> token1InputNotifier = ValueNotifier("")
-    ..addListener(token1StringChanged);
-
+  late final ValueNotifier<String> token1InputNotifier = ValueNotifier("");
   late final ValueNotifier<Amount?> poolTokenAmountNotifier =
-      ValueNotifier(null)
-        ..addListener(updateOtherAmounts)
-        ..addListener(checkRemoveInfo);
-  late final ValueNotifier<Amount?> token0AmountNotifier = ValueNotifier(null)
-    ..addListener(updateOtherAmounts)
-    ..addListener(checkRemoveInfo);
-  late final ValueNotifier<Amount?> token1AmountNotifier = ValueNotifier(null)
-    ..addListener(updateOtherAmounts)
-    ..addListener(checkRemoveInfo);
+      ValueNotifier(null);
+  late final ValueNotifier<Amount?> token0AmountNotifier = ValueNotifier(null);
+
+  late final ValueNotifier<Amount?> token1AmountNotifier = ValueNotifier(null);
 
   late final ValueNotifier<String?> inputErrorNotifer = ValueNotifier(null);
 
@@ -248,7 +241,31 @@ class RemoveLiqudityProvider {
     required this.slippageNotifier,
     required this.needToBroadcast,
     required this.signer,
-  });
+  }) {
+    poolTokenInputNotifier.addListener(poolTokenStringChanged);
+    token0InputNotifier.addListener(token0StringChanged);
+    token1InputNotifier.addListener(token1StringChanged);
+
+    poolTokenAmountNotifier
+      ..addListener(updateOtherAmounts)
+      ..addListener(checkRemoveInfo);
+
+    token0AmountNotifier
+      ..addListener(updateOtherAmounts)
+      ..addListener(checkRemoveInfo);
+
+    token1AmountNotifier
+      ..addListener(updateOtherAmounts)
+      ..addListener(checkRemoveInfo);
+
+    if (onlyAllowRemovingFully) {
+      poolTokenInputNotifier.value =
+          pairInfo.pairTokenAmountAmount.displayValue;
+      poolTokenAmountNotifier.value = pairInfo.pairTokenAmountAmount;
+    }
+
+    refresh();
+  }
 
   void removeStateChanged() {
     final newState = removeState.value;
@@ -265,11 +282,13 @@ class RemoveLiqudityProvider {
   }
 
   void refresh() async {
-    final updatedPairInfo = await pairInfo.update(address);
+    final updatedPairInfo = await pairInfo.update(address).then(
+          (value) => value.checkIfStillOwned(),
+        );
     pairInfoNotifier.value = updatedPairInfo;
     poolProvider.updatePair(
       pairInfo.pair.contractAddress,
-      updatedPairInfo.checkIfStillOwned(),
+      updatedPairInfo,
     );
   }
 
@@ -303,14 +322,19 @@ class RemoveLiqudityProvider {
 
     final address = this.address ?? arbitrumTestWallet;
 
-    removeInfoNotifier.value = WithdrawInfo.create(
-      pairInfo: pairInfo,
-      amount0Received: token0Amount,
-      amount1Received: token1Amount,
-      poolTokenAmount: poolTokenAmount,
-      slippage: slippage,
-      address: address,
-    );
+    try {
+      removeInfoNotifier.value = WithdrawInfo.create(
+        pairInfo: pairInfo,
+        amount0Received: token0Amount,
+        amount1Received: token1Amount,
+        poolTokenAmount: poolTokenAmount,
+        slippage: slippage,
+        address: address,
+      );
+    } catch (e) {
+      removeState.value = RemoveLiqudityState.error;
+      return;
+    }
 
     final hasApproval = await checkTokenApproval(
       poolTokenAmount,
@@ -425,9 +449,12 @@ class RemoveLiqudityProvider {
   }
 
   void setPoolTokenPercentage(double percentage) {
-    final newAmount = pairInfo.pairTokenAmountAmount.displayDouble * percentage;
+    final newAmount = Amount(
+      value: pairInfo.pairTokenAmountAmount.value.multiply(percentage),
+      decimals: 18,
+    );
 
-    poolTokenInputNotifier.value = newAmount.toString();
+    poolTokenInputNotifier.value = newAmount.displayValue;
   }
 
   void token0StringChanged() {
@@ -477,9 +504,9 @@ class RemoveLiqudityProvider {
           pairInfo.calculateTokeAmountsFromPoolAmount(poolAmount);
 
       token0AmountNotifier.value = amount0;
-      token0InputNotifier.value = amount0.displayDouble.toString();
+      token0InputNotifier.value = amount0.displayValue;
       token1AmountNotifier.value = amount1;
-      token1InputNotifier.value = amount1.displayDouble.toString();
+      token1InputNotifier.value = amount1.displayValue;
     } else if (lastAmountChanged == LastTokenChanged.token0) {
       final amount0 = token0AmountNotifier.value;
       if (amount0 == null) return;
@@ -488,9 +515,9 @@ class RemoveLiqudityProvider {
       final poolAmount = pairInfo.calculatePoolTokenAmountFromAmount0(amount0);
 
       token1AmountNotifier.value = amount1;
-      token1InputNotifier.value = amount1.displayDouble.toString();
+      token1InputNotifier.value = amount1.displayValue;
       poolTokenAmountNotifier.value = poolAmount;
-      poolTokenInputNotifier.value = poolAmount.displayDouble.toString();
+      poolTokenInputNotifier.value = poolAmount.displayValue;
     } else if (lastAmountChanged == LastTokenChanged.token1) {
       final amount1 = token1AmountNotifier.value;
       if (amount1 == null) return;
@@ -499,9 +526,9 @@ class RemoveLiqudityProvider {
       final poolAmount = pairInfo.calculatePoolTokenAmountFromAmount1(amount1);
 
       token0AmountNotifier.value = amount0;
-      token0InputNotifier.value = amount0.displayDouble.toString();
+      token0InputNotifier.value = amount0.displayValue;
       poolTokenAmountNotifier.value = poolAmount;
-      poolTokenInputNotifier.value = poolAmount.displayDouble.toString();
+      poolTokenInputNotifier.value = poolAmount.displayValue;
     }
 
     if (poolTokenAmountNotifier.value != null &&

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:collection/collection.dart';
@@ -32,6 +33,10 @@ class PriceProvider {
     tokenProvider.notifier.addListener(() {
       fetchAllPrices(tokens);
     });
+
+    Timer.periodic(Duration(minutes: 1), (_) {
+      fetchAllPrices(tokens);
+    });
   }
 
   final Map<ERC20Entity, AsyncNotifier<PriceState>> _prices = {};
@@ -40,7 +45,23 @@ class PriceProvider {
     // TODO: Refresh token price
   }
 
-  ValueNotifier<AsyncValue<PriceState>> priceNotifierForToken(
+  void addToken(PairInfoEntity pairInfo) {
+    final zeniqPrice =
+        priceNotifierForToken(zeniqTokenWrapper).value.valueOrNull?.price;
+    if (zeniqPrice == null) return;
+
+    final tokenPrice = pairInfo.zeniqRatio * zeniqPrice;
+
+    priceNotifierForToken(pairInfo.token).setValue(
+      PriceState(
+        price: tokenPrice,
+        currency: currency,
+        priceLegacy: null,
+      ),
+    );
+  }
+
+  AsyncNotifier<PriceState> priceNotifierForToken(
     ERC20Entity token,
   ) {
     return _prices.putIfAbsent(

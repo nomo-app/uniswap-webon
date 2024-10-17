@@ -94,7 +94,8 @@ const refreshIntervall = Duration(seconds: 30);
 class _PoolWrapperState extends State<PoolWrapper> {
   PairInfoEntity get pairInfo => pairInfoNotifer.value;
 
-  late final pairInfoNotifer = ValueNotifier(widget.pairInfo);
+  late final pairInfoNotifer = ValueNotifier(widget.pairInfo)
+    ..addListener(onPairInfoChanged);
 
   late final poolProvider = context.read<PoolProvider>();
 
@@ -117,6 +118,13 @@ class _PoolWrapperState extends State<PoolWrapper> {
 
   late final Timer refreshTimer;
 
+  void onPairInfoChanged() {
+    if (pairInfo is! OwnedPairInfo &&
+        locationNotifier.value == PoolDetailLocation.removeLiquidity) {
+      locationNotifier.value = PoolDetailLocation.overview;
+    }
+  }
+
   @override
   void initState() {
     refresh();
@@ -129,12 +137,11 @@ class _PoolWrapperState extends State<PoolWrapper> {
   void refresh() async {
     switch (pairInfo) {
       case OwnedPairInfo pairInfo:
-        final updatedPair = await pairInfo.update($addressNotifier.value);
+        final updatedPair = await pairInfo.update($addressNotifier.value).then(
+              (value) => value.checkIfStillOwned(),
+            );
         pairInfoNotifer.value = updatedPair;
-        poolProvider.updatePair(
-          pairInfo.pair.contractAddress,
-          updatedPair.checkIfStillOwned(),
-        );
+        poolProvider.updatePair(pairInfo.pair.contractAddress, updatedPair);
         break;
       case PairInfo pairInfo:
         final updatedPair =
@@ -148,6 +155,9 @@ class _PoolWrapperState extends State<PoolWrapper> {
   void dispose() {
     refreshTimer.cancel();
     locationNotifier.dispose();
+    pairInfoNotifer
+      ..removeListener(onPairInfoChanged)
+      ..dispose();
     super.dispose();
   }
 

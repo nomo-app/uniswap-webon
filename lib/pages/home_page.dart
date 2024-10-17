@@ -114,7 +114,8 @@ class AccountAction extends StatelessWidget {
         builder: (context, address, connectWidget) {
           if (address == null) return connectWidget!;
 
-          if ($metamask?.chainId != ZeniqSmartNetwork.chainId) {
+          if ($metamask != null &&
+              $metamask?.chainId != ZeniqSmartNetwork.chainId) {
             return SecondaryNomoButton(
               width: 148.0.ifElse(context.isSmall == false, other: 48),
               height: 42,

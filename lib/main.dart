@@ -81,7 +81,8 @@ void main() async {
 
   if ($inNomo) {
     $addressNotifier.value = await WebonKitDart.getEvmAddress();
-    initNomo();
+    $metamask = null;
+    await initNomo();
   } else {
     $metamask = MetamaskConnection(
       accoutNotifier: $addressNotifier,
@@ -119,6 +120,8 @@ Future<void> initNomo() async {
         .whereType<TokenEntity>()
         .toList(),
   );
+
+  print(allAppAssets);
 
   $tokenNotifier.value = {...allAppAssets, ...$tokenNotifier.value};
 }

@@ -491,7 +491,7 @@ class AddLiquidityProvider {
     recalculateInputs = false;
 
     token0AmountNotifier.value = amount0;
-    token0InputNotifier.value = amount0.displayDouble.toString();
+    token0InputNotifier.value = amount0.displayValue;
 
     recalculateInputs = true;
   }
@@ -510,7 +510,7 @@ class AddLiquidityProvider {
     recalculateInputs = false;
 
     token1AmountNotifier.value = amount1;
-    token1InputNotifier.value = amount1.displayDouble.toString();
+    token1InputNotifier.value = amount1.displayValue;
 
     recalculateInputs = true;
   }

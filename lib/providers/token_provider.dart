@@ -78,6 +78,8 @@ class TokenProvider {
         ...tokens,
         ...initialTokens,
       };
+      print("token_provider: Fetched tokens: ${notifier.value}");
+      print("Initial tokens: $initialTokens");
     } catch (e, s) {
       print("token_provider: Error fetching tokens: $e");
       print(s);

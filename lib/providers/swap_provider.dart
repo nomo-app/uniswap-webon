@@ -215,9 +215,10 @@ BigInt? parseFromString(String value, int decimals) {
     return null;
   }
 
-  final right = split.length == 2
+  var right = split.length == 2
       ? split[1].padRight(decimals, '0')
       : ''.padRight(decimals, '0');
+  right = right.length > decimals ? right.substring(0, decimals) : right;
   final left = split[0];
 
   return BigInt.tryParse('$left$right');

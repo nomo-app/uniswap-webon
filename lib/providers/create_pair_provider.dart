@@ -4,6 +4,9 @@ import 'package:zeniq_swap_frontend/common/async_value.dart';
 import 'package:zeniq_swap_frontend/common/logger.dart';
 import 'package:zeniq_swap_frontend/providers/add_liquidity_provider.dart';
 import 'package:zeniq_swap_frontend/providers/balance_provider.dart';
+import 'package:zeniq_swap_frontend/providers/models/pair_info.dart';
+import 'package:zeniq_swap_frontend/providers/pool_provider.dart';
+import 'package:zeniq_swap_frontend/providers/price_provider.dart';
 import 'package:zeniq_swap_frontend/providers/swap_provider.dart';
 
 class CreateInfo {
@@ -96,6 +99,19 @@ class CreateInfo {
         .then((value) => value as RawEVMTransactionType0);
   }
 
+  Future<PairInfoEntity?> findPairInfo() {
+    return zfactory
+        .getPair(tokenA: token0.contractAddress, tokenB: token1.contractAddress)
+        .then((address) => UniswapV2Pair(contractAddress: address, rpc: rpc))
+        .then(
+          (pair) => PairInfoEntity.fromPair(
+            pair,
+            type: PairType.v2,
+            address: address,
+          ),
+        );
+  }
+
   @override
   String toString() {
     return "Provided ${amount0.displayDouble.toStringAsFixed(2)} ${token0.symbol} and ${amount1.displayDouble.toStringAsFixed(2)} ${token1.symbol}";
@@ -108,6 +124,9 @@ final minZeniqForPoolCreation = Amount.convert(
 );
 
 class CreatePairProvider {
+  final PoolProvider poolProvider;
+  final PriceProvider priceProvider;
+
   final ERC20Entity token0;
   final ERC20Entity token1;
 
@@ -144,6 +163,8 @@ class CreatePairProvider {
   final Future<String> Function(String tx) signer;
 
   CreatePairProvider({
+    required this.priceProvider,
+    required this.poolProvider,
     required this.token0,
     required this.token1,
     required BalanceProvider assetNotifier,
@@ -353,6 +374,12 @@ class CreatePairProvider {
       createState.value = AddLiquidityState.confirming;
 
       final successfull = await rpc.waitForTxConfirmation(hash);
+
+      final pair = await depositInfo.findPairInfo();
+      if (pair != null) {
+        poolProvider.addPair(pair);
+        priceProvider.addToken(pair);
+      }
 
       createState.value =
           successfull ? AddLiquidityState.deposited : AddLiquidityState.error;

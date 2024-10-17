@@ -72,7 +72,6 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
       final depositInfo = provider.removeInfoNotifier
           .value; // TODO: This needs to be more precise and only refresh the tokens that are affected
 
-      //  widget.assetNotifier.refresh();
       InAppNotification.show(
         right: 16,
         top: 16,
@@ -97,8 +96,6 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
 
     /// User just completed the swap
     if (removeState == RemoveLiqudityState.confirming) {
-      // widget.assetNotifier
-      //     .refresh(); // TODO: This needs to be more precise and only refresh the tokens that are affected
       InAppNotification.show(
         right: 16,
         top: 16,
@@ -193,7 +190,8 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
             valueListenable: provider.removeState,
             builder: (context, state, child) {
               return NomoInput(
-                enabled: state.inputsEnabled,
+                enabled:
+                    state.inputsEnabled && !provider.onlyAllowRemovingFully,
                 valueNotifier: provider.poolTokenInputNotifier,
                 style: context.typography.b3,
                 inputFormatters: [
@@ -296,7 +294,8 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
             valueListenable: provider.removeState,
             builder: (context, state, child) {
               return NomoInput(
-                enabled: state.inputsEnabled,
+                enabled:
+                    state.inputsEnabled && !provider.onlyAllowRemovingFully,
                 top: Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Row(
@@ -352,7 +351,8 @@ class _PoolRemoveLiquidityState extends State<PoolRemoveLiquidity> {
             valueListenable: provider.removeState,
             builder: (context, state, child) {
               return NomoInput(
-                enabled: state.inputsEnabled,
+                enabled:
+                    state.inputsEnabled && !provider.onlyAllowRemovingFully,
                 top: Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Row(
